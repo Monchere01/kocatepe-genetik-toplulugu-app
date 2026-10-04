@@ -1,13 +1,13 @@
 /* =====================================================================
    sw.js — çevrimdışı (offline) çalışma için service worker
-   AKÜ MBG Kulübü · DNA Takvimi
+   AKÜ MBG Topluluğu · DNA Takvimi
    ---------------------------------------------------------------------
    · Uygulama kabuğu (takvim.html / index.html) önbelleğe alınır
    · Excel dosyası ASLA önbelleğe alınmaz (plan güncel kalsın)
    · HTML için önce ağ; ağ yoksa **veya hata dönerse** önbellek
    · Simge/manifest için önce önbellek, arkada tazele
    ===================================================================== */
-const VER = 'akumgb-v3.5.0';
+const VER = 'akumgb-v3.10.0';
 const SHELL = [
   './',
   './index.html',

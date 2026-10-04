@@ -1,0 +1,83 @@
+rules_version = '2';
+/* =====================================================================
+   AKÜ MBG Kulübü — DNA Takvimi · Firestore güvenlik kuralları
+   ---------------------------------------------------------------------
+   NASIL KULLANILIR:
+   1) Firebase konsolu → Firestore Database → Rules sekmesi
+   2) Aşağıdaki metnin TAMAMINI sil, bunu yapıştır
+   3) Publish düğmesine bas
+   ---------------------------------------------------------------------
+   • Planı (events) herkes okur, yalnızca YÖNETİCİ yazar
+   • Üye profilleri: üye kendi profilini yazar; ROLÜ kendisi değiştiremez
+   • Kayıt (regs): üye yalnızca kendi kaydını ekler/siler
+   • Not ve yapılacaklar: yalnızca sahibi görebilir/değiştirebilir
+   • Hata bildirimleri: herkes yazabilir, yalnızca yönetici okur
+   ===================================================================== */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function girisYapildi() { return request.auth != null; }
+    function benim() { return girisYapildi() && request.auth.uid == uid; }
+    function adminMi() {
+      return girisYapildi()
+        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    /* --- PLAN: herkese acik okunur, yalnizca yonetici yazar --- */
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if adminMi();
+    }
+
+    /* --- UYE PROFILLERI --- */
+    match /members/{uid} {
+      /* uyeler listeyi gorur (iletisim icin), ziyaretci goremez */
+      allow read: if girisYapildi();
+      /* kendi profilini olusturur; rol sadece e-posta listesine gore atanir */
+      allow create: if girisYapildi() && request.auth.uid == uid
+        && request.resource.data.role == 'member';
+      /* kendi bilgilerini guncelleyebilir ama ROLUNU degistiremez */
+      allow update: if adminMi()
+        || (girisYapildi() && request.auth.uid == uid
+            && request.resource.data.role == resource.data.role);
+      allow delete: if adminMi();
+    }
+
+    /* --- ETKINLIK KAYITLARI --- */
+    match /regs/{regId} {
+      allow read: if girisYapildi();
+      allow create: if girisYapildi()
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if adminMi();
+      allow delete: if adminMi()
+        || (girisYapildi() && resource.data.uid == request.auth.uid);
+    }
+
+    /* --- DUYURULAR --- */
+    match /news/{newsId} {
+      allow read: if true;
+      allow create, update, delete: if adminMi();
+    }
+
+    /* --- HATA BILDIRIMLERI: herkes yazar, yalnizca yonetici okur --- */
+    match /reports/{reportId} {
+      allow read: if adminMi();
+      allow create: if true;
+      allow update, delete: if adminMi();
+    }
+
+    /* --- KISISEL VERILER: yalnizca sahibi --- */
+    match /ud/{uid}/{document=**} {
+      allow read, write: if girisYapildi() && request.auth.uid == uid;
+    }
+
+    /* --- PLAN META --- */
+    match /meta/{doc} {
+      allow read: if true;
+      allow write: if adminMi();
+    }
+
+    /* --- GERI KALAN HICBIR SEY KAPALI --- */
+    match /{document=**} { allow read, write: if false; }
+  }
+}
