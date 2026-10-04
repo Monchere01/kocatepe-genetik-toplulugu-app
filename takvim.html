@@ -397,6 +397,46 @@
   .inst p.dim{color:#8fa2bd}
   .inst b{color:#e6edf7}
   #btnInstall[hidden]{display:none}
+
+  /* ---------------- profil paneli ---------------- */
+  .pf-ist{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 4px}
+  .pf-i{background:rgba(148,178,220,.07);border:1px solid rgba(148,178,220,.16);
+    border-radius:11px;padding:7px 9px;display:flex;flex-direction:column;gap:1px}
+  .pf-i b{font-size:1.12rem;line-height:1.15;color:#eaf2ff;font-variant-numeric:tabular-nums}
+  .pf-i span{font-size:.61rem;letter-spacing:.05em;color:#93a6c4}
+  .pf-i.uyari b{color:#ffb454}
+  .pf-mail{font-size:.66rem;opacity:.8;word-break:break-all}
+  .pf-blok{margin-top:14px}
+  .pf-blok h3{font-size:.76rem;letter-spacing:.06em;color:#9fb4d2;margin:0 0 6px;font-weight:600}
+  .pf-blok h3 em{font-style:normal;font-size:.66rem;color:#e6edf7;background:rgba(148,178,220,.14);
+    border-radius:20px;padding:1px 7px;font-size:.62rem;margin-left:4px}
+  .pf-tab{max-height:30vh;overflow:auto;border:1px solid rgba(148,178,220,.14);border-radius:11px}
+  .pf-tab table{width:100%;border-collapse:collapse;font-size:.76rem}
+  .pf-tab td{padding:6px 9px;border-bottom:1px solid rgba(148,178,220,.09);vertical-align:top}
+  .pf-tab tr:last-child td{border-bottom:0}
+  .pf-t{color:#9fb4d2;white-space:nowrap;width:1%;font-variant-numeric:tabular-nums}
+  .pf-s{width:1%;white-space:nowrap;text-align:right}
+  .pf-s button{background:rgba(148,178,220,.12);border:0;border-radius:7px;color:#cfe0f7;
+    cursor:pointer;font-size:.7rem;padding:2px 7px;line-height:1.4}
+  .pf-s button:hover{background:rgba(255,120,120,.25)}
+  .pf-bos{color:#8296b4;text-align:center;padding:12px 8px!important}
+  .pf-et{display:inline-block;background:rgba(120,200,255,.16);color:#a9d8ff;
+    border-radius:20px;padding:0 7px;font-size:.6rem;white-space:nowrap}
+  .pf-form{max-height:46vh}
+  .pf-sel{white-space:nowrap;width:1%;text-align:right}
+  .pf-sel select{background:#111a2c;color:#e6edf7;border:1px solid rgba(148,178,220,.28);
+    border-radius:7px;font-size:.66rem;padding:2px 3px;max-width:96px}
+  .pf-acts{justify-content:flex-start}
+  .pf-ipucu{font-size:.6rem;opacity:.75;margin-top:14px;line-height:1.5}
+  @media (max-width:520px){
+    .pf-ist{grid-template-columns:1fr 1fr}
+    .pf-tab{max-height:38vh}
+    .pf-sel select{max-width:78px;font-size:.62rem}
+  }
+  .sheet-sep{border:0;border-top:1px solid rgba(148,178,220,.16);margin:3px 6px}
+  /* [hidden] her yerde gizlemeli: asagidaki display kurallari aksi halde
+     ozelligi ezer ve bos kartlar gorunur kalir */
+  [hidden]{display:none !important}
   /* ---------------- ⋮ paneli ---------------- */
   .sheet{position:fixed;z-index:70;right:10px;display:none;flex-direction:column;gap:4px;min-width:238px;
     padding:7px;border-radius:16px;border:1px solid rgba(148,178,220,.2);
@@ -518,13 +558,14 @@
 </div>
 <div class="sheet" id="moreSheet" hidden>
   <button id="mAuth" type="button"><b>👤</b><span>Giriş yap / Üye ol</span></button>
-  <button id="mSignOut" type="button" hidden>
+  <button id="mSignOut" type="button" hidden><b>🗢</b><span>Çıkış yap</span></button>
   <button id="mVerify" type="button" hidden><b>✉</b><span>E-postamı doğrula</span></button>
-  <button id="mDelete" type="button" hidden><b>🚪</b><span>Hesabımı sil</span></button><b>🗢</b><span>Çıkış yap</span></button>
+  <button id="mDelete" type="button" hidden><b>🚪</b><span>Hesabımı sil</span></button>
   <button id="mAdmin" type="button" hidden><b>⚙️</b><span>Planı düzenle (yönetici)</span></button>
   <button id="mInstall" type="button"><b>⬇</b><span>Uygulamayı kur</span></button>
-  <button id="mBug" type="button"><b>🐞</b><span>Hata bildir</span></button>
   <button id="mClear" type="button"><b>🗑</b><span>Kişisel verileri temizle</span></button>
+<hr class="sheet-sep">
+  <button id="mBug" type="button"><b>🐞</b><span>Hata bildir</span></button>
 </div>
 
 <canvas id="dna"></canvas>
@@ -532,7 +573,7 @@
 <main>
   <div class="stage" id="stage"></div>
 </main>
-<section id="normalView" aria-label="Normal takvim" hidden>
+<section id="normalView" aria-label="Normal takvim">
   <div class="cal-wrap">
     <div class="cal-stats" id="calStats"></div>
     <div class="todos" id="calTodos">
@@ -544,7 +585,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.10.1 · çekirdek</span></div>
+<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.11.0 · çekirdek</span></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2311,6 +2352,25 @@ var MBGFB = (function () {
     return !g || String(kod || '').trim() === g;
   }
 
+  /* --- katilim ve gorevler (profil) --- */
+  function loadKatilim() {
+    if (!state.user) return Promise.resolve(null);
+    return ready().then(function () {
+      return udCol('katilim').get().then(function (snap) {
+        var out = {};
+        snap.forEach(function (d) { out[d.id] = d.data() || {}; });
+        return out;
+      });
+    }).catch(function () { return null; });
+  }
+  function saveKatilim(evId, rec) {
+    if (!state.user) return Promise.resolve();
+    return ready().then(function () {
+      var ref = udCol('katilim').doc(String(evId));
+      if (!rec || (!rec.durum && !rec.gorev)) return ref.delete();
+      return ref.set({ durum: rec.durum || '', gorev: rec.gorev || '', at: ts() });
+    }).catch(function () {});
+  }
   /* --- uye yonetimi (yalnizca yonetici) --- */
   function listMembers() {
     if (!isAdmin()) return Promise.reject(new Error('Bu islem icin yonetici olmalisin.'));
@@ -2495,6 +2555,7 @@ var MBGFB = (function () {
     watchEvents: watchEvents, replaceEvents: replaceEvents, upsertEvent: upsertEvent,
     deleteEvent: deleteEvent, eventIds: eventIds,
     saveTodos: saveTodos, loadTodos: loadTodos, saveNote: saveNote, loadNotes: loadNotes,
+    loadKatilim: loadKatilim, saveKatilim: saveKatilim,
     watchNews: watchNews, addNews: addNews, addReport: addReport, listReports: listReports
   };
 })();
@@ -2543,6 +2604,67 @@ var MBGM = (function () {
   /* ===================================================================
      GİRİŞ / KAYIT
      =================================================================== */
+/* authModal'in gosterdigi alanlar: etiket, ipucu (ornek), kabul edilen veri tipi */
+  var ALAN = {
+    ad: {
+      id: 'fAd', etiket: 'Ad Soyad *', yer: 'Örn. Elif Yılmaz',
+      tip: 'harf', max: 60, oto: 'given-name',
+      hata: 'Ad soyad yalnızca harf ve boşluktan oluşabilir (rakam, @ yazılamaz).'
+    },
+    no: {
+      id: 'fNo', etiket: 'Öğrenci No', yer: 'Örn. 202612345 · yalnızca rakam',
+      tip: 'rakam', max: 20, oto: 'off',
+      hata: 'Öğrenci numarası yalnızca rakamlardan oluşur (örn. 202612345).'
+    },
+    bolum: {
+      id: 'fBolum', etiket: 'Bölüm', yer: 'Örn. Biyoloji',
+      tip: 'metin', max: 60, oto: 'off',
+      hata: 'Bölüm adı rakamla başlayamaz.'
+    },
+    sinif: {
+      id: 'fSinif', etiket: 'Sınıf', yer: 'Örn. 3 (1-4)',
+      tip: 'sinif', max: 2, oto: 'off',
+      hata: 'Sınıf 1-4 arası tek bir sayı olmalı (örn. 3).'
+    }
+  };
+  var RE_MAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+
+  /* veri tipine gore filtrele: yalnizca ilgili karakterler kalsin */
+  function filtrele(alan, deger) {
+    var d = deger;
+    if (alan.tip === 'rakam') d = d.replace(/[^0-9]/g, '');
+    else if (alan.tip === 'sinif') d = d.replace(/[^0-9]/g, '').slice(0, 1);
+    else if (alan.tip === 'harf') {
+      d = d.replace(/[0-9@#<>+_]/g, '');
+      d = d.replace(/\s{2,}/g, ' ');
+    } else if (alan.tip === 'metin') {
+      d = d.replace(/[0-9@#<>]/g, '');
+    }
+    return d;
+  }
+  /* tek alani dogrula; hata metni doner, hata yoksa null */
+  function alanHatasi(alan, deger) {
+    var d = String(deger == null ? '' : deger).trim();
+    if (!d) return null;                       /* zorunlu olmayanlar bos kalabilir */
+    if (alan.tip === 'rakam') return /^[0-9]+$/.test(d) ? null : alan.hata;
+    if (alan.tip === 'sinif') return /^[1-9]$/.test(d) ? null : alan.hata;
+    if (alan.tip === 'harf') {
+      if (d.length < 2) return 'Ad soyad en az 2 harf olmalı.';
+      if (!/^[^\d@#<>+_]+$/.test(d)) return alan.hata;
+      return null;
+    }
+    if (alan.tip === 'metin') return /^[^\d@#<>]/.test(d) ? null : alan.hata;
+    return null;
+  }
+
+  function alanHtml(k, zorunlu) {
+    var a = ALAN[k];
+    return '<div class="field"><label>' + a.etiket + '</label>' +
+      '<input id="' + a.id + '" maxlength="' + a.max + '" autocomplete="' + a.oto + '"' +
+      (k === 'no' || k === 'sinif' ? ' inputmode="numeric"' : '') +
+      ' placeholder="' + a.yer + '" data-t="' + a.tip + '"></div>';
+  }
+
   function authModal(mode) {
     var m = q('#modal');
     if (!m) return;
@@ -2552,17 +2674,19 @@ var MBGM = (function () {
         '<input id="fKod" maxlength="40" placeholder="Kulüp yöneticisinden alın"></div>'
       : '';
     var profil = kayit
-      ? '<div class="field"><label>Ad Soyad *</label><input id="fAd" maxlength="60"></div>' +
-        '<div class="field"><label>Öğrenci No</label><input id="fNo" maxlength="20"></div>' +
-        '<div class="field"><label>Bölüm</label><input id="fBolum" maxlength="60"></div>' +
-        '<div class="field"><label>Sınıf</label><input id="fSinif" maxlength="20"></div>'
+      ? alanHtml('ad', 1) + alanHtml('no') + alanHtml('bolum') + alanHtml('sinif')
       : '';
     m.innerHTML =
       '<h2>' + (kayit ? 'Üye kaydı' : 'Giriş yap') + '</h2>' +
       '<div class="sub">Plan herkese açık; not ve yapılacaklar yalnızca kendi hesabında</div>' +
-      '<div class="field"><label>E-posta *</label><input id="fMail" type="email" autocomplete="email"></div>' +
-      '<div class="field"><label>Şifre *</label><input id="fPw" type="password" autocomplete="' +
-        (kayit ? 'new-password' : 'current-password') + '"></div>' +
+      '<div class="field"><label>E-posta *</label>' +
+        '<input id="fMail" type="email" autocomplete="email" inputmode="email"' +
+        ' placeholder="Örn. elif.yilmaz@aku.edu.tr"></div>' +
+      '<div class="field"><label>Şifre *</label>' +
+        '<input id="fPw" type="password" autocomplete="' +
+        (kayit ? 'new-password' : 'current-password') + '" minlength="6"' +
+        ' placeholder="' + (kayit ? 'En az 6 karakter (örn. aku2026)' : 'Şifren') + '"></div>' +
+      '<div class="sub">Kutuya uygun veriyi gir: öğrenci no ve sınıf yalnızca rakam kabul eder.</div>' +
       profil + kodAlan +
       '<div class="acts">' +
         '<button type="button" data-x="vaz">Vazgeç</button>' +
@@ -2583,6 +2707,17 @@ var MBGM = (function () {
       if (a === 'giris') { ev.preventDefault(); authModal('giris'); return; }
       if (a === 'git') gonder(kayit);
     };
+    m.addEventListener('input', function (ev) {
+      var el = ev.target;
+      if (!el || !el.getAttribute) return;
+      var t = el.getAttribute('data-t');
+      if (!t) return;
+      var a = null, kk;
+      for (kk in ALAN) if (ALAN[kk].id === el.id) a = ALAN[kk];
+      if (!a) return;
+      var yeni = filtrele(a, el.value);
+      if (yeni !== el.value) el.value = yeni;
+    });
     q('#backdrop').classList.add('open');
     setTimeout(function () { var f = q('#fMail'); if (f) f.focus(); }, 60);
   }
@@ -2590,10 +2725,25 @@ var MBGM = (function () {
   function gonder(kayit) {
     var mail = (q('#fMail').value || '').trim();
     var pw = q('#fPw').value || '';
-    if (!mail || !pw) { toast('E-posta ve şifre gerekli.', 3000); return; }
+    /* --- veri tipi denetimi: her hata ayri bildirilir --- */
+    if (!mail) { toast('E-posta alanı boş bırakıldı.', 3500); q('#fMail').focus(); return; }
+    if (!RE_MAIL.test(mail)) {
+      toast('Geçerli bir e-posta gir. Örnek: elif.yilmaz@aku.edu.tr', 5500);
+      q('#fMail').focus(); return;
+    }
+    if (!pw) { toast('Şifre alanı boş bırakıldı.', 3500); q('#fPw').focus(); return; }
+    if (pw.length < 6) {
+      toast('Şifre en az 6 karakter olmalı (' + pw.length + ' karakter yazdın).', 5000);
+      q('#fPw').focus(); return;
+    }
     if (kayit) {
       var ad = (q('#fAd').value || '').trim();
-      if (!ad) { toast('Ad soyad gerekli.', 3000); return; }
+      if (!ad) { toast('Ad soyad alanı boş bırakıldı.', 3500); q('#fAd').focus(); return; }
+      var h, kk2;
+      for (kk2 in ALAN) {
+        h = alanHatasi(ALAN[kk2], q('#' + ALAN[kk2].id).value);
+        if (h) { toast(h, 6000); q('#' + ALAN[kk2].id).focus(); return; }
+      }
       if (!MBGFB.kodGecerli(q('#fKod') ? q('#fKod').value : '')) {
         toast('Kulüp kodu hatalı.', 4000); return;
       }
@@ -2711,7 +2861,13 @@ var MBGM = (function () {
     var u = MBGFB.user();
     var gir = q('#mAuth'), cik = q('#mSignOut'), adm = q('#mAdmin');
     var dogr = q('#mVerify'), sil = q('#mDelete');
-    if (gir) gir.hidden = !!u;
+    /* giris yapmamisken: uyelik. giris yapmissa: profil */
+    if (gir) {
+      gir.hidden = false;
+      var gb = gir.querySelector('b'), gs = gir.querySelector('span');
+      if (gb) gb.textContent = u ? '\u{1F44D}' : '\u{1F464}';
+      if (gs) gs.textContent = u ? 'Profil' : 'Giri\u015f yap / \u00dcye ol';
+    }
     if (cik) {
       cik.hidden = !u;
       var sp = cik.querySelector('span');
@@ -3002,10 +3158,15 @@ var MBGM = (function () {
     });
     /* canlı plan */
     planBagla();
+    /* profil (katılım, görev, not, tamamlanan görevler) */
+    try { if (window.MBGP) MBGP.init(window.MBG); } catch (e12) {}
     /* ⋮ paneli bağlantıları */
     var a1 = q('#mAuth'), a2 = q('#mSignOut'), a3 = q('#mAdmin');
     var a4 = q('#mVerify'), a5 = q('#mDelete');
-    if (a1) a1.onclick = function () { authModal('giris'); };
+    if (a1) a1.onclick = function () {
+      if (MBGFB.user()) { if (window.MBGP) MBGP.profil(); }
+      else authModal('giris');
+    };
     if (a2) a2.onclick = function () { cikis(); };
     if (a3) a3.onclick = function () { adminPanel(); };
     if (a4) a4.onclick = function (ev) { yenidenGonder(ev.currentTarget, null); };
@@ -3020,6 +3181,297 @@ var MBGM = (function () {
       if (!MBGFB.user()) return;
       if (A && A.todosDump) MBGFB.saveTodos(A.todosDump());
     }
+  };
+})();
+/* =====================================================================
+   src/profile.js — Üye profili (Aşama 2)
+   ---------------------------------------------------------------------
+   Profil panelinde gösterilen her şey:
+     • istatistikler (toplam etkinlik, katılan, katılacak, görevli…)
+     • katıldığı etkinlikler        (durum = katildi)
+     • katılacağı etkinlikler      (durum = gidecek)
+     • görev aldığı etkinlikler    (görev boş değil)
+     • aldığı notlar — tarihli özet tablo
+     • tamamladığı yapılacaklar
+   Katılım ve görev bilgisi: ud/{uid}/katilim/{etkinlikId}
+     { durum: 'gidecek' | 'katildi', gorev: 'Sunum' | 'Moderatör' | … }
+   ===================================================================== */
+var MBGP = (function () {
+  'use strict';
+  var A = null;
+  var KAT = {};            /* eventId -> {durum, gorev} */
+
+  var GOREV = ['Sunum', 'Moderatör', 'Oturum başkanı', 'Yer düzeni',
+               'Kayıt / teslim', 'Fotoğraf – video', 'Tanıtım', 'Diğer'];
+
+  function q(s) { return document.querySelector(s); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function toast(m, ms) { if (A && A.toast) A.toast(m, ms || 4000); }
+  function close() { if (A && A.closeModal) A.closeModal(); }
+  function fmt(d) { return A && A.fmtDate ? A.fmtDate(d) : d; }
+  function evler() { return (A && A.events) ? A.events() : []; }
+  function notlar() { return (A && A.notesDump) ? A.notesDump() : {}; }
+  function gorevler() { return (A && A.todosDump) ? A.todosDump() : []; }
+
+  /* ------------------------------------------------------------------
+     VERİ
+     ------------------------------------------------------------------ */
+  function katilimYukle() {
+    if (!MBGFB.user()) { KAT = {}; return Promise.resolve({}); }
+    return MBGFB.loadKatilim().then(function (k) {
+      if (k) KAT = k;
+      return KAT;
+    });
+  }
+  function katilimKaydet(evId, rec) {
+    KAT[evId] = rec || {};
+    if (!rec || (!rec.durum && !rec.gorev)) delete KAT[evId];
+    MBGFB.saveKatilim(evId, rec);
+  }
+  function evBul(id) {
+    var l = evler(), k;
+    for (k = 0; k < l.length; k++) if (String(l[k].id) === String(id)) return l[k];
+    /* kimlik bulunamazsa tarihe göre eşleştir */
+    for (k = 0; k < l.length; k++) if (l[k].date === id) return l[k];
+    return null;
+  }
+  function kayitlar(durum) {
+    var out = [], id, ev, r;
+    for (id in KAT) {
+      r = KAT[id] || {};
+      if (durum && r.durum !== durum) continue;
+      ev = evBul(id);
+      if (!ev) continue;
+      out.push({ id: id, ev: ev, durum: r.durum || '', gorev: r.gorev || '' });
+    }
+    out.sort(function (a, b) { return a.ev.date < b.ev.date ? -1 : 1; });
+    return out;
+  }
+
+  /* ------------------------------------------------------------------
+     İSTATİSTİK
+     ------------------------------------------------------------------ */
+  function istatistik() {
+    var katildi = kayitlar('katildi');
+    var gidecek = kayitlar('gidecek');
+    var gorevli = 0, bekleyen = 0, k;
+    for (k = 0; k < gidecek.length; k++) {
+      if (gidecek[k].gorev) gorevli++;
+      else bekleyen++;
+    }
+    var nt = notlar(), notSay = 0, d;
+    for (d in nt) if (nt[d]) notSay++;
+    var gt = gorevler(), bitti = 0, b;
+    for (k = 0; k < gt.length; k++) if (gt[k].done) bitti++;
+    return {
+      toplamEtkinlik: evler().length,
+      katildi: katildi.length,
+      gidecek: gidecek.length,
+      gorevli: gorevli,
+      bekleyen: bekleyen,
+      notSay: notSay,
+      gorevToplam: gt.length,
+      gorevBitti: bitti
+    };
+  }
+
+  /* ------------------------------------------------------------------
+     TABLO YARDIMCILARI
+     ------------------------------------------------------------------ */
+  function tablo(baslik, sayi, satirlar, bosMetin) {
+    var govde = satirlar.length
+      ? satirlar
+      : '<tr><td colspan="3" class="pf-bos">' + esc(bosMetin) + '</td></tr>';
+    return '<section class="pf-blok">' +
+      '<h3>' + esc(baslik) + ' <em>' + sayi + '</em></h3>' +
+      '<div class="pf-tab"><table>' + govde + '</table></div></section>';
+  }
+  function trEtkinlik(k) {
+    return '<tr><td class="pf-t">' + esc(fmt(k.ev.date)) + '</td>' +
+      '<td>' + esc(k.ev.title) +
+      (k.gorev ? ' <span class="pf-et">' + esc(k.gorev) + '</span>' : '') + '</td>' +
+      '<td class="pf-s"><button type="button" data-k="sil" data-e="' + esc(k.id) + '">✕</button></td></tr>';
+  }
+
+  /* ------------------------------------------------------------------
+     PROFİL PANELİ
+     ------------------------------------------------------------------ */
+  function profil() {
+    var m = q('#modal');
+    if (!m) return;
+    katilimYukle().then(function () { ciz(); });
+    ciz();
+
+    function ciz() {
+      var p = MBGFB.state.profile || {};
+      var u = MBGFB.user() || {};
+      var s = istatistik();
+      var katildi = kayitlar('katildi');
+      var gidecek = kayitlar('gidecek');
+      var gorevli = kayitlar().filter(function (k) { return !!k.gorev; });
+
+      /* notlar: tarihli, yeniden eskiye */
+      var nt = notlar(), notList = [], d;
+      for (d in nt) if (nt[d]) notList.push({ d: d, t: nt[d] });
+      notList.sort(function (a, b) { return a.d < b.d ? 1 : -1; });
+
+      /* tamamlanan gorevler */
+      var gt = gorevler().filter(function (t) { return t.done; });
+
+      var html =
+        '<h2>Profil</h2>' +
+        '<div class="sub">' + esc(p.name || '(ad soyad girilmemiş)') +
+          (p.dept ? ' · ' + esc(p.dept) : '') +
+          (p.year ? ' ' + esc(p.year) + '. sınıf' : '') +
+          (p.no ? ' · No ' + esc(p.no) : '') + '</div>' +
+        '<div class="sub pf-mail">' + esc(u.email || '') + '</div>' +
+
+        '<div class="pf-ist">' +
+          ist('Toplam etkinlik', s.toplamEtkinlik) +
+          ist('Katıldığım', s.katildi) +
+          ist('Katılacağım', s.gidecek) +
+          ist('Görevim olan', s.gorevli) +
+          ist('Görevi eksik', s.bekleyen, s.bekleyen ? 'uyari' : '') +
+          ist('Not sayım', s.notSay) +
+          ist('Tamamlanan görev', s.gorevBitti + ' / ' + s.gorevToplam) +
+        '</div>' +
+
+        '<div class="acts pf-acts">' +
+          '<button type="button" class="pri" data-k="duzenle">Katılımı düzenle</button>' +
+          '<button type="button" data-k="yenile">Yenile</button>' +
+          '<button type="button" data-k="kapat">Kapat</button>' +
+        '</div>' +
+
+        tablo('Katıldığım etkinlikler', katildi.length,
+          katildi.map(trEtkinlik), 'Henüz işaretlenmiş etkinlik yok.') +
+
+        tablo('Görev aldığım etkinlikler', gorevli.length,
+          gorevli.map(trEtkinlik), 'Henüz görevli olduğun etkinlik yok.') +
+
+        tablo('Katılacağım etkinlikler', gidecek.length,
+          gidecek.map(trEtkinlik), 'Henüz katılacağın etkinlik seçmedin.') +
+
+        tablo('Notlarım', notList.length,
+          notList.map(function (n) {
+            var ozet = n.t.length > 90 ? n.t.slice(0, 90) + '…' : n.t;
+            return '<tr><td class="pf-t">' + esc(fmt(n.d)) + '</td>' +
+              '<td>' + esc(ozet) + '</td>' +
+              '<td class="pf-s"><button type="button" data-k="not" data-e="' + esc(n.d) + '">✎</button></td></tr>';
+          }), 'Henüz not eklemedin. Takvimde bir güne not ekle.');
+
+      if (gt.length) {
+        html += tablo('Tamamladığım görevler', gt.length,
+          gt.map(function (t) {
+            return '<tr><td class="pf-s">✓</td><td>' + esc(t.text) + '</td><td></td></tr>';
+          }), '');
+      } else {
+        html += tablo('Tamamladığım görevler', 0, [],
+          'Henüz tamamlanmış görevin yok.');
+      }
+      html += '<div class="sub pf-ipucu">' +
+        (MBGFB.user()
+          ? 'Katılım, görev, not ve tamamlanan görevler yalnızca senin hesabında saklanır; ' +
+            'telefon ya da tarayıcı değişse de korunur.'
+          : 'Şu an giriş yapmamışsın: notlar ve görevler yalnızca <b>bu cihazda</b> kayıtlı. ' +
+            'Hesabına giriş yaparsan bulutta saklanır ve cihaz değişse de korunur. ' +
+            'Katılım ve görev bilgisi yalnızca giriş yapınca kullanılabilir.') +
+        '</div>';
+
+      m.innerHTML = html;
+      m.onclick = function (ev) {
+        var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
+        if (!b) return;
+        var a = b.getAttribute('data-k');
+        if (a === 'kapat') { close(); return; }
+        if (a === 'yenile') { katilimYukle().then(ciz); return; }
+        if (a === 'duzenle') { katilimForm(); return; }
+        if (a === 'not') { close(); if (A && A.openNote) A.openNote(b.getAttribute('data-e')); return; }
+        if (a === 'sil') {
+          katilimKaydet(b.getAttribute('data-e'), null);
+          toast('Kayıt kaldırıldı.', 2500);
+          ciz();
+        }
+      };
+    }
+    q('#backdrop').classList.add('open');
+  }
+
+  function ist(etiket, deger, cls) {
+    return '<div class="pf-i' + (cls ? ' ' + cls : '') + '">' +
+      '<b>' + esc(deger) + '</b><span>' + esc(etiket) + '</span></div>';
+  }
+
+  /* ------------------------------------------------------------------
+     KATILIM DÜZENLEME
+     ------------------------------------------------------------------ */
+  function katilimForm() {
+    var m = q('#modal');
+    if (!m) return;
+    var l = evler();
+    var bugun = (A && A.today) ? A.today() : '';
+    m.innerHTML =
+      '<h2>Katılım ve görevlerim</h2>' +
+      '<div class="sub">Katılacağın etkinliği ve o etkinlikdeki görevini seç. ' +
+      'Değişiklikler yalnızca senin hesabında saklanır.</div>' +
+      '<div class="pf-tab pf-form"><table>' +
+      l.map(function (e) {
+        var r = KAT[String(e.id)] || {};
+        var g = ['<option value="">— görev yok —</option>'].concat(
+          GOREV.map(function (x) {
+            return '<option value="' + esc(x) + '"' + (r.gorev === x ? ' selected' : '') + '>' + esc(x) + '</option>';
+          })).join('');
+        return '<tr><td class="pf-t">' + esc(fmt(e.date)) +
+          (e.date < bugun ? ' <small>(geçti)</small>' : '') + '</td>' +
+          '<td>' + esc(e.title) + '</td>' +
+          '<td class="pf-sel">' +
+            '<select data-s="d" data-e="' + esc(e.id) + '">' +
+              '<option value="">—</option>' +
+              '<option value="gidecek"' + (r.durum === 'gidecek' ? ' selected' : '') + '>Katılacağım</option>' +
+              '<option value="katildi"' + (r.durum === 'katildi' ? ' selected' : '') + '>Katıldım</option>' +
+            '</select>' +
+            '<select data-s="g" data-e="' + esc(e.id) + '">' + g + '</select>' +
+          '</td></tr>';
+      }).join('') +
+      '</table></div>' +
+      '<div class="acts">' +
+        '<button type="button" data-k="vaz">Vazgeç</button>' +
+        '<button type="button" class="pri" data-k="kay">Kaydet</button></div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-k');
+      if (a === 'vaz') { profil(); return; }
+      if (a !== 'kay') return;
+      var ds = m.querySelectorAll('[data-s="d"]'), gs = m.querySelectorAll('[data-s="g"]');
+      var yaz = 0, i, id, rec;
+      for (i = 0; i < ds.length; i++) {
+        id = ds[i].getAttribute('data-e');
+        rec = { durum: ds[i].value, gorev: gs[i] ? gs[i].value : '' };
+        katilimKaydet(id, rec);
+        if (rec.durum || rec.gorev) yaz++;
+      }
+      toast(yaz ? yaz + ' etkinlik kaydedildi.' : 'Tüm kayıtlar temizlendi.', 4000);
+      profil();
+    };
+    q('#backdrop').classList.add('open');
+  }
+
+  /* ------------------------------------------------------------------
+     BAŞLAT
+     ------------------------------------------------------------------ */
+  function init(app) {
+    A = app || (window.MBG || null);
+    if (!A || !MBGFB.configured()) return;
+    katilimYukle();
+  }
+
+  return {
+    init: init, profil: profil, katilimForm: katilimForm,
+    katilimYukle: katilimYukle, istatistik: istatistik,
+    GOREV: GOREV, state: function () { return KAT; }
   };
 })();
 </script>
@@ -3081,6 +3533,19 @@ var MBGM = (function () {
     t.classList.add('on');
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { t.classList.remove('on'); }, ms || 3200);
+  }
+  /* --- kisisel veriyi buluta tasi (uye olunca) --- */
+  function bulutNot(ds) {
+    try {
+      if (!window.MBGFB || !MBGFB.user()) return;
+      MBGFB.saveNote(ds, NOTES[ds] || '');
+    } catch (e) {}
+  }
+  function bulutTodo() {
+    try {
+      if (!window.MBGFB || !MBGFB.user()) return;
+      MBGFB.saveTodos(todosDump());
+    } catch (e) {}
   }
   function semFromDate(s) {
     var m = parseISO(s).m;
@@ -3508,7 +3973,7 @@ var MBGM = (function () {
   /* bulut senkronu icin: not/gorev aktarimlari */
   function mergeNote(ds, text) {
     if (!text) return;
-    if (!NOTES[ds]) { NOTES[ds] = text; saveNotes(); }
+    if (!NOTES[ds]) { NOTES[ds] = text; saveNotes(); bulutNot(ds); }
   }
   function mergeTodos(list) {
     if (!list || !list.length) return;
@@ -3519,7 +3984,7 @@ var MBGM = (function () {
       for (j = 0; j < TODOS.length; j++) if (TODOS[j].id === var1) { dup = true; break; }
       if (!dup) TODOS.push({ id: var1, text: list[k].text, done: !!list[k].done });
     }
-    saveTodos(); renderCal();
+    saveTodos(); bulutTodo(); renderCal();
   }
   function todosDump() {
     var out = [], k;
@@ -3542,7 +4007,7 @@ var MBGM = (function () {
     var v = inp.value.trim();
     if (!v) { inp.focus(); return; }
     TODOS.unshift({ id: 't' + Date.now(), text: v.slice(0, 120), done: false });
-    saveTodos(); inp.value = ''; renderCal(); toast('Görev eklendi.');
+    saveTodos(); bulutTodo(); inp.value = ''; renderCal(); toast('Görev eklendi.');
   }
   function openInstallHelp() {
     var m = $('#modal');
@@ -3643,10 +4108,10 @@ var MBGM = (function () {
       var v = $('#fNote').value.trim();
       if (v) { NOTES[ds] = v; toast('Not kaydedildi.'); }
       else { delete NOTES[ds]; toast('Not silindi.'); }
-      saveNotes(); closeModal(); renderCal();
+      saveNotes(); bulutNot(ds); closeModal(); renderCal();
     };
     var dl = m.querySelector('[data-act="del"]');
-    if (dl) dl.onclick = function () { delete NOTES[ds]; saveNotes(); closeModal(); renderCal(); toast('Not silindi.'); };
+    if (dl) dl.onclick = function () { delete NOTES[ds]; saveNotes(); bulutNot(ds); closeModal(); renderCal(); toast('Not silindi.'); };
     $('#backdrop').classList.add('open');
     setTimeout(function () { $('#fNote').focus(); }, 60);
   }
@@ -4057,7 +4522,7 @@ var MBGM = (function () {
           else TODOS[k].done = !TODOS[k].done;
           break;
         }
-        saveTodos(); renderCal();
+        saveTodos(); bulutTodo(); renderCal();
         return;
       }
       if (e.target && e.target.id === 'todoAdd') addTodo();
@@ -4222,6 +4687,7 @@ var MBGM = (function () {
       ayAd: function (m) { return P.AY_UST[m - 1] || ''; },
       mergeNote: mergeNote, mergeTodos: mergeTodos, todosDump: todosDump,
       notesDump: function () { return NOTES; },
+      openNote: openNote,
       planSrc: function () { return PLAN_SRC; },
       offset: function (d) { progT = clampP(progT + (+d || 0)); return progT; }
     };

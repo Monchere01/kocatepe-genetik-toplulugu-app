@@ -7,7 +7,7 @@
    · HTML için önce ağ; ağ yoksa **veya hata dönerse** önbellek
    · Simge/manifest için önce önbellek, arkada tazele
    ===================================================================== */
-const VER = 'akumgb-v3.10.1';
+const VER = 'akumgb-v3.11.0';
 const SHELL = [
   './',
   './index.html',
