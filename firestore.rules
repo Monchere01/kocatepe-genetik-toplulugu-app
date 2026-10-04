@@ -1,55 +1,77 @@
 rules_version = '2';
 /* =====================================================================
-   AKÜ MBG Kulübü — DNA Takvimi · Firestore güvenlik kuralları
+   AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
+   Firestore güvenlik kuralları  (v3.10.1)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
-   1) Firebase konsolu → Firestore Database → Rules sekmesi
+   1) Firebase konsolu → Firestore Database → Rules
    2) Aşağıdaki metnin TAMAMINI sil, bunu yapıştır
-   3) Publish düğmesine bas
+   3) Publish
    ---------------------------------------------------------------------
-   • Planı (events) herkes okur, yalnızca YÖNETİCİ yazar
-   • Üye profilleri: üye kendi profilini yazar; ROLÜ kendisi değiştiremez
-   • Kayıt (regs): üye yalnızca kendi kaydını ekler/siler
-   • Not ve yapılacaklar: yalnızca sahibi görebilir/değiştirebilir
-   • Hata bildirimleri: herkes yazabilir, yalnızca yönetici okur
+   YETKİ NASIL BELİRLENİR?
+   Yönetici, Firestore belgesindeki "role" alanına değil, **giriş yapan
+   hesabın e-postasına** bakılarak belirlenir:
+       request.auth.token.email == 'b.gul.baba.can@hotmail.com'
+   Böylece ilk yönetici hesabının profil belgesi silinse/bozulsa bile
+   yetkisi kaybolmaz (ölü kilit olmaz). Bu e-posta Firebase Auth'a
+   kayıtlıdır; parolayı yalnızca hesap sahibi bilir.
+   ---------------------------------------------------------------------
+   • Plan (events)     : herkes okur, YALNIZCA yönetici yazar
+   • Üye profilleri    : üye listeyi okur, kendi profilini yazar
+   • Kayıt (regs)      : üye yalnızca kendi kaydını ekler/siler
+   • Duyurular (news)  : herkes okur, yalnızca yönetici yazar
+   • Hata bildirimleri : herkes yazar, YALNIZCA yönetici okur
+   • Notlar/görevler   : YALNIZCA sahibi görebilir/değiştirebilir
+   • Geri kalan her şey: KAPALI
    ===================================================================== */
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function girisYapildi() { return request.auth != null; }
-    function benim() { return girisYapildi() && request.auth.uid == uid; }
-    function adminMi() {
-      return girisYapildi()
-        && get(/databases/$(database)/documents/members/$(request.auth.uid)).data.role == 'admin';
+    function girisYapildi() {
+      return request.auth != null;
     }
 
-    /* --- PLAN: herkese acik okunur, yalnizca yonetici yazar --- */
+    function adminMail() {
+      return 'b.gul.baba.can@hotmail.com';
+    }
+
+    /* Yönetici = bu e-posta ile giriş yapmış hesap */
+    function adminMi() {
+      return girisYapildi()
+        && request.auth.token.email != null
+        && request.auth.token.email == adminMail();
+    }
+
+    /* --- PLAN: herkese açık okunur, yalnızca yönetici yazar --- */
     match /events/{eventId} {
       allow read: if true;
       allow create, update, delete: if adminMi();
     }
 
-    /* --- UYE PROFILLERI --- */
+    /* --- ÜYE PROFİLLERİ --- */
     match /members/{uid} {
-      /* uyeler listeyi gorur (iletisim icin), ziyaretci goremez */
+      /* üyeler listeyi görür (iletişim/dernek işleri için) */
       allow read: if girisYapildi();
-      /* kendi profilini olusturur; rol sadece e-posta listesine gore atanir */
-      allow create: if girisYapildi() && request.auth.uid == uid
-        && request.resource.data.role == 'member';
-      /* kendi bilgilerini guncelleyebilir ama ROLUNU degistiremez */
+
+      /* kendi profilini oluşturur; "role" alanı bilgilendirme amaçlıdır,
+         gerçek yetki yukarıdaki adminMi() ile belirlenir */
+      allow create: if girisYapildi() && request.auth.uid == uid;
+
+      /* kendi bilgilerini günceller; yönetici rolü değiştirebilir */
       allow update: if adminMi()
-        || (girisYapildi() && request.auth.uid == uid
-            && request.resource.data.role == resource.data.role);
-      allow delete: if adminMi();
+        || (girisYapildi() && request.auth.uid == uid);
+
+      /* yönetici istediğini siler; üye de kendi hesabını silebilir
+         (KVKK: hesap silme hakkı) */
+      allow delete: if adminMi() || (girisYapildi() && request.auth.uid == uid);
     }
 
-    /* --- ETKINLIK KAYITLARI --- */
+    /* --- ETKİNLİK KAYITLARI --- */
     match /regs/{regId} {
       allow read: if girisYapildi();
       allow create: if girisYapildi()
         && request.resource.data.uid == request.auth.uid;
-      allow update: if adminMi();
-      allow delete: if adminMi()
+      allow update, delete: if adminMi()
         || (girisYapildi() && resource.data.uid == request.auth.uid);
     }
 
@@ -59,25 +81,27 @@ service cloud.firestore {
       allow create, update, delete: if adminMi();
     }
 
-    /* --- HATA BILDIRIMLERI: herkes yazar, yalnizca yonetici okur --- */
+    /* --- HATA BİLDİRİMLERİ: herkes yazar, yalnızca yönetici okur --- */
     match /reports/{reportId} {
       allow read: if adminMi();
       allow create: if true;
       allow update, delete: if adminMi();
     }
 
-    /* --- KISISEL VERILER: yalnizca sahibi --- */
+    /* --- KİŞİSEL VERİLER: yalnızca sahibi --- */
     match /ud/{uid}/{document=**} {
       allow read, write: if girisYapildi() && request.auth.uid == uid;
     }
 
-    /* --- PLAN META --- */
+    /* --- PLAN ÜST VERİSİ --- */
     match /meta/{doc} {
       allow read: if true;
       allow write: if adminMi();
     }
 
-    /* --- GERI KALAN HICBIR SEY KAPALI --- */
-    match /{document=**} { allow read, write: if false; }
+    /* --- GERİ KALAN HİÇBİR ŞEY KAPALI --- */
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

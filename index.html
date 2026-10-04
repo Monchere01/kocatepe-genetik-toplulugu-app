@@ -518,7 +518,9 @@
 </div>
 <div class="sheet" id="moreSheet" hidden>
   <button id="mAuth" type="button"><b>👤</b><span>Giriş yap / Üye ol</span></button>
-  <button id="mSignOut" type="button" hidden><b>🗢</b><span>Çıkış yap</span></button>
+  <button id="mSignOut" type="button" hidden>
+  <button id="mVerify" type="button" hidden><b>✉</b><span>E-postamı doğrula</span></button>
+  <button id="mDelete" type="button" hidden><b>🚪</b><span>Hesabımı sil</span></button><b>🗢</b><span>Çıkış yap</span></button>
   <button id="mAdmin" type="button" hidden><b>⚙️</b><span>Planı düzenle (yönetici)</span></button>
   <button id="mInstall" type="button"><b>⬇</b><span>Uygulamayı kur</span></button>
   <button id="mBug" type="button"><b>🐞</b><span>Hata bildir</span></button>
@@ -542,7 +544,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.10.0 · çekirdek</span></div>
+<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.10.1 · çekirdek</span></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2199,6 +2201,18 @@ var MBGFB = (function () {
     return loading;
   }
 
+  /* profil belgesi: kayit yazisi birkac yuzde sonra daha gorunur olabilir */
+  function profilGet(uid, kalan) {
+    return db.collection('members').doc(uid).get().then(function (snap) {
+      if (snap.exists) return snap.data();
+      if (kalan > 0) {
+        return new Promise(function (r) {
+          setTimeout(function () { profilGet(uid, kalan - 1).then(r); }, 450);
+        });
+      }
+      return null;
+    });
+  }
   /* --- oturum durumu ----------------------------------------------------- */
   function onChange(cb) {
     if (!configured()) { cb(null); return; }
@@ -2207,18 +2221,18 @@ var MBGFB = (function () {
         state.user = u || null;
         state.role = 'guest'; state.profile = null;
         if (!u) { cb(null, 'guest', null); return; }
-        db.collection('members').doc(u.uid).get().then(function (snap) {
-          if (snap.exists) {
+        profilGet(u.uid, 3).then(function (snap) {
+          if (snap) {
             state.profile = snap.data() || {};
             state.role = state.profile.role === 'admin' ? 'admin' : 'member';
             cb(u, state.role, state.profile);
           } else {
             var p = {
-              email: u.email || '', name: u.displayName || (u.email || '').split('@')[0],
+              email: u.email || '', name: u.displayName || '',
               no: '', dept: '', year: '', role: ADMINS.indexOf(String(u.email || '').toLowerCase()) >= 0 ? 'admin' : 'member',
               createdAt: ts()
             };
-            db.collection('members').doc(u.uid).set(p).then(function () {
+            db.collection('members').doc(u.uid).set(p, { merge: true }).then(function () {
               state.profile = p; state.role = p.role;
             }).catch(function () {});
             cb(u, p.role, p);
@@ -2239,9 +2253,20 @@ var MBGFB = (function () {
           role: ADMINS.indexOf(String(email).toLowerCase()) >= 0 ? 'admin' : 'member',
           createdAt: ts()
         };
-        return db.collection('members').doc(cred.user.uid).set(p).then(function () {
+        return db.collection('members').doc(cred.user.uid).set(p).catch(function (e) {
+          /* belge yazilamadi: hesap yine de olustu ama profil kaydedilmedi */
+          state.profilHatasi = e && e.code === 'permission-denied'
+            ? 'Profil kaydedilemedi: Firestore kurallari izin vermiyor.'
+            : 'Profil kaydedilemedi.';
+          throw e;
+        }).then(function () {
           state.user = cred.user; state.profile = p; state.role = p.role;
-          return state;
+          state.dogrulama = 'gonderilmedi';
+          return cred.user.sendEmailVerification().then(function () {
+            state.dogrulama = 'gonderildi';
+          }).catch(function (e) {
+            state.dogrulama = (e && e.code === 'auth/quota-exceeded') ? 'kota' : 'hatali';
+          }).then(function () { return state; });
         });
       });
     });
@@ -2265,17 +2290,61 @@ var MBGFB = (function () {
   function deleteMe() {
     if (!auth || !auth.currentUser) return Promise.resolve();
     var u = auth.currentUser;
-    return db.collection('members').doc(u.uid).delete().catch(function () {})
-      .then(function () { return u.delete(); });
+    var udRef = db.collection('ud').doc(u.uid);
+    return Promise.all([
+      udRef.collection('notes').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
+      udRef.collection('todos').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
+      db.collection('members').doc(u.uid).delete(),
+      db.collection('regs').where('uid', '==', u.uid).get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {})
+    ]).then(function () { return u.delete(); });
   }
-  function role() { return state.role; }
+  function role() { return isAdmin() ? 'admin' : (state.user ? 'member' : 'guest'); }
   function user() { return state.user; }
-  function isAdmin() { return state.role === 'admin'; }
+  /* Yetki kaynagi: giris yapan hesabin e-postasi (firestore.rules ile ayni).
+     Boylece profil belgesi silinse bile yonetici yetkisi kaybolmaz. */
+  function isAdmin() {
+    var u = auth && auth.currentUser ? auth.currentUser : state.user;
+    return !!(u && u.email && ADMINS.indexOf(String(u.email).toLowerCase()) >= 0);
+  }
   function kodGecerli(kod) {
     var g = String(window.MBG_KULUP_KODU || '').trim();
     return !g || String(kod || '').trim() === g;
   }
 
+  /* --- uye yonetimi (yalnizca yonetici) --- */
+  function listMembers() {
+    if (!isAdmin()) return Promise.reject(new Error('Bu islem icin yonetici olmalisin.'));
+    return ready().then(function () {
+      return db.collection('members').get().then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) {
+          var o = d.data() || {};
+          o.uid = d.id;
+          out.push(o);
+        });
+        out.sort(function (a, b) { return String(a.name || a.email).localeCompare(String(b.name || b.email), 'tr'); });
+        return out;
+      });
+    });
+  }
+  function deleteMember(uid) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu islem icin yonetici olmalisin.'));
+    return ready().then(function () { return db.collection('members').doc(String(uid)).delete(); });
+  }
+  function setMemberRole(uid, rol) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu islem icin yonetici olmalisin.'));
+    return ready().then(function () { return db.collection('members').doc(String(uid)).update({ role: rol }); });
+  }
+  /* e-posta dogrulama: yeniden gonder / durum */
+  function verified() { return !!(auth && auth.currentUser && auth.currentUser.emailVerified); }
+  function sendVerify() {
+    return ready().then(function () {
+      var u = auth.currentUser;
+      if (!u) return Promise.reject(new Error('Once giris yapmalisin.'));
+      if (u.emailVerified) return Promise.resolve('zaten');
+      return u.sendEmailVerification().then(function () { return 'gonderildi'; });
+    });
+  }
   /* --- plan (etkinlikler) ------------------------------------------------ */
   function normEv(e, id, order) {
     var o = {
@@ -2421,6 +2490,8 @@ var MBGFB = (function () {
     configured: configured, ready: ready, onChange: onChange,
     signUp: signUp, signIn: signIn, signOut: signOut, deleteMe: deleteMe,
     role: role, user: user, isAdmin: isAdmin, state: state, kodGecerli: kodGecerli,
+    verified: verified, sendVerify: sendVerify,
+    listMembers: listMembers, deleteMember: deleteMember, setMemberRole: setMemberRole,
     watchEvents: watchEvents, replaceEvents: replaceEvents, upsertEvent: upsertEvent,
     deleteEvent: deleteEvent, eventIds: eventIds,
     saveTodos: saveTodos, loadTodos: loadTodos, saveNote: saveNote, loadNotes: loadNotes,
@@ -2536,12 +2607,23 @@ var MBGM = (function () {
         })
       : MBGFB.signIn(mail, pw);
     p.then(function () {
-      close();
-      toast(kayit ? 'Üye oldun, hoş geldin!' : 'Giriş yapıldı.', 4000);
       syncUI();
       diziniBagla();
       kisiselCek();
+      if (kayit) {
+        karsilama();
+      } else {
+        close();
+        toast('Giriş yapıldı, hoş geldin!', 4000);
+        if (!MBGFB.verified()) toast('E-posta adresin henüz doğrulanmadı.', 5500);
+      }
     }).catch(function (e) {
+      if (MBGFB.state.profilHatasi && kayit && MBGFB.user()) {
+        close();
+        toast('Hesabın oluştu ama profilin kaydedilemedi. ' +
+              'Firestore kurallarını güncellemelisin (kurallar henüz eski olabilir).', 9000);
+        return;
+      }
       btn.disabled = false;
       btn.textContent = kayit ? 'Üye ol' : 'Giriş yap';
       toast(err(e), 6000);
@@ -2556,10 +2638,79 @@ var MBGM = (function () {
     });
   }
 
+/* doğrulama e-postasını tekrar gönder */
+  function yenidenGonder(btn, bitir) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Gönderiliyor…'; }
+    MBGFB.sendVerify().then(function (r) {
+      if (r === 'zaten') toast('E-posta adresin zaten doğrulanmış.', 4000);
+      else toast('Doğrulama e-postası gönderildi — gelen kutusu ve spam klasörüne bak.', 5200);
+    }).catch(function (e) {
+      toast(err(e), 7000);
+    }).then(function () {
+      if (btn) { btn.disabled = false; btn.textContent = 'Doğrulamayı tekrar gönder'; }
+      if (bitir) bitir();
+    });
+  }
+
+  /* kayıt sonrası: ne olduğunu net anlat, sır saklama */
+  function karsilama() {
+    var m = q('#modal');
+    if (!m) { toast('Üye oldun, hoş geldin!', 4000); return; }
+    var ad = (MBGFB.state.profile && MBGFB.state.profile.name) || '';
+    var u = MBGFB.user();
+    var eposta = u && u.email ? u.email : '';
+    var d = MBGFB.state.dogrulama;
+    var durum, etiket;
+
+    if (d === 'gonderildi') {
+      durum = 'Doğrulama e-postası <b>' + esc(eposta) + '</b> adresine gönderildi. ' +
+        'Gelen kutunu ve <b>spam</b> klasörünü kontrol et.';
+      etiket = 'Yeniden gönder';
+    } else if (d === 'kota') {
+      durum = 'Doğrulama e-postası gönderilemedi: günlük e-posta kotası doldu. ' +
+        'Yöneticiye haber ver, birkaç saat içinde tekrar deneyeceğiz.';
+      etiket = 'Yine de dene';
+    } else {
+      durum = 'Doğrulama e-postası gönderilemedi. Aşağıdan tekrar deneyebilirsin. ' +
+        'Üye olman için e-posta doğrulaması şart değil — yine de takvimi kullanabilirsin.';
+      etiket = 'Yeniden dene';
+    }
+
+    m.innerHTML =
+      '<h2>Hoş geldin' + (ad ? ', ' + esc(ad) : '') + '!</h2>' +
+      '<div class="sub">Üye kaydın tamamlandı. Plan ve duyurulara hemen erişebilirsin; ' +
+      'not ve yapılacaklar yalnızca senin hesabında saklanır.</div>' +
+      '<div class="sub">✉ ' + durum + '</div>' +
+      '<div class="acts">' +
+        '<button type="button" data-x="tekrar">' + etiket + '</button>' +
+        '<button type="button" class="pri" data-x="kapat">Takvime dön</button>' +
+      '</div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-x]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-x') === 'tekrar') yenidenGonder(b, null);
+      else close();
+    };
+    q('#backdrop').classList.add('open');
+  }
+
+  /* hesabımı sil (KVKK: hesap silme hakkı) */
+  function hesabiSil() {
+    if (!MBGFB.user()) return;
+    if (!confirm('Hesabın, notların ve yapılacakların kalıcı olarak silinecek.\n\n' +
+                 'Bu işlem geri alınamaz. Emin misin?')) return;
+    MBGFB.deleteMe().then(function () {
+      close();
+      toast('Hesabın ve kişisel verilerin silindi.', 4500);
+      syncUI();
+    }).catch(function (e) { toast(err(e), 7000); });
+  }
+
   /* --- ⋮ panelindeki durum --- */
   function syncUI() {
     var u = MBGFB.user();
     var gir = q('#mAuth'), cik = q('#mSignOut'), adm = q('#mAdmin');
+    var dogr = q('#mVerify'), sil = q('#mDelete');
     if (gir) gir.hidden = !!u;
     if (cik) {
       cik.hidden = !u;
@@ -2570,6 +2721,8 @@ var MBGM = (function () {
       }
     }
     if (adm) adm.hidden = !MBGFB.isAdmin();
+    if (dogr) dogr.hidden = !u || MBGFB.verified();
+    if (sil) sil.hidden = !u;
   }
 
   /* ===================================================================
@@ -2628,6 +2781,7 @@ var MBGM = (function () {
         '<button type="button" class="pri" data-a="ekle">＋ Etkinlik ekle</button>' +
         '<button type="button" data-a="aktar">Excel\'den içe aktar</button>' +
         '<button type="button" data-a="duyuru">Duyuru ekle</button>' +
+        '<button type="button" data-a="uyeler">Üyeler</button>' +
         '<button type="button" data-a="rapor">Hata bildirimleri</button>' +
         '<button type="button" data-a="kapat">Kapat</button>' +
       '</div>' +
@@ -2663,6 +2817,7 @@ var MBGM = (function () {
       if (a === 'ekle') eventForm(null);
       else if (a === 'aktar') q('#admXlsx').click();
       else if (a === 'duyuru') newsForm();
+      else if (a === 'uyeler') uyeler();
       else if (a === 'rapor') reports();
       else if (a === 'kapat') close();
     };
@@ -2677,6 +2832,67 @@ var MBGM = (function () {
       this.value = '';
     };
     q('#backdrop').classList.add('open');
+  }
+
+/* üye listesi (yalnizca yönetici) — eski/deneme üyeleri temizlemek için */
+  function uyeler() {
+    var m = q('#modal');
+    if (!m) return;
+    m.innerHTML =
+      '<h2>Üyeler</h2>' +
+      '<div class="sub">Yönetici e-postası: <b>b.gul.baba.can@hotmail.com</b> · ' +
+      'kayıtlı üye: <b id="uyeSay">…</b></div>' +
+      '<div id="uyeList" style="margin-top:12px;max-height:52vh;overflow:auto"></div>' +
+      '<div class="acts"><button type="button" data-a="v">Kapat</button>' +
+      '<button type="button" data-a="t">Yenile</button></div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-a]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-a');
+      if (a === 'v') { adminPanel(); return; }
+      if (a === 't') { listele(); return; }
+    };
+    q('#backdrop').classList.add('open');
+    listele();
+
+    function listele() {
+      MBGFB.listMembers().then(function (ls) {
+        var box = q('#uyeList'), say = q('#uyeSay');
+        if (say) say.textContent = String(ls.length);
+        if (!box) return;
+        if (!ls.length) { box.innerHTML = '<div class="todo-empty">Henüz üye yok.</div>'; return; }
+        var benimUid = MBGFB.user() ? MBGFB.user().uid : '';
+        box.innerHTML = ls.map(function (u) {
+          var yonetici = MBGFB.role() === 'admin' && u.email &&
+            String(u.email).toLowerCase() === 'b.gul.baba.can@hotmail.com';
+          var bilgi = [u.name, u.no, u.dept, u.year].filter(function (x) { return x; }).join(' · ');
+          return '<div class="todo"><span><b>' + esc(u.email || '(e-posta yok)') + '</b>' +
+            (yonetici ? ' <em>(yönetici)</em>' : '') +
+            (bilgi ? '<br><small>' + esc(bilgi) + '</small>' : '') + '</span>' +
+            (u.uid === benimUid || yonetici ? '' :
+              '<button type="button" class="td" data-u="' + esc(u.uid) + '">Sil</button>') +
+            '</div>';
+        }).join('');
+        box.onclick = function (ev) {
+          var b = ev.target && ev.target.closest ? ev.target.closest('[data-u]') : null;
+          if (!b) return;
+          var uid = b.getAttribute('data-u');
+          var u = ls.filter(function (x) { return x.uid === uid; })[0];
+          if (!u) return;
+          if (!confirm('"' + (u.email || uid) + '" üye kaydı silinsin mi?\n\n' +
+                       'Not: e-posta doğrulaması yapılmamışsa yalnızca profil kaydı silinir; ' +
+                       'giriş hesabı Firebase Auth içinde kalır.')) return;
+          b.disabled = true;
+          MBGFB.deleteMember(uid).then(function () {
+            toast('Üye kaydı silindi.', 3500);
+            listele();
+          }).catch(function (x) { b.disabled = false; toast(err(x), 6000); });
+        };
+      }).catch(function (x) {
+        var box = q('#uyeList');
+        if (box) box.innerHTML = '<div class="todo-empty">' + esc(err(x)) + '</div>';
+      });
+    }
   }
 
   function eventForm(existing) {
@@ -2772,25 +2988,34 @@ var MBGM = (function () {
      BAŞLAT
      =================================================================== */
   function init(app) {
-    A = app;
+    A = app || (window.MBG || null);
+    if (!A) { console.warn('MBGM: uygulama yardimcilari yuklenmedi, uyelik arayuzu kapali.'); return; }
     if (!MBGFB.configured()) return;
     /* oturumu dinle */
     MBGFB.onChange(function (user, role) {
       syncUI();
-      if (user) { diziniBagla(); kisiselCek(); }
+      if (user) {
+        diziniBagla(); kisiselCek();
+        setTimeout(function () { syncUI(); }, 1200);
+      }
       else syncUI();
     });
     /* canlı plan */
     planBagla();
     /* ⋮ paneli bağlantıları */
     var a1 = q('#mAuth'), a2 = q('#mSignOut'), a3 = q('#mAdmin');
+    var a4 = q('#mVerify'), a5 = q('#mDelete');
     if (a1) a1.onclick = function () { authModal('giris'); };
     if (a2) a2.onclick = function () { cikis(); };
     if (a3) a3.onclick = function () { adminPanel(); };
+    if (a4) a4.onclick = function (ev) { yenidenGonder(ev.currentTarget, null); };
+    if (a5) a5.onclick = function () { hesabiSil(); };
   }
 
   return {
     init: init, authModal: authModal, adminPanel: adminPanel, syncUI: syncUI,
+    karsilama: karsilama, yenidenGonder: yenidenGonder, hesabiSil: hesabiSil,
+    uyeler: uyeler,
     err: err, kaydetCevrimdisi: function () {
       if (!MBGFB.user()) return;
       if (A && A.todosDump) MBGFB.saveTodos(A.todosDump());
@@ -3114,8 +3339,6 @@ var MBGM = (function () {
     setActive(nearestIdx(prog));
     try { rail.draw(D1 > D0 ? (prog - D0) / (D1 - D0) : 0, prog); } catch (e9) {}
     try { syncToday(); } catch (e10) {}
-    /* uyelik katmani (Firebase varsa); yoksa sessizce devre disi */
-    try { if (window.MBGM) MBGM.init(window.MBG); } catch (e11) {}
     renderCal();
   }
 
@@ -4002,6 +4225,8 @@ var MBGM = (function () {
       planSrc: function () { return PLAN_SRC; },
       offset: function (d) { progT = clampP(progT + (+d || 0)); return progT; }
     };
+    /* uyelik katmani (Firebase varsa); yoksa sessizce devre disi */
+    try { if (window.MBGM) MBGM.init(window.MBG); } catch (e11) {}
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
