@@ -203,7 +203,9 @@
   .backdrop{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:16px;
     background:rgba(3,6,12,.72);backdrop-filter:blur(6px)}
   .backdrop.open{display:flex}
-  .modal{position:relative;width:min(580px,100%);max-height:88vh;overflow:auto;border-radius:22px;padding:26px;
+    .modal::-webkit-scrollbar{width:0;height:0;display:none}
+  .modal{-ms-overflow-style:none}
+.modal{position:relative;width:min(580px,100%);max-height:88vh;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;border-radius:22px;padding:26px;
     border:1px solid var(--stroke-2);background:linear-gradient(160deg,#131c2c,#0a101c);
     box-shadow:0 40px 90px -30px rgba(0,0,0,1)}
   .modal h2{font-size:1.18rem;line-height:1.32;margin:10px 0 6px;letter-spacing:-.01em}
@@ -399,6 +401,10 @@
   #btnInstall[hidden]{display:none}
 
   /* ---------------- profil paneli ---------------- */
+  .pf-uyari{background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.28);
+    color:#ffd8a3;border-radius:11px;padding:8px 10px;margin-top:10px;line-height:1.5}
+  .pf-ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.26);
+    color:#9df3cd;border-radius:11px;padding:8px 10px;margin-top:10px;line-height:1.5}
   .pf-ist{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 4px}
   .pf-i{background:rgba(148,178,220,.07);border:1px solid rgba(148,178,220,.16);
     border-radius:11px;padding:7px 9px;display:flex;flex-direction:column;gap:1px}
@@ -410,7 +416,8 @@
   .pf-blok h3{font-size:.76rem;letter-spacing:.06em;color:#9fb4d2;margin:0 0 6px;font-weight:600}
   .pf-blok h3 em{font-style:normal;font-size:.66rem;color:#e6edf7;background:rgba(148,178,220,.14);
     border-radius:20px;padding:1px 7px;font-size:.62rem;margin-left:4px}
-  .pf-tab{max-height:30vh;overflow:auto;border:1px solid rgba(148,178,220,.14);border-radius:11px}
+  .pf-tab{max-height:30vh;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;border:1px solid rgba(148,178,220,.14);border-radius:11px;mask-image:linear-gradient(180deg,#000 0,#000 calc(100% - 14px),transparent 100%)}
+  .pf-tab::-webkit-scrollbar{width:0;height:0;display:none}
   .pf-tab table{width:100%;border-collapse:collapse;font-size:.76rem}
   .pf-tab td{padding:6px 9px;border-bottom:1px solid rgba(148,178,220,.09);vertical-align:top}
   .pf-tab tr:last-child td{border-bottom:0}
@@ -434,6 +441,10 @@
     .pf-sel select{max-width:78px;font-size:.62rem}
   }
   .sheet-sep{border:0;border-top:1px solid rgba(148,178,220,.16);margin:3px 6px}
+  /* e-posta doğrulandı: düğme pasif ve yeşil */
+  #moreSheet button.dogru-ok{opacity:.9;cursor:default;border-color:rgba(52,211,153,.35);
+    background:rgba(52,211,153,.12);color:#7ef0c0}
+  #moreSheet button.dogru-ok b{color:#34d399}
   /* [hidden] her yerde gizlemeli: asagidaki display kurallari aksi halde
      ozelligi ezer ve bos kartlar gorunur kalir */
   [hidden]{display:none !important}
@@ -565,6 +576,7 @@
   <button id="mInstall" type="button"><b>⬇</b><span>Uygulamayı kur</span></button>
   <button id="mClear" type="button"><b>🗑</b><span>Kişisel verileri temizle</span></button>
 <hr class="sheet-sep">
+  <button id="mOneri" type="button"><b>💡</b><span>Öneri / görüş bildir</span></button>
   <button id="mBug" type="button"><b>🐞</b><span>Hata bildir</span></button>
 </div>
 
@@ -585,7 +597,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.11.0 · çekirdek</span></div>
+<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.12.0 · çekirdek</span></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2254,7 +2266,147 @@ var MBGFB = (function () {
       return null;
     });
   }
-  /* --- oturum durumu ----------------------------------------------------- */
+/* --- üyelik: yalnızca DOĞRULANMIŞ e-posta ile veritabanına yazılır --- */
+  function dogrulamaBekliyor() {
+    var u = auth && auth.currentUser;
+    return !!(u && !u.emailVerified);
+  }
+  /* doğrulama tamamlandığında çağrılır: profil belgesini oluşturur */
+  function uyeKaydet(profil) {
+    if (!auth || !auth.currentUser) return Promise.reject(new Error('Önce giriş yapmalısın.'));
+    var u = auth.currentUser;
+    if (!u.emailVerified) {
+      return Promise.reject(new Error('E-posta adresi doğrulanmadan üye kaydı yapılamaz.'));
+    }
+    return ready().then(function () {
+      var p = profil || {};
+      var veri = {
+        email: u.email || '',
+        name: p.name != null ? p.name : (u.displayName || ''),
+        no: p.no || '',
+        dept: p.dept || '',
+        girisYili: p.girisYili || '',
+        rol: ADMINS.indexOf(String(u.email || '').toLowerCase()) >= 0 ? 'admin' : 'uye',
+        dogrulandi: true,
+        profilGuncelAt: ts(),
+        olusturmaAt: ts()
+      };
+      return db.collection('members').doc(u.uid).set(veri, { merge: true }).then(function () {
+        state.profile = veri;
+        state.role = veri.rol;
+        return veri;
+      });
+    });
+  }
+  /* doğrulamayı yeniden kontrol et (kullanici e-postadaki baglantiya tiklar) */
+  function dogrulamaYenile() {
+    return ready().then(function () {
+      var u = auth.currentUser;
+      if (!u) return Promise.resolve(null);
+      return u.reload().then(function () {
+        return u.emailVerified ? u : null;
+      });
+    });
+  }
+  /* kullanici e-postadaki baglantiya tiklayip geri dondu: dogrulamayi yenile */
+  function dogrulamaTamamla() {
+    return dogrulamaYenile().then(function (u) {
+      if (!u) return Promise.resolve(false);
+      var bek = state.bekleyenProfil || null;
+      return uyeKaydet(bek || {
+        name: u.displayName || '', no: '', dept: '', girisYili: ''
+      }).then(function () {
+        state.bekleyenProfil = null;
+        state.dogrulama = 'tamam';
+        return true;
+      }).catch(function () { return false; });
+    });
+  }
+  /* profil guncelleme: ayda bir kez (sunucu kurallari da ayni kurali uygular) */
+  function profilGuncelle(alanlar) {
+    if (!auth || !auth.currentUser) return Promise.reject(new Error('Önce giriş yapmalısın.'));
+    if (!auth.currentUser.emailVerified) {
+      return Promise.reject(new Error('E-posta adresi doğrulanmadan profil güncellenemez.'));
+    }
+    return ready().then(function () {
+      var ref = db.collection('members').doc(auth.currentUser.uid);
+      return ref.get().then(function (s) {
+        var mevcut = s.exists ? (s.data() || {}) : {};
+        var son = mevcut.profilGuncelAt;
+        var ms = son && typeof son.toMillis === 'function' ? son.toMillis() : null;
+        if (ms) {
+          var kalan = 30 * 24 * 3600 * 1000 - (Date.now() - ms);
+          if (kalan > 0) {
+            return Promise.reject(new Error(
+              'Profil bilgilerini ayda bir kez güncelleyebilirsin. ' +
+              'Bir sonraki güncelleme: ' + new Date(ms + 30 * 24 * 3600 * 1000).toLocaleDateString('tr-TR')
+            ));
+          }
+        }
+        var veri = {
+          name: alanlar.name != null ? alanlar.name : (mevcut.name || ''),
+          no: alanlar.no != null ? alanlar.no : (mevcut.no || ''),
+          dept: alanlar.dept != null ? alanlar.dept : (mevcut.dept || ''),
+          girisYili: alanlar.girisYili != null ? alanlar.girisYili : (mevcut.girisYili || ''),
+          profilGuncelAt: ts()
+        };
+        return ref.update(veri).then(function () {
+          state.profile = Object.assign({}, mevcut, veri);
+          return veri;
+        });
+      });
+    });
+  }
+  /* profil guncelleme ne zaman serbest? */
+  function profilSikKalan() {
+    var p = state.profile || {};
+    var son = p.profilGuncelAt;
+    var ms = son && typeof son.toMillis === 'function' ? son.toMillis() : null;
+    if (!ms) return 0;
+    var kalan = ms + 30 * 24 * 3600 * 1000 - Date.now();
+    return kalan > 0 ? kalan : 0;
+  }
+
+  /* --- hata bildirimi / öneri (log bilgileriyle birlikte) --- */
+  function logTopla() {
+    var vEl = document.querySelector('#hint .ver');
+    var g = window.MBG;
+    var d = {
+      ver: vEl ? String(vEl.textContent).replace(/^\s*|\s*$/g, '') : '',
+      tarih: new Date().toISOString(),
+      ekran: window.innerWidth + 'x' + window.innerHeight,
+      cihaz: /iP(hone|ad|od)/.test(navigator.userAgent) ? 'iOS'
+        : /Android/.test(navigator.userAgent) ? 'Android' : 'masaüstü',
+      tarayici: String(navigator.userAgent).slice(0, 160),
+      gorunum: (g && g.view) ? g.view() : '',
+      bugun: (g && g.today) ? g.today() : '',
+      etkinlikSayisi: (g && g.events) ? g.events().length : 0,
+      planKaynagi: (g && g.planSrc) ? g.planSrc() : '',
+      online: navigator.onLine,
+      uye: !!(auth && auth.currentUser),
+      eposta: auth && auth.currentUser ? (auth.currentUser.email || '') : ''
+    };
+    try {
+      var i = window.DNA3D && DNA3D.info ? DNA3D.info() : null;
+      if (i) { d.pr = i.pr; d.prCap = i.prCap; d.visCards = i.visCards; d.todayRGB = i.todayRGB; }
+    } catch (e) {}
+    return d;
+  }
+  function geriBildirim(koleksiyon, tur, text) {
+    return ready().then(function () {
+      var d = logTopla();
+      return db.collection(koleksiyon).add(Object.assign({
+        tur: tur,
+        mesaj: text,
+        uye: state.user ? state.user.email : '',
+        ad: state.profile ? (state.profile.name || '') : '',
+        durum: 'yeni',
+        at: ts()
+      }, d));
+    });
+  }
+/* --- oturum durumu -----------------------------------------------------
+     Yalnızca DOĞRULANMIŞ e-posta veritabanına üye yazılır. */
   function onChange(cb) {
     if (!configured()) { cb(null); return; }
     ready().then(function () {
@@ -2263,22 +2415,26 @@ var MBGFB = (function () {
         state.role = 'guest'; state.profile = null;
         if (!u) { cb(null, 'guest', null); return; }
         profilGet(u.uid, 3).then(function (snap) {
-          if (snap) {
-            state.profile = snap.data() || {};
-            state.role = state.profile.role === 'admin' ? 'admin' : 'member';
-            cb(u, state.role, state.profile);
+          if (snap && snap.dogrulandi === true) {
+            state.profile = snap;
+            state.role = snap.rol === 'admin' ? 'admin' : 'uye';
+            cb(u, state.role, snap);
+          } else if (u.emailVerified) {
+            /* doğrulanmış ama belge yok (ilk doğrulama): oluştur */
+            uyeKaydet({
+              name: (state.bekleyenProfil && state.bekleyenProfil.name) || u.displayName || '',
+              no: (state.bekleyenProfil && state.bekleyenProfil.no) || '',
+              dept: (state.bekleyenProfil && state.bekleyenProfil.dept) || '',
+              girisYili: (state.bekleyenProfil && state.bekleyenProfil.girisYili) || ''
+            }).then(function (p) {
+              state.bekleyenProfil = null;
+              cb(u, p.rol, p);
+            }).catch(function () { cb(u, role(), null); });
           } else {
-            var p = {
-              email: u.email || '', name: u.displayName || '',
-              no: '', dept: '', year: '', role: ADMINS.indexOf(String(u.email || '').toLowerCase()) >= 0 ? 'admin' : 'member',
-              createdAt: ts()
-            };
-            db.collection('members').doc(u.uid).set(p, { merge: true }).then(function () {
-              state.profile = p; state.role = p.role;
-            }).catch(function () {});
-            cb(u, p.role, p);
+            /* doğrulanmamış: henüz üye değil, belge YAZILMAZ */
+            cb(u, 'misafir', null);
           }
-        }).catch(function () { cb(u, 'member', null); });
+        }).catch(function () { cb(u, role(), null); });
       });
     }).catch(function () { cb(null); });
   }
@@ -2287,28 +2443,25 @@ var MBGFB = (function () {
   function signUp(email, pw, profile) {
     return ready().then(function () {
       return auth.createUserWithEmailAndPassword(email, pw).then(function (cred) {
-        var p = {
-          email: email, name: (profile && profile.name) || '',
-          no: (profile && profile.no) || '', dept: (profile && profile.dept) || '',
-          year: (profile && profile.year) || '', phone: (profile && profile.phone) || '',
-          role: ADMINS.indexOf(String(email).toLowerCase()) >= 0 ? 'admin' : 'member',
-          createdAt: ts()
+        /* giriş formundaki bilgiler doğrulama sonrası yazılacak */
+        state.bekleyenProfil = {
+          name: (profile && profile.name) || '',
+          no: (profile && profile.no) || '',
+          dept: (profile && profile.dept) || '',
+          girisYili: (profile && profile.girisYili) || ''
         };
-        return db.collection('members').doc(cred.user.uid).set(p).catch(function (e) {
-          /* belge yazilamadi: hesap yine de olustu ama profil kaydedilmedi */
-          state.profilHatasi = e && e.code === 'permission-denied'
-            ? 'Profil kaydedilemedi: Firestore kurallari izin vermiyor.'
-            : 'Profil kaydedilemedi.';
-          throw e;
-        }).then(function () {
-          state.user = cred.user; state.profile = p; state.role = p.role;
-          state.dogrulama = 'gonderilmedi';
-          return cred.user.sendEmailVerification().then(function () {
-            state.dogrulama = 'gonderildi';
-          }).catch(function (e) {
-            state.dogrulama = (e && e.code === 'auth/quota-exceeded') ? 'kota' : 'hatali';
-          }).then(function () { return state; });
-        });
+        state.user = cred.user;
+        state.profile = null;
+        state.role = 'misafir';
+        state.profilHatasi = null;
+        state.dogrulama = 'gonderilmedi';
+        return cred.user.sendEmailVerification().then(function () {
+          state.dogrulama = 'gonderildi';
+        }).catch(function (e) {
+          state.dogrulama = (e && e.code === 'auth/quota-exceeded') ? 'kota'
+            : (e && e.code === 'auth/operation-not-allowed') ? 'kapali'
+            : 'hatali';
+        }).then(function () { return state; });
       });
     });
   }
@@ -2316,9 +2469,9 @@ var MBGFB = (function () {
     return ready().then(function () {
       return auth.signInWithEmailAndPassword(email, pw).then(function (cred) {
         state.user = cred.user;
-        return db.collection('members').doc(cred.user.uid).get().then(function (s) {
-          state.profile = s.exists ? s.data() : null;
-          state.role = state.profile && state.profile.role === 'admin' ? 'admin' : 'member';
+        return profilGet(cred.user.uid, 2).then(function (p) {
+          state.profile = p && p.dogrulandi ? p : null;
+          state.role = role();
           return state;
         }).catch(function () { return state; });
       });
@@ -2326,7 +2479,10 @@ var MBGFB = (function () {
   }
   function signOut() {
     if (!auth) return Promise.resolve();
-    return auth.signOut().then(function () { state.user = null; state.role = 'guest'; state.profile = null; });
+    return auth.signOut().then(function () {
+      state.user = null; state.role = 'guest'; state.profile = null;
+      state.bekleyenProfil = null;
+    });
   }
   function deleteMe() {
     if (!auth || !auth.currentUser) return Promise.resolve();
@@ -2335,76 +2491,38 @@ var MBGFB = (function () {
     return Promise.all([
       udRef.collection('notes').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
       udRef.collection('todos').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
+      udRef.collection('katilim').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
       db.collection('members').doc(u.uid).delete(),
       db.collection('regs').where('uid', '==', u.uid).get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {})
     ]).then(function () { return u.delete(); });
   }
-  function role() { return isAdmin() ? 'admin' : (state.user ? 'member' : 'guest'); }
-  function user() { return state.user; }
-  /* Yetki kaynagi: giris yapan hesabin e-postasi (firestore.rules ile ayni).
-     Boylece profil belgesi silinse bile yonetici yetkisi kaybolmaz. */
+  /* yetki: belge değil, giriş yapan hesabın e-postası (kurallarla aynı) */
   function isAdmin() {
     var u = auth && auth.currentUser ? auth.currentUser : state.user;
     return !!(u && u.email && ADMINS.indexOf(String(u.email).toLowerCase()) >= 0);
   }
+  function role() {
+    if (!auth || !auth.currentUser) return 'guest';
+    if (!auth.currentUser.emailVerified) return 'misafir';
+    return isAdmin() ? 'admin' : 'member';
+  }
+  function user() { return auth && auth.currentUser ? auth.currentUser : state.user; }
   function kodGecerli(kod) {
     var g = String(window.MBG_KULUP_KODU || '').trim();
     return !g || String(kod || '').trim() === g;
   }
 
-  /* --- katilim ve gorevler (profil) --- */
-  function loadKatilim() {
-    if (!state.user) return Promise.resolve(null);
-    return ready().then(function () {
-      return udCol('katilim').get().then(function (snap) {
-        var out = {};
-        snap.forEach(function (d) { out[d.id] = d.data() || {}; });
-        return out;
-      });
-    }).catch(function () { return null; });
-  }
-  function saveKatilim(evId, rec) {
-    if (!state.user) return Promise.resolve();
-    return ready().then(function () {
-      var ref = udCol('katilim').doc(String(evId));
-      if (!rec || (!rec.durum && !rec.gorev)) return ref.delete();
-      return ref.set({ durum: rec.durum || '', gorev: rec.gorev || '', at: ts() });
-    }).catch(function () {});
-  }
-  /* --- uye yonetimi (yalnizca yonetici) --- */
-  function listMembers() {
-    if (!isAdmin()) return Promise.reject(new Error('Bu islem icin yonetici olmalisin.'));
-    return ready().then(function () {
-      return db.collection('members').get().then(function (snap) {
-        var out = [];
-        snap.forEach(function (d) {
-          var o = d.data() || {};
-          o.uid = d.id;
-          out.push(o);
-        });
-        out.sort(function (a, b) { return String(a.name || a.email).localeCompare(String(b.name || b.email), 'tr'); });
-        return out;
-      });
-    });
-  }
-  function deleteMember(uid) {
-    if (!isAdmin()) return Promise.reject(new Error('Bu islem icin yonetici olmalisin.'));
-    return ready().then(function () { return db.collection('members').doc(String(uid)).delete(); });
-  }
-  function setMemberRole(uid, rol) {
-    if (!isAdmin()) return Promise.reject(new Error('Bu islem icin yonetici olmalisin.'));
-    return ready().then(function () { return db.collection('members').doc(String(uid)).update({ role: rol }); });
-  }
-  /* e-posta dogrulama: yeniden gonder / durum */
+  /* e-posta doğrulama */
   function verified() { return !!(auth && auth.currentUser && auth.currentUser.emailVerified); }
   function sendVerify() {
     return ready().then(function () {
       var u = auth.currentUser;
-      if (!u) return Promise.reject(new Error('Once giris yapmalisin.'));
+      if (!u) return Promise.reject(new Error('Önce giriş yapmalısın.'));
       if (u.emailVerified) return Promise.resolve('zaten');
       return u.sendEmailVerification().then(function () { return 'gonderildi'; });
     });
   }
+
   /* --- plan (etkinlikler) ------------------------------------------------ */
   function normEv(e, id, order) {
     var o = {
@@ -2415,7 +2533,7 @@ var MBGFB = (function () {
       custom: false, order: order == null ? 0 : order
     };
     if (id || e.id) o.id = id || e.id;
-    /* Firestore undefined deger kabul etmez -> temizle */
+    /* Firestore undefined değer kabul etmez → temizle */
     Object.keys(o).forEach(function (k) { if (o[k] === undefined) delete o[k]; });
     return o;
   }
@@ -2462,7 +2580,7 @@ var MBGFB = (function () {
     });
   }
 
-  /* --- kisisel veri ------------------------------------------------------ */
+  /* --- kişisel veri ------------------------------------------------------ */
   function udCol(name) { return db.collection('ud').doc(state.user.uid).collection(name); }
   function saveTodos(list) {
     if (!state.user) return Promise.resolve();
@@ -2500,39 +2618,59 @@ var MBGFB = (function () {
       });
     }).catch(function () { return null; });
   }
-
-  /* --- duyuru + hata bildirimi -------------------------------------------- */
-  function watchNews(cb) {
+  function loadKatilim() {
+    if (!state.user) return Promise.resolve(null);
     return ready().then(function () {
-      return db.collection('news').orderBy('at', 'desc').limit(5).onSnapshot(function (snap) {
-        var list = [];
-        snap.forEach(function (d) {
-          var o = d.data() || {}; o.id = d.id; list.push(o);
-        });
-        cb(list);
-      }, function () { cb([]); });
-    }).catch(function () { cb([]); });
+      return udCol('katilim').get().then(function (snap) {
+        var out = {};
+        snap.forEach(function (d) { out[d.id] = d.data() || {}; });
+        return out;
+      });
+    }).catch(function () { return null; });
   }
-  function addNews(title, body) {
+  function saveKatilim(evId, rec) {
+    if (!state.user) return Promise.resolve();
+    return ready().then(function () {
+      var ref = udCol('katilim').doc(String(evId));
+      if (!rec || (!rec.durum && !rec.gorev)) return ref.delete();
+      return ref.set({ durum: rec.durum || '', gorev: rec.gorev || '', at: ts() });
+    }).catch(function () {});
+  }
+
+  /* --- üye yönetimi (yalnızca yönetici) ----------------------------------- */
+  function listMembers() {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () {
-      return db.collection('news').add({
-        title: title, body: body, at: ts(),
-        by: state.user ? state.user.email : ''
+      return db.collection('members').get().then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) {
+          var o = d.data() || {};
+          o.uid = d.id;
+          out.push(o);
+        });
+        out.sort(function (a, b) {
+          return String(a.name || a.email).localeCompare(String(b.name || b.email), 'tr');
+        });
+        return out;
       });
     });
   }
-  function addReport(text) {
+  function deleteMember(uid) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () { return db.collection('members').doc(String(uid)).delete(); });
+  }
+  function setMemberRole(uid, rol) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () { return db.collection('members').doc(String(uid)).update({ rol: rol }); });
+  }
+function addReport(text) { return geriBildirim('reports', 'hata', text); }
+  function addOneri(text) { return geriBildirim('oneriler', 'oneri', text); }
+  function listOneriler(limit) {
     return ready().then(function () {
-      var vEl = document.querySelector('#hint .ver');
-      return db.collection('reports').add({
-        text: text,
-        by: state.user ? state.user.email : (state.profile ? state.profile.email : 'ziyaretçi'),
-        name: state.profile ? (state.profile.name || '') : '',
-        ver: vEl ? String(vEl.textContent).replace(/^\s*|\s*$/g, '') : '',
-        ekran: window.innerWidth + 'x' + window.innerHeight,
-        ua: String(navigator.userAgent).slice(0, 140),
-        at: ts(), status: 'yeni'
+      return db.collection('oneriler').orderBy('at', 'desc').limit(limit || 50).get().then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) { var o = d.data() || {}; o.id = d.id; out.push(o); });
+        return out;
       });
     });
   }
@@ -2546,11 +2684,36 @@ var MBGFB = (function () {
     });
   }
 
+  /* --- duyurular --------------------------------------------------------- */
+  function watchNews(cb) {
+    return ready().then(function () {
+      return db.collection('news').orderBy('at', 'desc').limit(5).onSnapshot(function (snap) {
+        var list = [];
+        snap.forEach(function (d) { var o = d.data() || {}; o.id = d.id; list.push(o); });
+        cb(list);
+      }, function () { cb([]); });
+    }).catch(function () { cb([]); });
+  }
+  function addNews(title, body) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return db.collection('news').add({
+        title: title, body: body, at: ts(),
+        by: state.user ? state.user.email : ''
+      });
+    });
+  }
+
   return {
     configured: configured, ready: ready, onChange: onChange,
     signUp: signUp, signIn: signIn, signOut: signOut, deleteMe: deleteMe,
     role: role, user: user, isAdmin: isAdmin, state: state, kodGecerli: kodGecerli,
     verified: verified, sendVerify: sendVerify,
+    uyeKaydet: uyeKaydet, dogrulamaYenile: dogrulamaYenile,
+    dogrulamaTamamla: dogrulamaTamamla,
+    dogrulamaBekliyor: dogrulamaBekliyor,
+    profilGuncelle: profilGuncelle, profilSikKalan: profilSikKalan,
+    logTopla: logTopla, addOneri: addOneri, listOneriler: listOneriler,
     listMembers: listMembers, deleteMember: deleteMember, setMemberRole: setMemberRole,
     watchEvents: watchEvents, replaceEvents: replaceEvents, upsertEvent: upsertEvent,
     deleteEvent: deleteEvent, eventIds: eventIds,
@@ -2564,7 +2727,7 @@ var MBGFB = (function () {
    ---------------------------------------------------------------------
    Firebase katmanı (MBGFB) + uygulamanın küçük yardımcıları (window.MBG)
    üzerinden çalışır. Firebase yoksa/çevrimdışıysa sessizce devre dışı kalır:
-   takvim, Excel'den gelen gömülü planla çalışmaya devam eder.
+   takvim, Excel""den gelen gömülü planla çalışmaya devam eder.
    ===================================================================== */
 var MBGM = (function () {
   'use strict';
@@ -2604,7 +2767,7 @@ var MBGM = (function () {
   /* ===================================================================
      GİRİŞ / KAYIT
      =================================================================== */
-/* authModal'in gosterdigi alanlar: etiket, ipucu (ornek), kabul edilen veri tipi */
+/* authModal""in gosterdigi alanlar: etiket, ipucu (ornek), kabul edilen veri tipi */
   var ALAN = {
     ad: {
       id: 'fAd', etiket: 'Ad Soyad *', yer: 'Örn. Elif Yılmaz',
@@ -2621,10 +2784,10 @@ var MBGM = (function () {
       tip: 'metin', max: 60, oto: 'off',
       hata: 'Bölüm adı rakamla başlayamaz.'
     },
-    sinif: {
-      id: 'fSinif', etiket: 'Sınıf', yer: 'Örn. 3 (1-4)',
-      tip: 'sinif', max: 2, oto: 'off',
-      hata: 'Sınıf 1-4 arası tek bir sayı olmalı (örn. 3).'
+    girisYili: {
+      id: 'fYil', etiket: 'Üniversiteye giriş yılı', yer: 'Örn. 2021 · yalnızca yıl',
+      tip: 'yil', max: 4, oto: 'off',
+      hata: 'Üniversiteye giriş yılı yalnızca 4 haneli bir yıl olmalı (örn. 2021).'
     }
   };
   var RE_MAIL = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
@@ -2633,6 +2796,7 @@ var MBGM = (function () {
   function filtrele(alan, deger) {
     var d = deger;
     if (alan.tip === 'rakam') d = d.replace(/[^0-9]/g, '');
+    else if (alan.tip === 'yil') d = d.replace(/[^0-9]/g, '').slice(0, 4);
     else if (alan.tip === 'sinif') d = d.replace(/[^0-9]/g, '').slice(0, 1);
     else if (alan.tip === 'harf') {
       d = d.replace(/[0-9@#<>+_]/g, '');
@@ -2647,6 +2811,12 @@ var MBGM = (function () {
     var d = String(deger == null ? '' : deger).trim();
     if (!d) return null;                       /* zorunlu olmayanlar bos kalabilir */
     if (alan.tip === 'rakam') return /^[0-9]+$/.test(d) ? null : alan.hata;
+    if (alan.tip === 'yil') {
+      if (!/^[0-9]{4}$/.test(d)) return alan.hata;
+      var y = +d, ust = new Date().getFullYear();
+      if (y < 1950 || y > ust) return alan.hata;
+      return null;
+    }
     if (alan.tip === 'sinif') return /^[1-9]$/.test(d) ? null : alan.hata;
     if (alan.tip === 'harf') {
       if (d.length < 2) return 'Ad soyad en az 2 harf olmalı.';
@@ -2657,11 +2827,24 @@ var MBGM = (function () {
     return null;
   }
 
+  /* profil formundan gelen degerleri ayni kurallarla dogrular */
+  function dogrulaAlan(ad, no, yil) {
+    if (!ad) return 'İsim soyisim boş bırakıldı.';
+    if (ad.length < 2) return 'İsim soyisim en az 2 harf olmalı.';
+    if (/[0-9@#<>+_]/.test(ad)) return ALAN.ad.hata;
+    if (no && !/^[0-9]+$/.test(no)) return ALAN.no.hata;
+    if (yil) {
+      if (!/^[0-9]{4}$/.test(yil)) return ALAN.girisYili.hata;
+      var yy = +yil, ust = new Date().getFullYear();
+      if (yy < 1950 || yy > ust) return ALAN.girisYili.hata;
+    }
+    return null;
+  }
   function alanHtml(k, zorunlu) {
     var a = ALAN[k];
     return '<div class="field"><label>' + a.etiket + '</label>' +
       '<input id="' + a.id + '" maxlength="' + a.max + '" autocomplete="' + a.oto + '"' +
-      (k === 'no' || k === 'sinif' ? ' inputmode="numeric"' : '') +
+      (k === 'no' || k === 'sinif' || k === 'girisYili' ? ' inputmode="numeric"' : '') +
       ' placeholder="' + a.yer + '" data-t="' + a.tip + '"></div>';
   }
 
@@ -2674,7 +2857,7 @@ var MBGM = (function () {
         '<input id="fKod" maxlength="40" placeholder="Kulüp yöneticisinden alın"></div>'
       : '';
     var profil = kayit
-      ? alanHtml('ad', 1) + alanHtml('no') + alanHtml('bolum') + alanHtml('sinif')
+      ? alanHtml('ad', 1) + alanHtml('no') + alanHtml('bolum') + alanHtml('girisYili')
       : '';
     m.innerHTML =
       '<h2>' + (kayit ? 'Üye kaydı' : 'Giriş yap') + '</h2>' +
@@ -2753,7 +2936,8 @@ var MBGM = (function () {
     var p = kayit
       ? MBGFB.signUp(mail, pw, {
           name: ad, no: (q('#fNo').value || '').trim(),
-          dept: (q('#fBolum').value || '').trim(), year: (q('#fSinif').value || '').trim()
+          dept: (q('#fBolum').value || '').trim(),
+          girisYili: (q('#fYil').value || '').trim()
         })
       : MBGFB.signIn(mail, pw);
     p.then(function () {
@@ -2803,6 +2987,65 @@ var MBGM = (function () {
   }
 
   /* kayıt sonrası: ne olduğunu net anlat, sır saklama */
+/* doğrulama paneli: tekrar gönder + "doğruladım" kontrolü */
+  var KULLUP_MAIL = 'b.gul.baba.can@hotmail.com';
+  var iOS_ADIMLAR = [
+    "AKÜ MBG DNA Takvimi — iPhone / iPad için ekleme adımları",
+    '',
+    "1. Sayfayı Safari ile aç (Chrome değil).",
+    '2. Ekrandaki Paylaş düğmesine dokun.',
+    "3. Aşağı kaydır, \"Ana Ekrana Ekle\" seç.",
+    '4. "Ekle" düğmesine dokun.',
+    '',
+    "Sonrasında ana ekrandaki simgeden açılır, çevrimdışı da çalışır."
+  ].join('\n');
+  function dogrulamaPaneli() {
+    var m = q('#modal');
+    if (!m) return;
+    var u = MBGFB.user();
+    if (!u) return;
+    if (MBGFB.verified()) { toast('E-posta adresin zaten doğrulanmış.', 4000); return; }
+    m.innerHTML =
+      '<h2>E-posta doğrulama</h2>' +
+      '<div class="sub">Üye olmak için <b>' + esc(u.email || '') + '</b> adresini doğrulaman gerekiyor.</div>' +
+      '<div class="inst">' +
+        '<p><b>1.</b> Gelen kutunu aç: Firebase tarafından gönderilen <b>doğrulama e-postası</b> orada.</p>' +
+        '<p><b>2.</b> Spam / önemsiz klasörünü de kontrol et.</p>' +
+        '<p><b>3.</b> E-postadaki bağlantıya dokun.</p>' +
+        '<p><b>4.</b> Buraya dön ve <b>Doğruladım, kontrol et</b> düğmesine bas.</p>' +
+        '<p class="dim">Gmail uygulamasında açmadıysan aynı bağlantıyı tarayıcıya yapıştırabilirsin.</p>' +
+      '</div>' +
+      '<div class="acts">' +
+        '<button type="button" data-x="tekrar">E-postayı tekrar gönder</button>' +
+        '<button type="button" class="pri" data-x="kontrol">Doğruladım, kontrol et</button>' +
+      '</div>' +
+      '<div class="sub" style="margin-top:10px"><a href="#" data-x="kapat">Kapat</a></div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-x]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-x');
+      if (a === 'kapat') { ev.preventDefault(); close(); return; }
+      if (a === 'tekrar') { yenidenGonder(b, null); return; }
+      if (a !== 'kontrol') return;
+      b.disabled = true; b.textContent = 'Kontrol ediliyor…';
+      MBGFB.dogrulamaTamamla().then(function (ok) {
+        if (ok) {
+          close();
+          toast('✓ E-posta doğrulandı — artık tam üyesin. Kişisel verilerin kaydedildi.', 6500);
+          syncUI();
+          diziniBagla();
+          kisiselCek();
+        } else {
+          b.disabled = false; b.textContent = 'Doğruladım, kontrol et';
+          toast('Henüz doğrulanmamış görünüyor. E-postadaki bağlantıya dokunup tekrar dene.', 6500);
+        }
+      }).catch(function (e) {
+        b.disabled = false; b.textContent = 'Doğruladım, kontrol et';
+        toast(err(e), 6000);
+      });
+    };
+    q('#backdrop').classList.add('open');
+  }
   function karsilama() {
     var m = q('#modal');
     if (!m) { toast('Üye oldun, hoş geldin!', 4000); return; }
@@ -2831,6 +3074,10 @@ var MBGM = (function () {
       '<div class="sub">Üye kaydın tamamlandı. Plan ve duyurulara hemen erişebilirsin; ' +
       'not ve yapılacaklar yalnızca senin hesabında saklanır.</div>' +
       '<div class="sub">✉ ' + durum + '</div>' +
+      '<div class="sub pf-uyari">⚠ <b>Doğrulamadan önce üye sayılmazsın.</b><br>' +
+        'E-posta adresini doğrulayana kadar kişisel verilerin kaydedilmez. ' +
+        'Doğrulamazsan notların, aldığın görevler ve katıldığın etkinlikler ' +
+        'cihazını değiştirdiğinde kaybolabilir.</div>' +
       '<div class="acts">' +
         '<button type="button" data-x="tekrar">' + etiket + '</button>' +
         '<button type="button" class="pri" data-x="kapat">Takvime dön</button>' +
@@ -2845,6 +3092,37 @@ var MBGM = (function () {
   }
 
   /* hesabımı sil (KVKK: hesap silme hakkı) */
+  /* iOS kurulum yardimi: Safari paylas menusu -> Ana Ekrana Ekle */
+  function iosKurulumYardim() {
+    var m = q('#modal');
+    if (!m) return;
+    m.innerHTML =
+      '<h2>Ana ekrana ekle</h2>' +
+      '<div class="sub">iPhone ve iPad üzerinde uygulama, Safari içindeki <b>Paylaş</b> menüsünden eklenir.</div>' +
+      '<div class="inst">' +
+        "<p><b>1.</b> Safari&#39;de bu takvimi aç (Chrome değil — iOS&#39;da Paylaş menüsü Safari&#39;dedir).</p>" +
+        '<p><b>2.</b> Ekranın ortasındaki <b>Paylaş</b> düğmesine dokun (kutu içinden yukarı çıkan ok).</p>' +
+        '<p><b>3.</b> Listede aşağı kaydır ve <b>Ana Ekrana Ekle</b> seçeneğine dokun.</p>' +
+        '<p><b>4.</b> Sağ üstteki <b>Ekle</b> düğmesine dokun.</p>' +
+        '<p class="dim">Sonrasında takvim, ana ekrandaki simgeye dokunularak açılır ve çevrimdışı da çalışır.</p>' +
+      '</div>' +
+      '<div class="acts"><button type="button" class="pri" data-i="kapat">Anladım</button></div>' +
+      '<div class="sub" style="margin-top:10px"><a href="#" data-i="mail">Adımı unuttum, e-postayla gönder</a></div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-i]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-i');
+      if (a === 'kapat') { close(); return; }
+      if (a === 'mail') {
+        ev.preventDefault();
+        window.location.href = 'mailto:' + KULLUP_MAIL +
+          '?subject=' + encodeURIComponent('Ana ekrana ekleme adimlari (iOS)') +
+          '&body=' + encodeURIComponent(iOS_ADIMLAR);
+        return;
+      }
+    };
+    q('#backdrop').classList.add('open');
+  }
   function hesabiSil() {
     if (!MBGFB.user()) return;
     if (!confirm('Hesabın, notların ve yapılacakların kalıcı olarak silinecek.\n\n' +
@@ -2877,7 +3155,15 @@ var MBGM = (function () {
       }
     }
     if (adm) adm.hidden = !MBGFB.isAdmin();
-    if (dogr) dogr.hidden = !u || MBGFB.verified();
+    if (dogr) {
+      dogr.hidden = !u;
+      var tamam = MBGFB.verified();
+      dogr.disabled = !!tamam;
+      dogr.className = tamam ? 'dogru-ok' : '';
+      var db2 = dogr.querySelector('b'), ds2 = dogr.querySelector('span');
+      if (db2) db2.textContent = tamam ? '✓' : '✉';
+      if (ds2) ds2.textContent = tamam ? 'E-posta doğrulandı' : 'E-postamı doğrula';
+    }
     if (sil) sil.hidden = !u;
   }
 
@@ -2926,6 +3212,70 @@ var MBGM = (function () {
   /* ===================================================================
      YÖNETİCİ PANELİ
      =================================================================== */
+/* geri bildirim formu: veritabanına yazar, çevrimdışıysa e-postaya düşer */
+  function geriBildirimFormu(tur) {
+    var m = q('#modal');
+    if (!m) return;
+    var hata = tur === 'hata';
+    var baslik = hata ? 'Hata bildir' : 'Öneri / görüş bildir';
+    var ipucu = hata
+      ? 'Ne oldu? Yazdığın bilgiler gönderim anındaki uygulama kayıtlarıyla birlikte yöneticiye ulaşır.'
+      : 'Takvimi nasıl geliştirelim? Görüşünü yaz; yönetici panelinde görünecek.';
+    var yer = hata
+      ? 'Örn. iPhone üzerinde bir etkinliğe dokununca kart açılmıyor.'
+      : 'Örn. Etkinlik kartına katılıp katılmama seçeneği eklenebilir.';
+    m.innerHTML =
+      '<h2>' + baslik + '</h2>' +
+      '<div class="sub">' + ipucu + '</div>' +
+      '<div class="field"><label>' + (hata ? 'Ne oldu?' : 'Görüşün') + '</label>' +
+        '<textarea id="fGeri" maxlength="1500" placeholder="' + yer + '"></textarea></div>' +
+      '<div class="acts">' +
+        (hata ? '<button type="button" data-g="kopyala">Bilgiyi kopyala</button>' : '') +
+        '<button type="button" data-g="vaz">Vazgeç</button>' +
+        '<button type="button" class="pri" data-g="gonder">Gönder</button></div>' +
+      '<div class="sub" style="margin-top:10px">Mesajın <b>senin adınla</b> ve e-posta adresinle ' +
+        'kaydedilir; yalnızca yönetici görebilir.</div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-g]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-g');
+      if (a === 'vaz') { close(); return; }
+      if (a === 'kopyala') {
+        var t0 = (q('#fGeri').value || '').trim();
+        var bilgi = A && A.bugBody ? A.bugBody(t0) : t0;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(bilgi).then(
+            function () { toast('Bilgi kopyalandı.', 3500); },
+            function () { toast('Kopyalanamadı.', 3000); });
+        } else toast('Kopyalanamadı.', 3000);
+        return;
+      }
+      if (a !== 'gonder') return;
+      var t = (q('#fGeri').value || '').trim();
+      if (t.length < 5) { toast('Lütfen birkaç kelime yaz.', 3500); q('#fGeri').focus(); return; }
+      var btn = b;
+      btn.disabled = true; btn.textContent = '…';
+      var islem = hata ? MBGFB.addReport(t) : MBGFB.addOneri(t);
+      islem.then(function () {
+        close();
+        toast(hata
+          ? '✓ Hata bildirimin kaydedildi. Teşekkürler!'
+          : '✓ Görüşün kaydedildi. Teşekkürler!', 5000);
+      }).catch(function (e) {
+        btn.disabled = false; btn.textContent = 'Gönder';
+        var kod = (e && e.code) || '';
+        if (kod === 'permission-denied') {
+          toast('Veritabanına yazılamadı (kuralları güncelle). E-postayla göndermek için "Bilgiyi kopyala".', 8000);
+        } else if (kod === 'unavailable') {
+          toast('İnternet yok. Bağlanınca tekrar dene.', 5000);
+        } else {
+          toast(err(e), 6500);
+        }
+      });
+    };
+    q('#backdrop').classList.add('open');
+    setTimeout(function () { var f = q('#fGeri'); if (f) f.focus(); }, 60);
+  }
   function adminPanel() {
     if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
     var m = q('#modal');
@@ -2935,10 +3285,11 @@ var MBGM = (function () {
       '<div class="sub">Değişiklikler tüm üyelerde anında görünür</div>' +
       '<div class="acts" style="justify-content:flex-start;flex-wrap:wrap">' +
         '<button type="button" class="pri" data-a="ekle">＋ Etkinlik ekle</button>' +
-        '<button type="button" data-a="aktar">Excel\'den içe aktar</button>' +
+        '<button type="button" data-a="aktar">Excel dosyasından içe aktar</button>' +
         '<button type="button" data-a="duyuru">Duyuru ekle</button>' +
         '<button type="button" data-a="uyeler">Üyeler</button>' +
         '<button type="button" data-a="rapor">Hata bildirimleri</button>' +
+        '<button type="button" data-a="gorus">Öneri / görüşler</button>' +
         '<button type="button" data-a="kapat">Kapat</button>' +
       '</div>' +
       '<div id="admList" style="margin-top:14px;max-height:44vh;overflow:auto"></div>' +
@@ -2975,6 +3326,7 @@ var MBGM = (function () {
       else if (a === 'duyuru') newsForm();
       else if (a === 'uyeler') uyeler();
       else if (a === 'rapor') reports();
+      else if (a === 'gorus') gorusler();
       else if (a === 'kapat') close();
     };
     q('#admXlsx').onchange = function () {
@@ -3116,6 +3468,37 @@ var MBGM = (function () {
     q('#backdrop').classList.add('open');
   }
 
+/* yönetici: öneri ve görüş listesi */
+  function gorusler() {
+    var m = q('#modal');
+    if (!m) return;
+    m.innerHTML = '<h2>Öneri / görüşler</h2><div id="gList"></div>' +
+      '<div class="acts"><button type="button" data-a="v">Geri</button>' +
+      '<button type="button" data-a="t">Yenile</button></div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-a]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-a');
+      if (a === 'v') { adminPanel(); return; }
+      if (a === 't') { listele(); }
+    };
+    q('#backdrop').classList.add('open');
+    listele();
+    function listele() {
+      MBGFB.listOneriler(60).then(function (ls) {
+        var box = q('#gList');
+        if (!box) return;
+        box.innerHTML = (ls && ls.length) ? ls.map(function (o) {
+          return '<div class="todo"><span><b>' + esc(o.ad || o.uye || 'ziyaretçi') + '</b> · ' +
+            esc(o.cihaz || '') + ' · ' + esc(o.ver || '') + '<br>' +
+            esc(String(o.mesaj || o.text || '').slice(0, 400)) + '</span></div>';
+        }).join('') : '<div class="todo-empty">Henüz öneri yok.</div>';
+      }).catch(function (x) {
+        var box = q('#gList');
+        if (box) box.innerHTML = '<div class="todo-empty">' + esc(err(x)) + '</div>';
+      });
+    }
+  }
   function reports() {
     var m = q('#modal');
     if (!m) return;
@@ -3156,28 +3539,56 @@ var MBGM = (function () {
       }
       else syncUI();
     });
+    /* e-postadaki baglantiya tiklayip geri donulunca otomatik kontrol */
+    window.addEventListener('focus', function () {
+      if (!MBGFB.user() || MBGFB.verified()) return;
+      MBGFB.dogrulamaTamamla().then(function (ok) {
+        if (!ok) return;
+        toast('✓ E-posta doğrulandı — kişisel verilerin kaydedildi.', 6500);
+        syncUI();
+        kisiselCek();
+      });
+    });
     /* canlı plan */
     planBagla();
     /* profil (katılım, görev, not, tamamlanan görevler) */
     try { if (window.MBGP) MBGP.init(window.MBG); } catch (e12) {}
     /* ⋮ paneli bağlantıları */
     var a1 = q('#mAuth'), a2 = q('#mSignOut'), a3 = q('#mAdmin');
-    var a4 = q('#mVerify'), a5 = q('#mDelete');
+    var a4 = q('#mVerify'), a5 = q('#mDelete'), a6 = q('#mOneri'), a7 = q('#mBug');
     if (a1) a1.onclick = function () {
       if (MBGFB.user()) { if (window.MBGP) MBGP.profil(); }
       else authModal('giris');
     };
     if (a2) a2.onclick = function () { cikis(); };
     if (a3) a3.onclick = function () { adminPanel(); };
-    if (a4) a4.onclick = function (ev) { yenidenGonder(ev.currentTarget, null); };
+    if (a4) a4.onclick = function () {
+      if (MBGFB.verified()) { toast('✓ E-posta adresin doğrulanmış.', 3500); return; }
+      dogrulamaPaneli();
+    };
     if (a5) a5.onclick = function () { hesabiSil(); };
+    var mi = q('#mInstall');
+    if (mi) {
+      var ios = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var kb2 = mi.querySelector('b'), ks2 = mi.querySelector('span');
+      if (ios) {
+        if (kb2) kb2.textContent = '􀈂';
+        if (ks2) ks2.textContent = 'Ana ekrana ekle';
+        mi.onclick = function () { iosKurulumYardim(); };
+      }
+    }
+    if (a6) a6.onclick = function () { geriBildirimFormu('oneri'); };
+    if (a7) a7.onclick = function () { geriBildirimFormu('hata'); };
   }
 
   return {
     init: init, authModal: authModal, adminPanel: adminPanel, syncUI: syncUI,
     karsilama: karsilama, yenidenGonder: yenidenGonder, hesabiSil: hesabiSil,
+    dogrulamaPaneli: dogrulamaPaneli, geriBildirimFormu: geriBildirimFormu,
+    iosKurulumYardim: iosKurulumYardim, KULLUP_MAIL: KULLUP_MAIL,
     uyeler: uyeler,
-    err: err, kaydetCevrimdisi: function () {
+    err: err, dogrulaAlan: dogrulaAlan, ALAN: ALAN, kaydetCevrimdisi: function () {
       if (!MBGFB.user()) return;
       if (A && A.todosDump) MBGFB.saveTodos(A.todosDump());
     }
@@ -3323,24 +3734,25 @@ var MBGP = (function () {
 
       var html =
         '<h2>Profil</h2>' +
-        '<div class="sub">' + esc(p.name || '(ad soyad girilmemiş)') +
+        '<div class="sub">' + esc(p.name || '(İsim soyisim girilmemiş)') +
           (p.dept ? ' · ' + esc(p.dept) : '') +
-          (p.year ? ' ' + esc(p.year) + '. sınıf' : '') +
-          (p.no ? ' · No ' + esc(p.no) : '') + '</div>' +
+          (p.girisYili || p.year ? ' · ' + esc(String(p.girisYili || p.year) + ' giriş') : '') +
+          (p.no ? ' · Öğrenci no ' + esc(p.no) : '') + '</div>' +
         '<div class="sub pf-mail">' + esc(u.email || '') + '</div>' +
 
         '<div class="pf-ist">' +
-          ist('Toplam etkinlik', s.toplamEtkinlik) +
+          ist('Planda etkinlik', s.toplamEtkinlik) +
           ist('Katıldığım', s.katildi) +
           ist('Katılacağım', s.gidecek) +
           ist('Görevim olan', s.gorevli) +
-          ist('Görevi eksik', s.bekleyen, s.bekleyen ? 'uyari' : '') +
+          ist('Görev bekleyen', s.bekleyen, s.beklayan ? 'uyari' : '') +
           ist('Not sayım', s.notSay) +
-          ist('Tamamlanan görev', s.gorevBitti + ' / ' + s.gorevToplam) +
+          ist('Bitirdiğim görev', s.gorevBitti + ' / ' + s.gorevToplam) +
         '</div>' +
 
         '<div class="acts pf-acts">' +
-          '<button type="button" class="pri" data-k="duzenle">Katılımı düzenle</button>' +
+          '<button type="button" class="pri" data-k="kisisel">Kişisel bilgilerim</button>' +
+          '<button type="button" data-k="duzenle">Katılımı düzenle</button>' +
           '<button type="button" data-k="yenile">Yenile</button>' +
           '<button type="button" data-k="kapat">Kapat</button>' +
         '</div>' +
@@ -3371,7 +3783,13 @@ var MBGP = (function () {
         html += tablo('Tamamladığım görevler', 0, [],
           'Henüz tamamlanmış görevin yok.');
       }
-      html += '<div class="sub pf-ipucu">' +
+      if (!MBGFB.verified()) {
+        html = '<div class="sub pf-uyari"><b>⚠ E-posta adresin henüz doğrulanmadı.</b><br>' +
+          'Doğrulamadan sonra kişisel bilgilerin kaydedilir ve profilin çalışır. ' +
+          'Şu an yalnızca bu cihazda tutuluyor: cihazı değiştirirsen kaybolur.</div>' + html;
+      }
+      html += '<div class="sub pf-ipucu">Kişisel bilgilerin ayda bir kez güncellenebilir.</div>' +
+      '<div class="sub pf-ipucu">' +
         (MBGFB.user()
           ? 'Katılım, görev, not ve tamamlanan görevler yalnızca senin hesabında saklanır; ' +
             'telefon ya da tarayıcı değişse de korunur.'
@@ -3388,6 +3806,7 @@ var MBGP = (function () {
         if (a === 'kapat') { close(); return; }
         if (a === 'yenile') { katilimYukle().then(ciz); return; }
         if (a === 'duzenle') { katilimForm(); return; }
+        if (a === 'kisisel') { kisiselForm(); return; }
         if (a === 'not') { close(); if (A && A.openNote) A.openNote(b.getAttribute('data-e')); return; }
         if (a === 'sil') {
           katilimKaydet(b.getAttribute('data-e'), null);
@@ -3404,6 +3823,86 @@ var MBGP = (function () {
       '<b>' + esc(deger) + '</b><span>' + esc(etiket) + '</span></div>';
   }
 
+/* kişisel bilgiler: ayda bir kez güncellenebilir */
+  function kisiselForm() {
+    var m = q('#modal');
+    if (!m) return;
+    var p = MBGFB.state.profile || {};
+    var kalan = MBGFB.profilSikKalan();
+    var kilitli = kalan > 0;
+    var kalanGun = Math.ceil(kalan / 86400000);
+    var son = p.profilGuncelAt && typeof p.profilGuncelAt.toDate === 'function'
+      ? p.profilGuncelAt.toDate() : null;
+
+    var uyar = kilitli
+      ? '⏳ Bu ayki güncellemeni kullandın. Bilgileri ' + kalanGun + ' gün daha sonra ' +
+        'tekrar düzenleyebilirsin (' +
+        (new Date(Date.now() + kalan)).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) +
+        '). Yanlış bir bilgi mi var? Yöneticiye yazabilirsin.'
+      : '✅ Bu ayki güncelleme hakkın hazır. Bilgileri ayda bir kez güncelleyebilirsin' +
+        (son ? ' (son güncelleme: ' + son.toLocaleDateString('tr-TR') + ')' : '') + '.';
+
+    m.innerHTML =
+      '<h2>Kişisel bilgilerim</h2>' +
+      '<div class="sub">Ad, öğrenci numarası, bölüm ve üniversiteye giriş yılın</div>' +
+      '<div class="sub ' + (kilitli ? 'pf-uyari' : 'pf-ok') + '">' + uyar + '</div>' +
+      '<div class="field"><label>İsim soyisim *</label>' +
+        '<input id="pAd" maxlength="60" data-t="harf" placeholder="Örn. Elif Yılmaz" value="' +
+        esc(p.name || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
+      '<div class="field"><label>Öğrenci numarası</label>' +
+        '<input id="pNo" maxlength="20" inputmode="numeric" data-t="rakam" ' +
+        'placeholder="Örn. 202612345 · yalnızca rakam" value="' + esc(p.no || '') + '"' +
+        (kilitli ? ' disabled' : '') + '></div>' +
+      '<div class="field"><label>Bölüm</label>' +
+        '<input id="pBolum" maxlength="60" data-t="metin" placeholder="Örn. Biyoloji" value="' +
+        esc(p.dept || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
+      '<div class="field"><label>Üniversiteye giriş yılı</label>' +
+        '<input id="pYil" maxlength="4" inputmode="numeric" placeholder="Örn. 2021" value="' +
+        esc(p.girisYili || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
+      '<div class="acts">' +
+        '<button type="button" data-k="vaz">Vazgeç</button>' +
+        (kilitli ? '' : '<button type="button" class="pri" data-k="kay">Kaydet</button>') +
+      '</div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-k');
+      if (a === 'vaz') { profil(); return; }
+      if (a !== 'kay') return;
+
+      var ad = (q('#pAd').value || '').trim();
+      var no = (q('#pNo').value || '').trim();
+      var bol = (q('#pBolum').value || '').trim();
+      var yil = (q('#pYil').value || '').trim();
+      var duz = MBGM.dogrulaAlan ? MBGM.dogrulaAlan(ad, no, yil) : null;
+      if (duz) { toast(duz, 6500); return; }
+
+      var btn = b;
+      btn.disabled = true; btn.textContent = '…';
+      MBGFB.profilGuncelle({ name: ad, no: no, dept: bol, girisYili: yil })
+        .then(function () {
+          toast('Kişisel bilgilerin güncellendi. Bir sonraki güncelleme 30 gün sonra.', 6000);
+          profil();
+        })
+        .catch(function (e) {
+          btn.disabled = false; btn.textContent = 'Kaydet';
+          toast(MBGM.err(e), 7000);
+        });
+    };
+    /* ayni filtre kurallari: yazarken eleme */
+    m.addEventListener('input', function (ev) {
+      var el = ev.target;
+      if (!el || !el.getAttribute) return;
+      var t = el.getAttribute('data-t');
+      if (!t) return;
+      var d = el.value;
+      if (t === 'rakam') d = d.replace(/[^0-9]/g, '');
+      else if (t === 'harf') d = d.replace(/[0-9@#<>+_]/g, '').replace(/\s{2,}/g, ' ');
+      else if (t === 'metin') d = d.replace(/[0-9@#<>]/g, '');
+      if (d !== el.value) el.value = d;
+    });
+    q('#backdrop').classList.add('open');
+  }
   /* ------------------------------------------------------------------
      KATILIM DÜZENLEME
      ------------------------------------------------------------------ */
@@ -3469,7 +3968,7 @@ var MBGP = (function () {
   }
 
   return {
-    init: init, profil: profil, katilimForm: katilimForm,
+    init: init, profil: profil, katilimForm: katilimForm, kisiselForm: kisiselForm,
     katilimYukle: katilimYukle, istatistik: istatistik,
     GOREV: GOREV, state: function () { return KAT; }
   };

@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.10.1)
+   Firestore güvenlik kuralları  (v3.12.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -9,20 +9,24 @@ rules_version = '2';
    3) Publish
    ---------------------------------------------------------------------
    YETKİ NASIL BELİRLENİR?
-   Yönetici, Firestore belgesindeki "role" alanına değil, **giriş yapan
-   hesabın e-postasına** bakılarak belirlenir:
+   Yönetici, Firestore belgesindeki role alanına değil, GİRİŞ YAPAN
+   hesabın e-postasına bakılarak belirlenir:
        request.auth.token.email == 'b.gul.baba.can@hotmail.com'
-   Böylece ilk yönetici hesabının profil belgesi silinse/bozulsa bile
-   yetkisi kaybolmaz (ölü kilit olmaz). Bu e-posta Firebase Auth'a
-   kayıtlıdır; parolayı yalnızca hesap sahibi bilir.
+   Böylece ilk yönetici hesabının profil belgesi silinse bile yetkisi
+   kaybolmaz. Bu e-posta Firebase Auth'a kayıtlıdır; parolayı yalnızca
+   hesap sahibi bilir.
    ---------------------------------------------------------------------
-   • Plan (events)     : herkes okur, YALNIZCA yönetici yazar
-   • Üye profilleri    : üye listeyi okur, kendi profilini yazar
-   • Kayıt (regs)      : üye yalnızca kendi kaydını ekler/siler
-   • Duyurular (news)  : herkes okur, yalnızca yönetici yazar
-   • Hata bildirimleri : herkes yazar, YALNIZCA yönetici okur
-   • Notlar/görevler   : YALNIZCA sahibi görebilir/değiştirebilir
-   • Geri kalan her şey: KAPALI
+   • ÜYELİK: yalnızca e-postası DOĞRULANMIŞ hesaplar members belgesi
+     oluşturabilir. Doğrulanmamış hesap veritabanına üye yazılmaz.
+   • PROFİL: kullanıcı kendi profilini günceller ama en fazla
+     30 GÜNDE BİR (ayda bir kere). İlk üyelikten itibaren sayılır.
+   • PLAN (events)     : herkes okur, yalnızca yönetici yazar
+   • KAYIT (regs)      : üye yalnızca kendi kaydını ekler/siler
+   • DUYURULAR (news)  : herkes okur, yalnızca yönetici yazar
+   • GERİ BİLDİRİM     : reports + oneriler — herkes yazar,
+                         YALNIZCA yönetici okur
+   • KİŞİSEL VERİLER    : yalnızca sahibi görebilir/değiştirebilir
+   • GERİ KALAN HER ŞEY: KAPALI
    ===================================================================== */
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -42,28 +46,45 @@ service cloud.firestore {
         && request.auth.token.email == adminMail();
     }
 
-    /* --- PLAN: herkese açık okunur, yalnızca yönetici yazar --- */
-    match /events/{eventId} {
-      allow read: if true;
-      allow create, update, delete: if adminMi();
+    /* E-postası doğrulanmış kullanıcı */
+    function dogrulandiMi() {
+      return girisYapildi()
+        && request.auth.token.email_verified == true;
+    }
+
+    /* Profil güncelleme aralığı: 30 gün */
+    function profilSikiliMi() {
+      return resource.data.profilGuncelAt != null
+        && request.time - resource.data.profilGuncelAt < duration.value(30, 'd');
     }
 
     /* --- ÜYE PROFİLLERİ --- */
     match /members/{uid} {
-      /* üyeler listeyi görür (iletişim/dernek işleri için) */
+      /* üyeler listeyi görür (iletişim / dernek işleri için) */
       allow read: if girisYapildi();
 
-      /* kendi profilini oluşturur; "role" alanı bilgilendirme amaçlıdır,
-         gerçek yetki yukarıdaki adminMi() ile belirlenir */
-      allow create: if girisYapildi() && request.auth.uid == uid;
+      /* YALNIZCA doğrulanmış e-posta üye olabilir */
+      allow create: if girisYapildi()
+        && request.auth.uid == uid
+        && dogrulandiMi();
 
-      /* kendi bilgilerini günceller; yönetici rolü değiştirebilir */
+      /* yönetici her zaman düzenleyebilir;
+         üye kendi bilgilerini düzenler ama ayda bir kez */
       allow update: if adminMi()
-        || (girisYapildi() && request.auth.uid == uid);
+        || (girisYapildi()
+            && request.auth.uid == uid
+            && dogrulandiMi()
+            && !profilSikiliMi());
 
       /* yönetici istediğini siler; üye de kendi hesabını silebilir
          (KVKK: hesap silme hakkı) */
       allow delete: if adminMi() || (girisYapildi() && request.auth.uid == uid);
+    }
+
+    /* --- PLAN: herkese açık okunur, yalnızca yönetici yazar --- */
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if adminMi();
     }
 
     /* --- ETKİNLİK KAYITLARI --- */
@@ -81,8 +102,15 @@ service cloud.firestore {
       allow create, update, delete: if adminMi();
     }
 
-    /* --- HATA BİLDİRİMLERİ: herkes yazar, yalnızca yönetici okur --- */
+    /* --- GERİ BİLDİRİMLER: hata bildirimi --- */
     match /reports/{reportId} {
+      allow read: if adminMi();
+      allow create: if true;
+      allow update, delete: if adminMi();
+    }
+
+    /* --- ÖNERİ / GÖRÜŞ BİLDİRİMLERİ --- */
+    match /oneriler/{oneriId} {
       allow read: if adminMi();
       allow create: if true;
       allow update, delete: if adminMi();
