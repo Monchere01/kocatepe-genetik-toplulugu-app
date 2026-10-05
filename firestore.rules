@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.12.0)
+   Firestore güvenlik kuralları  (v3.13.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -25,7 +25,13 @@ rules_version = '2';
    • DUYURULAR (news)  : herkes okur, yalnızca yönetici yazar
    • GERİ BİLDİRİM     : reports + oneriler — herkes yazar,
                          YALNIZCA yönetici okur
-   • KİŞİSEL VERİLER    : yalnızca sahibi görebilir/değiştirebilir
+   • ETKİNLİK SAYFASI   : events/{id}/sayfa — herkes okur, yönetici yazar
+   • KATILIM QR        : events/{id}/qr — yönetici yazar (10 sn yenilenir)
+   • KATILANLAR        : üye YALNIZCA geçerli QR kodunu göstererek kendi
+                        kaydını yazabilir; başkasının katılımı yazılamaz
+   • GÖREVLİLER        : events/{id}/gorevli — herkes okur, yönetici atar
+   • KİŞİSEL VERİLER    : not/görev yalnızca sahibine; katılım artık üye
+                        tarafından seçilemez
    • GERİ KALAN HER ŞEY: KAPALI
    ===================================================================== */
 service cloud.firestore {
@@ -116,9 +122,55 @@ service cloud.firestore {
       allow update, delete: if adminMi();
     }
 
+    /* --- ETKİNLİK SAYFASI İÇERİĞİ: herkes okur, yönetici yazar --- */
+    match /events/{eventId}/sayfa/{doc} {
+      allow read: if true;
+      allow write: if adminMi();
+    }
+
+    /* --- KATILIM QR KODU: herkes okur (üye kodu doğrular), yönetici yazar --- */
+    match /events/{eventId}/qr/{doc} {
+      allow read: if true;
+      allow write: if adminMi();
+    }
+
+    /* --- GÖREVLİLER: herkes okur, YALNIZCA yönetici atar --- */
+    match /events/{eventId}/gorevli/{uid} {
+      allow read: if true;
+      allow write: if adminMi();
+    }
+
+    /* --- KATILANLAR ---
+       Üye YALNIZCA kendi kaydını yazabilir ve yazarken o an geçerli olan
+       QR kodunu göstermek zorundadır (kod 10 saniyede bir yenilenir).
+       Böylece katılım kendi kendine uydurulamaz. --- */
+    match /events/{eventId}/katilan/{uid} {
+      allow read: if true;
+      allow create: if girisYapildi()
+        && request.auth.uid == uid
+        && dogrulandiMi()
+        && request.resource.data.uid == uid
+        && request.resource.data.anahtar ==
+             get(/databases/$(database)/documents/events/$(eventId)/qr/anahtar).data.anahtar;
+      allow update, delete: if adminMi();
+    }
+
     /* --- KİŞİSEL VERİLER: yalnızca sahibi --- */
-    match /ud/{uid}/{document=**} {
+    /* Notlar, yapılacaklar: yalnızca sahibi */
+    match /ud/{uid}/notes/{doc} {
       allow read, write: if girisYapildi() && request.auth.uid == uid;
+    }
+    match /ud/{uid}/todos/{doc} {
+      allow read, write: if girisYapildi() && request.auth.uid == uid;
+    }
+    /* Eski katılım kayıtları: yalnızca sahibi okur, yalnızca yönetici yazar
+       (yeni katılım events/{id}/katilan altında, QR ile) */
+    match /ud/{uid}/katilim/{doc} {
+      allow read: if girisYapildi() && request.auth.uid == uid;
+      allow write: if adminMi();
+    }
+    match /ud/{uid}/{document=**} {
+      allow read, write: if false;
     }
 
     /* --- PLAN ÜST VERİSİ --- */

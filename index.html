@@ -440,6 +440,24 @@
     .pf-tab{max-height:38vh}
     .pf-sel select{max-width:78px;font-size:.62rem}
   }
+  .es-blok{margin-top:16px;padding-top:14px;border-top:1px solid rgba(148,178,220,.14)}
+  .es-blok h3{font-size:.74rem;letter-spacing:.05em;color:#9fb4d2;margin:0 0 8px}
+  .es-blok h3 em{font-style:normal;background:rgba(148,178,220,.16);border-radius:20px;
+    padding:1px 8px;font-size:.64rem;margin-left:6px;color:#e6edf7}
+  .es-qr{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+  .es-qr canvas{border-radius:12px;background:#fff;padding:6px;box-shadow:0 8px 24px -10px #000}
+  .es-qr > div{flex:1 1 190px;min-width:180px}
+  .es-kod{font-size:1.5rem;letter-spacing:.22em;font-weight:700;color:#7ef0c0;
+    font-family:ui-monospace,Menlo,Consolas,monospace;margin-bottom:6px}
+  .ev-sayfa{position:absolute;left:3px;top:50%;transform:translateY(-50%);
+    width:17px;height:17px;border-radius:6px;border:0;cursor:pointer;
+    background:rgba(255,255,255,.14);color:#cfe0f7;font-size:.6rem;
+    display:grid;place-items:center;padding:0;line-height:1;z-index:2}
+  .ev-sayfa:hover{background:rgba(120,200,255,.3)}
+  .ev-wrap{display:inline-flex;align-items:center;gap:2px;max-width:100%;vertical-align:middle}
+  tr.pf-ac{cursor:pointer}
+  tr.pf-ac:hover td{background:rgba(120,200,255,.07)}
+  @media (max-width:520px){ .es-qr canvas{width:150px !important;height:150px !important} .es-kod{font-size:1.15rem} }
   .sheet-sep{border:0;border-top:1px solid rgba(148,178,220,.16);margin:3px 6px}
   /* e-posta doğrulandı: düğme pasif ve yeşil */
   #moreSheet button.dogru-ok{opacity:.9;cursor:default;border-color:rgba(52,211,153,.35);
@@ -597,7 +615,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.12.0 · çekirdek</span></div>
+<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.13.0 · çekirdek</span></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2665,6 +2683,156 @@ var MBGFB = (function () {
   }
 function addReport(text) { return geriBildirim('reports', 'hata', text); }
   function addOneri(text) { return geriBildirim('oneriler', 'oneri', text); }
+/* =====================================================================
+   Etkinlik sayfası, katılım QR'ı ve görevli ataması — veri katmanı
+   (MBGFB içine eklenen fonksiyonlar)
+   ===================================================================== */
+  function evRef(id) { return db.collection('events').doc(String(id)); }
+
+  /* etkinlik sayfası içeriği */
+  function sayfaOku(evId) {
+    return ready().then(function () {
+      return evRef(evId).collection('sayfa').doc('genel').get().then(function (s) {
+        return s.exists ? (s.data() || {}) : {};
+      });
+    });
+  }
+  function sayfaYaz(evId, veri) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return evRef(evId).collection('sayfa').doc('genel').set(Object.assign({}, veri, {
+        guncelle: ts(), ekleyen: state.user ? state.user.email : ''
+      })).then(function () { return veri; });
+    });
+  }
+
+  /* katılım kodu (10 saniyede bir yenilenir) */
+  function qrKodYaz(evId, anahtar) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return evRef(evId).collection('qr').doc('anahtar').set({
+        anahtar: anahtar, uretilme: ts(),
+        ekleyen: state.user ? state.user.email : ''
+      }).then(function () { return anahtar; });
+    });
+  }
+  function qrKodOku(evId) {
+    return ready().then(function () {
+      return evRef(evId).collection('qr').doc('anahtar').get().then(function (s) {
+        if (!s.exists) return null;
+        var o = s.data() || {};
+        return {
+          anahtar: o.anahtar || '',
+          zaman: o.uretilme && typeof o.uretilme.toMillis === 'function'
+            ? o.uretilme.toMillis() : 0
+        };
+      });
+    });
+  }
+
+  /* katılanlar */
+  function katilanOku(evId) {
+    return ready().then(function () {
+      return evRef(evId).collection('katilan').get().then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) {
+          var o = d.data() || {};
+          o.uid = d.id;
+          o.zaman = o.at && typeof o.at.toDate === 'function'
+            ? o.at.toDate().toLocaleString('tr-TR') : '';
+          out.push(o);
+        });
+        out.sort(function (a, b) { return String(a.zaman) < String(b.zaman) ? 1 : -1; });
+        return out;
+      });
+    });
+  }
+  /* üye kendi katılımını yazar (kurul geçerli kodu doğrular) */
+  function katilanYaz(evId, anahtar) {
+    if (!state.user) return Promise.reject(new Error('Önce giriş yapmalısın.'));
+    if (!verified()) return Promise.reject(new Error('E-posta adresi doğrulanmadan katılım kaydedilemez.'));
+    return ready().then(function () {
+      var p = state.profile || {};
+      return evRef(evId).collection('katilan').doc(state.user.uid).set({
+        uid: state.user.uid,
+        ad: p.name || state.user.email || '',
+        eposta: state.user.email || '',
+        anahtar: anahtar,
+        at: ts()
+      }).then(function () { return true; });
+    });
+  }
+
+  /* görevliler (yalnızca yönetici yazar) */
+  function gorevliOku(evId) {
+    return ready().then(function () {
+      return evRef(evId).collection('gorevli').get().then(function (snap) {
+        var out = [];
+        snap.forEach(function (d) {
+          var o = d.data() || {};
+          o.uid = d.id;
+          out.push(o);
+        });
+        return out;
+      });
+    });
+  }
+  function gorevliEkle(evId, uid, gorev) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return db.collection('members').doc(String(uid)).get().then(function (s) {
+        var u = s.exists ? (s.data() || {}) : {};
+        return evRef(evId).collection('gorevli').doc(String(uid)).set({
+          uid: String(uid),
+          ad: u.name || (u.email || ''),
+          eposta: u.email || '',
+          gorev: gorev || '',
+          at: ts()
+        });
+      });
+    });
+  }
+  function gorevliSil(evId, uid) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return evRef(evId).collection('gorevli').doc(String(uid)).delete();
+    });
+  }
+
+  /* profil için: benim katıldıklarım / görevlerim */
+  function benimKatildiklarim() {
+    if (!state.user) return Promise.resolve([]);
+    return ready().then(function () {
+      return db.collectionGroup('katilan').where('uid', '==', state.user.uid).get()
+        .then(function (snap) {
+          var out = [];
+          snap.forEach(function (d) {
+            var o = d.data() || {};
+            /* events/{id}/katilan/{uid} → id çıkar */
+            var parcalar = String(d.ref.path).split('/');
+            o.etkinlikId = parcalar[1];
+            out.push(o);
+          });
+          return out;
+        });
+    }).catch(function () { return []; });
+  }
+  function benimGorevlerim() {
+    if (!state.user) return Promise.resolve([]);
+    return ready().then(function () {
+      return db.collectionGroup('gorevli').where('uid', '==', state.user.uid).get()
+        .then(function (snap) {
+          var out = [];
+          snap.forEach(function (d) {
+            var o = d.data() || {};
+            var parcalar = String(d.ref.path).split('/');
+            o.etkinlikId = parcalar[1];
+            out.push(o);
+          });
+          return out;
+        });
+    }).catch(function () { return []; });
+  }
   function listOneriler(limit) {
     return ready().then(function () {
       return db.collection('oneriler').orderBy('at', 'desc').limit(limit || 50).get().then(function (snap) {
@@ -2714,6 +2882,11 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     dogrulamaBekliyor: dogrulamaBekliyor,
     profilGuncelle: profilGuncelle, profilSikKalan: profilSikKalan,
     logTopla: logTopla, addOneri: addOneri, listOneriler: listOneriler,
+    sayfaOku: sayfaOku, sayfaYaz: sayfaYaz,
+    qrKodYaz: qrKodYaz, qrKodOku: qrKodOku,
+    katilanOku: katilanOku, katilanYaz: katilanYaz,
+    gorevliOku: gorevliOku, gorevliEkle: gorevliEkle, gorevliSil: gorevliSil,
+    benimKatildiklarim: benimKatildiklarim, benimGorevlerim: benimGorevlerim,
     listMembers: listMembers, deleteMember: deleteMember, setMemberRole: setMemberRole,
     watchEvents: watchEvents, replaceEvents: replaceEvents, upsertEvent: upsertEvent,
     deleteEvent: deleteEvent, eventIds: eventIds,
@@ -3300,11 +3473,18 @@ var MBGM = (function () {
       list.innerHTML = ev.map(function (e, i) {
         return '<div class="todo"><span>' + esc(fmt(e.date)) + ' · ' +
           esc(String(e.title).slice(0, 64)) + '</span>' +
+          '<button type="button" class="td" data-p="' + i + '">Sayfası</button>' +
           '<button type="button" class="td" data-i="' + i + '">Sil</button></div>';
       }).join('') || '<div class="todo-empty">Plan boş.</div>';
     }
     ciz();
     list.onclick = function (ev) {
+      var say = ev.target && ev.target.closest ? ev.target.closest('[data-p]') : null;
+      if (say) {
+        var se = (A.events() || [])[+say.getAttribute('data-p')];
+        if (se && window.ETK) ETK.etkinlikSayfasi(String(se.id));
+        return;
+      }
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-i]') : null;
       if (!b) return;
       var i = +b.getAttribute('data-i');
@@ -3503,12 +3683,15 @@ var MBGM = (function () {
     var m = q('#modal');
     if (!m) return;
     m.innerHTML = '<h2>Hata bildirimleri</h2><div id="adRep"></div>' +
-      '<div class="acts"><button type="button" data-a="v">Kapat</button></div>';
+      '<div class="acts"><button type="button" data-a="v">Geri</button>' +
+      '<button type="button" data-a="t">Yenile</button></div>';
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-a]') : null;
       if (b && b.getAttribute('data-a') === 'v') close();
     };
     q('#backdrop').classList.add('open');
+    listele();
+    function listele() {
     MBGFB.listReports(60).then(function (rs) {
       var box = q('#adRep');
       if (!box) return;
@@ -3521,6 +3704,7 @@ var MBGM = (function () {
       var box = q('#adRep');
       if (box) box.innerHTML = '<div class="todo-empty">' + esc(err(x)) + '</div>';
     });
+    }
   }
 
   /* ===================================================================
@@ -3553,6 +3737,8 @@ var MBGM = (function () {
     planBagla();
     /* profil (katılım, görev, not, tamamlanan görevler) */
     try { if (window.MBGP) MBGP.init(window.MBG); } catch (e12) {}
+    /* etkinlik sayfaları + katılım QR akışı */
+    try { if (window.ETK) ETK.init(window.MBG); } catch (e13) {}
     /* ⋮ paneli bağlantıları */
     var a1 = q('#mAuth'), a2 = q('#mSignOut'), a3 = q('#mAdmin');
     var a4 = q('#mVerify'), a5 = q('#mDelete'), a6 = q('#mOneri'), a7 = q('#mBug');
@@ -3701,7 +3887,7 @@ var MBGP = (function () {
       '<div class="pf-tab"><table>' + govde + '</table></div></section>';
   }
   function trEtkinlik(k) {
-    return '<tr><td class="pf-t">' + esc(fmt(k.ev.date)) + '</td>' +
+    return '<tr class="pf-ac" data-ev-sayfa="' + esc(k.id) + '"><td class="pf-t">' + esc(fmt(k.ev.date)) + '</td>' +
       '<td>' + esc(k.ev.title) +
       (k.gorev ? ' <span class="pf-et">' + esc(k.gorev) + '</span>' : '') + '</td>' +
       '<td class="pf-s"><button type="button" data-k="sil" data-e="' + esc(k.id) + '">✕</button></td></tr>';
@@ -3808,6 +3994,8 @@ var MBGP = (function () {
         if (a === 'duzenle') { katilimForm(); return; }
         if (a === 'kisisel') { kisiselForm(); return; }
         if (a === 'not') { close(); if (A && A.openNote) A.openNote(b.getAttribute('data-e')); return; }
+        var es = ev.target && ev.target.closest ? ev.target.closest('[data-ev-sayfa]') : null;
+        if (es && window.ETK) { ETK.etkinlikGoruntule(es.getAttribute('data-ev-sayfa')); return; }
         if (a === 'sil') {
           katilimKaydet(b.getAttribute('data-e'), null);
           toast('Kayıt kaldırıldı.', 2500);
@@ -3860,7 +4048,7 @@ var MBGP = (function () {
         '<input id="pYil" maxlength="4" inputmode="numeric" placeholder="Örn. 2021" value="' +
         esc(p.girisYili || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
       '<div class="acts">' +
-        '<button type="button" data-k="vaz">Vazgeç</button>' +
+      '<button type="button" data-k="vaz">&larr; Geri</button>' +
         (kilitli ? '' : '<button type="button" class="pri" data-k="kay">Kaydet</button>') +
       '</div>';
     m.onclick = function (ev) {
@@ -3971,6 +4159,794 @@ var MBGP = (function () {
     init: init, profil: profil, katilimForm: katilimForm, kisiselForm: kisiselForm,
     katilimYukle: katilimYukle, istatistik: istatistik,
     GOREV: GOREV, state: function () { return KAT; }
+  };
+})();
+/* =====================================================================
+   src/qr.js — QR kod üreteci (tamamen çevrimdışı, kütüphanesiz)
+   ---------------------------------------------------------------------
+   • Bayt (byte) kipi · hata düzeltme seviyesi M · sürüm 1–6
+   • 10 saniyede bir yenilenen kısa kodlar için tasarlandı
+   • Dış kaynak yok: tek dosyada çalışır, internetsiz de üretir.
+   • Kullanım:  QR.uret(metin)  →  { boyut, moduller:[[0|1]], surum, maske }
+   ===================================================================== */
+var QR = (function () {
+  'use strict';
+
+  /* ---------------- GF(256) ve Reed-Solomon ---------------- */
+  var EXP = new Array(512), LOG = new Array(256);
+  (function () {
+    var x = 1;
+    for (var i = 0; i < 255; i++) {
+      EXP[i] = x; LOG[x] = i;
+      x <<= 1;
+      if (x & 0x100) x ^= 0x11D;
+    }
+    for (var j = 255; j < 512; j++) EXP[j] = EXP[j - 255];
+  })();
+  function mul(a, b) { return (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]]; }
+
+  function rsKodlari(veri, ecSayi) {
+    var uretec = [1], i, j, k;
+    for (i = 0; i < ecSayi; i++) {
+      var yeni = new Array(uretec.length + 1);
+      for (j = 0; j < yeni.length; j++) yeni[j] = 0;
+      for (j = 0; j < uretec.length; j++) {
+        yeni[j] ^= uretec[j];
+        yeni[j + 1] ^= mul(uretec[j], EXP[i]);
+      }
+      uretec = yeni;
+    }
+    var tampon = veri.slice();
+    for (i = 0; i < ecSayi; i++) tampon.push(0);
+    for (i = 0; i < tampon.length - ecSayi; i++) {
+      var f = tampon[i];
+      if (!f) continue;
+      for (j = 0; j < uretec.length; j++) tampon[i + j] ^= mul(uretec[j], f);
+    }
+    var son = [];
+    for (k = tampon.length - ecSayi; k < tampon.length; k++) son.push(tampon[k]);
+    return son;
+  }
+
+  /* ---------------- tablolar (seviye M, sürüm 1-6) ---------------- */
+  var TAB = {
+    1: { veri: 16, blok: 1, ec: 10, hizala: [],        boyut: 21 },
+    2: { veri: 28, blok: 1, ec: 16, hizala: [6, 18],   boyut: 25 },
+    3: { veri: 44, blok: 1, ec: 26, hizala: [6, 22],   boyut: 29 },
+    4: { veri: 64, blok: 2, ec: 18, hizala: [6, 26],   boyut: 33 },
+    5: { veri: 86, blok: 2, ec: 24, hizala: [6, 30],   boyut: 37 },
+    6: { veri: 108, blok: 4, ec: 16, hizala: [6, 34],  boyut: 41 }
+  };
+  var EC_M = 0;   /* seviye M için iki bitlik gösterge */
+
+  /* ---------------- metin → bayt ---------------- */
+  function utf8(str) {
+    var out = [], i, c, cp;
+    for (i = 0; i < str.length; i++) {
+      c = str.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) { out.push(0xC0 | (c >> 6), 0x80 | (c & 63)); }
+      else if (c >= 0xD800 && c <= 0xDBFF && i + 1 < str.length) {
+        cp = 0x10000 + ((c - 0xD800) << 10) + (str.charCodeAt(i + 1) - 0xDC00);
+        out.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 63),
+                 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+        i++;
+      } else { out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+    }
+    return out;
+  }
+
+  function surumSec(baytSayisi) {
+    for (var v = 1; v <= 6; v++) {
+      if (baytSayisi <= TAB[v].veri - 2) return v;   /* 12 bit başlık ≈ 1.5 bayt */
+    }
+    return 0;
+  }
+
+  /* ---------------- veri + hata düzeltme kod sözcükleri ---------------- */
+  function kodSözcükleri(baytlar, v) {
+    var t = TAB[v], bitler = [], i, j;
+    function ekle(deger, bitSayisi) {
+      for (var k = bitSayisi - 1; k >= 0; k--) bitler.push((deger >> k) & 1);
+    }
+    ekle(4, 4);                       /* bayt kipi göstergesi */
+    ekle(baytlar.length, 8);          /* bayt sayısı (sürüm 1-9: 8 bit) */
+    for (i = 0; i < baytlar.length; i++) ekle(baytlar[i], 8);
+    var kapasite = t.veri * 8;
+    for (i = 0; i < 4 && bitler.length < kapasite; i++) bitler.push(0);
+    while (bitler.length % 8) bitler.push(0);
+    var veri = [], bayt;
+    for (i = 0; i < bitler.length; i += 8) {
+      bayt = 0;
+      for (j = 0; j < 8; j++) bayt = (bayt << 1) | bitler[i + j];
+      veri.push(bayt);
+    }
+    var dolgu = [0xEC, 0x11], p = 0;
+    while (veri.length < t.veri) { veri.push(dolgu[p & 1]); p++; }
+
+    /* bloklara böl + EC üret + serpiştir */
+    var blokVeri = Math.floor(t.veri / t.blok);
+    var veriBlok = [], ecBlok = [], b;
+    for (b = 0; b < t.blok; b++) {
+      var dilim = veri.slice(b * blokVeri, (b + 1) * blokVeri);
+      if (b === t.blok - 1) dilim = veri.slice(b * blokVeri);
+      veriBlok.push(dilim);
+      ecBlok.push(rsKodlari(dilim, t.ec));
+    }
+    var kodlar = [], enUzun = 0, k;
+    for (k = 0; k < t.blok; k++) if (veriBlok[k].length > enUzun) enUzun = veriBlok[k].length;
+    for (i = 0; i < enUzun; i++) {
+      for (k = 0; k < t.blok; k++) if (i < veriBlok[k].length) kodlar.push(veriBlok[k][i]);
+    }
+    for (i = 0; i < t.ec; i++) {
+      for (k = 0; k < t.blok; k++) kodlar.push(ecBlok[k][i]);
+    }
+    return kodlar;
+  }
+
+  /* ---------------- fonksiyon desenleri ---------------- */
+  function cerceve(boyut) {
+    var g = [], i, j;
+    for (i = 0; i < boyut; i++) {
+      g.push([]); var r = [];
+      for (j = 0; j < boyut; j++) { g[i].push(0); r.push(0); }
+      g.durum = r;
+    }
+    return g;
+  }
+
+  function maskBitis(m, i, j) {
+    if (m === 0) return ((i + j) & 1) === 0;
+    if (m === 1) return (i & 1) === 0;
+    if (m === 2) return j % 3 === 0;
+    if (m === 3) return (i + j) % 3 === 0;
+    if (m === 4) return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
+    if (m === 5) return ((i * j) & 1) + ((i * j) % 3) === 0;
+    if (m === 6) return (((i * j) & 1) + ((i * j) % 3)) % 2 === 0;
+    return ((((i + j) & 1) + ((i * j) % 3)) & 1) === 0;
+  }
+
+  /* BCH(15,5) format bilgisi */
+  function formatBits(ec, maske) {
+    var veri = (ec << 3) | maske, i, bch = veri << 10;
+    for (i = 4; i >= 0; i--) if (bch & (1 << (i + 10))) bch ^= 0x537 << i;
+    return ((veri << 10) | bch) ^ 0x5412;
+  }
+
+  /* ---------------- ana üretim ---------------- */
+  function uret(metin) {
+    var baytlar = utf8(String(metin == null ? '' : metin));
+    var v = surumSec(baytlar.length);
+    if (!v) return { hata: 'metin çok uzun', enFazla: TAB[6].veri - 2 };
+
+    var t = TAB[v], boyut = t.boyut;
+    var kodlar = kodSözcükleri(baytlar, v);
+
+    /* 1) boş ızgara + rezerve haritası */
+    var g = cerceve(boyut), res = cerceve(boyut);
+    function koy(i, j, deger) {
+      if (i < 0 || j < 0 || i >= boyut || j >= boyut) return;
+      g[i][j] = deger ? 1 : 0; res[i][j] = 1;
+    }
+    function rez(i, j) { if (i >= 0 && j >= 0 && i < boyut && j < boyut) res[i][j] = 1; }
+
+    /* bulucu + ayırıcı */
+    var i, j, a, b;
+    for (i = -1; i <= 7; i++) {
+      for (j = -1; j <= 7; j++) {
+        var ici = i >= 0 && i <= 6 && j >= 0 && j <= 6;
+        var dolu = ici && (i === 0 || i === 6 || j === 0 || j === 6 ||
+                 (i >= 2 && i <= 4 && j >= 2 && j <= 4));
+        koy(0 + i, 0 + j, dolu);
+        koy(0 + i, boyut - 7 + j, dolu);
+        koy(boyut - 7 + i, 0 + j, dolu);
+      }
+    }
+    /* zamanlama */
+    for (i = 8; i < boyut - 8; i++) { koy(6, i, i % 2 === 0); koy(i, 6, i % 2 === 0); }
+    /* hizalama */
+    var h = t.hizala;
+    for (a = 0; a < h.length; a++) {
+      for (b = 0; b < h.length; b++) {
+        var ci = h[a], cj = h[b];
+        if ((ci <= 8 && cj <= 8) || (ci <= 8 && cj >= boyut - 9) || (ci >= boyut - 9 && cj <= 8)) continue;
+        for (i = -2; i <= 2; i++) {
+          for (j = -2; j <= 2; j++) {
+            koy(ci + i, cj + j, Math.max(Math.abs(i), Math.abs(j)) !== 1);
+          }
+        }
+      }
+    }
+    /* koyu modül */
+    koy(boyut - 8, 8, 1);
+    /* format bilgisi alanlarını rezerve et */
+    for (i = 0; i <= 8; i++) { rez(8, i); rez(i, 8); }
+    for (i = 0; i < 8; i++) { rez(boyut - 1 - i, 8); rez(8, boyut - 1 - i); }
+
+    /* 2) veri bitlerini yerleştir
+       Sağ alt köşeden başlar, 2 sütun genişliğinde şerit hâlinde yukarı,
+       sonra aşağı, aşağı yukarı diye ilerler (ZXing embedData). */
+    var bitIdx = 0;
+    var ysatir = boyut - 1;        /* satır */
+    var xsutun = boyut - 1;        /* sütun */
+    var yukarı = true;
+    while (xsutun > 0) {
+      if (xsutun === 6) xsutun -= 1;              /* zamanlama sütununu atla */
+      while (ysatir >= 0 && ysatir < boyut) {
+        for (var k2 = 0; k2 < 2; k2++) {
+          var xx = xsutun - k2;
+          if (res[ysatir][xx]) continue;
+          var bitv = 0;
+          if (bitIdx < kodlar.length * 8) bitv = (kodlar[bitIdx >> 3] >> (7 - (bitIdx & 7))) & 1;
+          g[ysatir][xx] = bitv;
+          bitIdx++;
+        }
+        ysatir += yukarı ? -1 : 1;
+      }
+      yukarı = !yukarı;
+      ysatir = yukarı ? boyut - 1 : 0;
+      xsutun -= 2;
+    }
+
+    /* 3) 8 maskeyi dene, en düşük cezalıyı seç */
+    /* Format bilgisi 15 bittir (BCH ile korunur) ve bit 14 (en sol)
+       hücreden başlayarak bu sırayla yazılır:
+         kopya 1: (8,0..5) (8,7) (8,8) (7,8) (5,8) (4,8) (3,8) (2,8) (1,8) (0,8)
+         kopya 2: (n-1,8)…(n-7,8) sonra (8,n-8)…(8,n-1) */
+    function formatYaz(izgara, maske) {
+      var f = formatBits(EC_M, maske), i;
+      var kopya1 = [[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],
+                   [5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+      var kopya2 = [], k;
+      for (k = 0; k < 7; k++) kopya2.push([boyut - 1 - k, 8]);
+      for (k = 0; k < 8; k++) kopya2.push([8, boyut - 8 + k]);
+      for (i = 0; i < 15; i++) {
+        var b = (f >> (14 - i)) & 1;
+        izgara[kopya1[i][0]][kopya1[i][1]] = b;
+        izgara[kopya2[i][0]][kopya2[i][1]] = b;
+      }
+    }
+
+    var enIyi = null, enIyiPuan = Infinity, m, r, cc;
+    for (m = 0; m < 8; m++) {
+      var kopya = [], s;
+      for (r = 0; r < boyut; r++) { kopya.push(g[r].slice()); }
+      for (r = 0; r < boyut; r++) {
+        for (cc = 0; cc < boyut; cc++) {
+          if (res[r][cc]) continue;
+          if (maskBitis(m, r, cc)) kopya[r][cc] ^= 1;
+        }
+      }
+      formatYaz(kopya, m);
+      var p = ceza(kopya, boyut);
+      if (p < enIyiPuan) { enIyiPuan = p; enIyi = { izgara: kopya, maske: m }; }
+    }
+
+    return {
+      boyut: boyut, moduller: enIyi.izgara, surum: v,
+      maske: enIyi.maske, ceza: enIyiPuan
+    };
+  }
+
+  /* ---------------- ceza puanı ---------------- */
+  function ceza(g, boyut) {
+    var p = 0, i, j, run;
+    /* kural 1 */
+    for (i = 0; i < boyut; i++) {
+      run = 1;
+      for (j = 1; j < boyut; j++) {
+        if (g[i][j] === g[i][j - 1]) run++;
+        else { if (run >= 5) p += 3 + (run - 5); run = 1; }
+      }
+      if (run >= 5) p += 3 + (run - 5);
+    }
+    for (j = 0; j < boyut; j++) {
+      run = 1;
+      for (i = 1; i < boyut; i++) {
+        if (g[i][j] === g[i - 1][j]) run++;
+        else { if (run >= 5) p += 3 + (run - 5); run = 1; }
+      }
+      if (run >= 5) p += 3 + (run - 5);
+    }
+    /* kural 2 */
+    for (i = 0; i < boyut - 1; i++) {
+      for (j = 0; j < boyut - 1; j++) {
+        var c = g[i][j];
+        if (g[i][j + 1] === c && g[i + 1][j] === c && g[i + 1][j + 1] === c) p += 3;
+      }
+    }
+    /* kural 3: 1:1:3:1:1 bulucu benzeri */
+    var kalip1 = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0];
+    var kalip2 = [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+    var uyus = function (sira, bas) {
+      var k, tam = true;
+      for (k = 0; k < 11; k++) {
+        var idx = bas + k;
+        var d = idx >= 0 && idx < boyut ? sira[idx] : -1;
+        if (d !== kalip1[k]) { tam = false; break; }
+      }
+      return tam;
+    };
+    for (i = 0; i < boyut; i++) {
+      for (j = 0; j <= boyut - 11; j++) if (uyus(g[i], j)) p += 40;
+    }
+    for (j = 0; j < boyut; j++) {
+      var sut = [], r2;
+      for (r2 = 0; r2 < boyut; r2++) sut[r2] = g[r2][j];
+      for (i = 0; i <= boyut - 11; i++) if (uyus(sut, i)) p += 40;
+    }
+    /* kural 4 */
+    var koyu = 0, toplam = boyut * boyut;
+    for (i = 0; i < boyut; i++) for (j = 0; j < boyut; j++) if (g[i][j]) koyu++;
+    p += Math.floor(Math.abs(koyu * 100 / toplam - 50) / 5) * 10;
+    return p;
+  }
+
+  /* ---------------- tuval çizimi ---------------- */
+  function tuvaleCiz(kanvas, sonuc, modBoyu, bosluk) {
+    if (!kanvas || !sonuc || sonuc.hata) return false;
+    var n = sonuc.boyut, m = modBoyu || 6, bos = bosluk == null ? 4 : bosluk;
+    var toplam = n * m + bos * 2;
+    var dpr = (window.devicePixelRatio || 1);
+    kanvas.width = Math.round(toplam * dpr);
+    kanvas.height = Math.round(toplam * dpr);
+    kanvas.style.width = toplam + 'px';
+    kanvas.style.height = toplam + 'px';
+    var ctx = kanvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, toplam, toplam);
+    ctx.fillStyle = '#0b1220';
+    for (var i = 0; i < n; i++) {
+      for (var j = 0; j < n; j++) {
+        if (sonuc.moduller[i][j]) ctx.fillRect(bos + j * m, bos + i * m, m, m);
+      }
+    }
+    return true;
+  }
+
+  /* --- test kancalari (referans kutuphaneyle karsilastirma icin) --- */
+  function rezerveHarita(v) {
+    var t = TAB[v], boyut = t.boyut, res = cerceve(boyut), i, j, a2, b2;
+    function rez(i2, j2) { if (i2 >= 0 && j2 >= 0 && i2 < boyut && j2 < boyut) res[i2][j2] = 1; }
+    for (i = -1; i <= 7; i++) for (j = -1; j <= 7; j++) {
+      rez(i, j); rez(i, boyut - 7 + j); rez(boyut - 7 + i, j);
+    }
+    for (i = 0; i < boyut; i++) { rez(6, i); rez(i, 6); }
+    var h = t.hizala;
+    for (a2 = 0; a2 < h.length; a2++) for (b2 = 0; b2 < h.length; b2++) {
+      var ci = h[a2], cj = h[b2];
+      if ((ci <= 8 && cj <= 8) || (ci <= 8 && cj >= boyut - 9) || (ci >= boyut - 9 && cj <= 8)) continue;
+      for (i = -2; i <= 2; i++) for (j = -2; j <= 2; j++) rez(ci + i, cj + j);
+    }
+    for (i = 0; i <= 8; i++) { rez(8, i); rez(i, 8); }
+    for (i = 0; i < 8; i++) { rez(boyut - 1 - i, 8); rez(8, boyut - 1 - i); }
+    var son = [];
+    for (i = 0; i < boyut; i++) { son.push([]); for (j = 0; j < boyut; j++) son[i].push(res[i][j]); }
+    return son;
+  }
+  return { uret: uret, tuvaleCiz: tuvaleCiz, formatBits: formatBits,
+           maskeBitis: maskBitis, rezerveHarita: rezerveHarita };
+})();
+/* =====================================================================
+   Etkinlik sayfası, katılım QR'ı ve görevli ataması
+   ---------------------------------------------------------------------
+   Veritabanı düzeni:
+     events/{id}                     plan kaydı (mevcut)
+     events/{id}/sayfa/genel         etkinlik sayfası içeriği (konu, konuk, yer, saat…)
+     events/{id}/qr/anahtar          10 saniyede bir yenilenen katılım kodu
+     events/{id}/katilan/{uid}       QR'ı okutan üyenin katılımı
+     events/{id}/gorevli/{uid}       yöneticinin atadığı görevli
+   ===================================================================== */
+var ETK = (function () {
+  'use strict';
+  var A = null;                 /* window.MBG */
+  var kodKasa = {};             /* eventId -> { anahtar, uretilme } */
+  var sayfalar = {};            /* eventId -> sayfa icerigi */
+  var zamanlayici = null;
+  var YENILE_MS = 10000;
+
+  function q(s) { return document.querySelector(s); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function toast(m, ms) { if (A && A.toast) A.toast(m, ms || 4000); }
+  function close() { if (A && A.closeModal) A.closeModal(); }
+  function fmt(d) { return A && A.fmtDate ? A.fmtDate(d) : d; }
+  function evler() { return (A && A.events) ? A.events() : []; }
+  function evBul(id) {
+    var l = evler(), k;
+    for (k = 0; k < l.length; k++) if (String(l[k].id) === String(id)) return l[k];
+    return null;
+  }
+
+  /* ---------------- kod üretimi ---------------- */
+  function kisaKod() {
+    var A1 = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   /* karışması harfler yok (0/O, 1/I) */
+    var s = '', i;
+    for (i = 0; i < 6; i++) s += A1.charAt(Math.floor(Math.random() * A1.length));
+    return s;
+  }
+  function qrUrl(evId, anahtar) {
+    var taban = (location.origin && location.origin.indexOf('http') === 0)
+      ? location.origin + location.pathname
+      : 'takvim.html';
+    return taban + '?e=' + encodeURIComponent(evId) + '&k=' + encodeURIComponent(anahtar);
+  }
+
+  /* ---------------- katılım kodu (admin) ---------------- */
+  function kodYenile(evId, zorla) {
+    if (!MBGFB.isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    var eski = kodKasa[evId];
+    if (!zorla && eski && (Date.now() - eski.uretilme) < YENILE_MS - 1500) {
+      return Promise.resolve(eski.anahtar);
+    }
+    var yeni = kisaKod();
+    return MBGFB.qrKodYaz(evId, yeni).then(function () {
+      kodKasa[evId] = { anahtar: yeni, uretilme: Date.now() };
+      return yeni;
+    });
+  }
+  function kodOku(evId) {
+    return MBGFB.qrKodOku(evId).then(function (d) {
+      if (d && d.anahtar) kodKasa[evId] = { anahtar: d.anahtar, uretilme: d.zaman || 0 };
+      return kodKasa[evId] || null;
+    }).catch(function () { return kodKasa[evId] || null; });
+  }
+
+  /* ---------------- etkinlik sayfası içeriği ---------------- */
+  function sayfaOku(evId) {
+    return MBGFB.sayfaOku(evId).then(function (d) {
+      sayfalar[evId] = d || {};
+      return sayfalar[evId];
+    }).catch(function () { sayfalar[evId] = {}; return {}; });
+  }
+  function sayfaYaz(evId, veri) {
+    sayfalar[evId] = veri;
+    return MBGFB.sayfaYaz(evId, veri);
+  }
+
+  /* ---------------- katılanlar / görevliler ---------------- */
+  function katilanOku(evId) {
+    return MBGFB.katilanOku(evId).catch(function () { return []; });
+  }
+  function gorevliOku(evId) {
+    return MBGFB.gorevliOku(evId).catch(function () { return []; });
+  }
+  /* üye: QR kodunu okutup katılımını yazar */
+  function katilimKaydet(evId, anahtar) {
+    if (!MBGFB.user()) return Promise.reject(new Error('Önce giriş yapmalısın.'));
+    if (!MBGFB.verified()) return Promise.reject(new Error('E-posta adresini doğrulamadan katılım kaydedilemez.'));
+    return MBGFB.katilanYaz(evId, anahtar).then(function () {
+      return katilanOku(evId);
+    });
+  }
+  /* profil için: benim katıldıklarım / görevlerim (collectionGroup) */
+  function benimEtkinliklerim() {
+    if (!MBGFB.user()) return Promise.resolve({ katildi: [], gorevli: [] });
+    return Promise.all([MBGFB.benimKatildiklarim(), MBGFB.benimGorevlerim()])
+      .then(function (r) {
+        return { katildi: r[0] || [], gorevli: r[1] || [] };
+      }).catch(function () { return { katildi: [], gorevli: [] }; });
+  }
+
+  /* =====================================================================
+     YÖNETİCİ: etkinlik sayfası + QR + görevli
+     ===================================================================== */
+  function etkinlikSayfasi(evId) {
+    if (!MBGFB.isAdmin()) { toast('Bu sayfayı yalnızca yönetici açabilir.', 4000); return; }
+    var m = q('#modal');
+    if (!m) return;
+    var ev = evBul(evId);
+    m.innerHTML = '<h2>' + esc(ev ? ev.title : 'Etkinlik') + '</h2>' +
+      '<div class="sub" id="esTarih">…</div>' +
+      '<div class="sub">Etkinlik sayfası içeriği, katılım QR\'ı ve görevliler</div>' +
+      '<div id="esGovde"><div class="pf-bos">yükleniyor…</div></div>' +
+      '<div class="acts"><button type="button" data-x="kapat">← Geri</button></div>';
+    m.onclick = function (ev2) {
+      var b = ev2.target && ev2.closest ? ev2.closest('[data-x]') : null;
+      if (b && b.getAttribute('data-x') === 'kapat') { MBGM.adminPanel(); }
+    };
+    q('#backdrop').classList.add('open');
+    yenile();
+    if (zamanlayici) clearInterval(zamanlayici);
+    zamanlayici = setInterval(function () {
+      if (!q('#esGovde')) { clearInterval(zamanlayici); zamanlayici = null; return; }
+      var k = kodKasa[evId];
+      if (k && (Date.now() - k.uretilme) >= YENILE_MS) kodYenile(evId, true).then(ciz);
+    }, 2500);
+
+    function yenile() {
+      Promise.all([sayfaOku(evId), kodOku(evId), katilanOku(evId), gorevliOku(evId)])
+        .then(ciz);
+    }
+    function ciz() {
+      var govde = q('#esGovde');
+      if (!govde) { clearInterval(zamanlayici); zamanlayici = null; return; }
+      var e = evBul(evId), s = sayfalar[evId] || {};
+      var kasa = kodKasa[evId] || {};
+      var kalan = Math.max(0, YENILE_MS - ((Date.now() - (kasa.uretilme || 0)) % YENILE_MS));
+      var link = kasa.anahtar ? qrUrl(evId, kasa.anahtar) : '';
+
+      govde.innerHTML =
+        '<div class="es-blok"><h3>Etkinlik sayfası içeriği</h3>' +
+        '<div class="field"><label>Konu</label><input id="esKonu" maxlength="140" placeholder="Örn. CRISPR ve gen düzenleme" value="' + esc(s.konu || '') + '"></div>' +
+        '<div class="field"><label>Konuk (ad soyad)</label><input id="esKonuk" maxlength="80" placeholder="Örn. Prof. Dr. Ayşe Yılmaz" value="' + esc(s.konuk || '') + '"></div>' +
+        '<div class="field"><label>Konuşma saati</label><input id="esSaat" maxlength="40" placeholder="Örn. 14.00 – 15.30" value="' + esc(s.saat || '') + '"></div>' +
+        '<div class="field"><label>Nerede</label><input id="esYer" maxlength="120" placeholder="Örn. Mühendislik Fakültesi, Seminer Salonu B" value="' + esc(s.yer || '') + '"></div>' +
+        '<div class="field"><label>Açıklama</label><textarea id="esAciklama" maxlength="600">' + esc(s.aciklama || '') + '</textarea></div>' +
+        '<div class="acts pf-acts"><button type="button" class="pri" data-e="kaydet">Sayfayı kaydet</button></div></div>' +
+
+        '<div class="es-blok"><h3>Katılım QR kodu <em>' + esc(kalan / 1000 | 0) + ' sn</em></h3>' +
+        '<div class="es-qr"><canvas id="esQr"></canvas>' +
+        '<div><div class="es-kod">' + esc(kasa.anahtar || '—') + '</div>' +
+        '<div class="pf-ipucu">Üyeler bu kodu telefon kamerasıyla okutur. Kod ' +
+        (YENILE_MS / 1000) + ' saniyede bir yenilenir; eski kod işe yaramaz.</div>' +
+        '<div class="acts pf-acts"><button type="button" data-e="yeniKod">Kodu şimdi yenile</button>' +
+        '<button type="button" data-e="panoya">Bağlantıyı kopyala</button></div></div></div></div>' +
+
+        '<div class="es-blok"><h3>Görevliler <em>' + (gorevli.length) + '</em></h3>' +
+        (gorevli.length
+          ? '<div class="pf-tab"><table>' + gorevli.map(function (g) {
+              return '<tr><td>' + esc(g.ad || g.eposta || '') + '</td>' +
+                '<td><span class="pf-et">' + esc(g.gorev || '') + '</span></td>' +
+                '<td class="pf-s"><button type="button" class="td" data-g="sil" data-u="' + esc(g.uid) + '">Sil</button></td></tr>';
+            }).join('') + '</table></div>'
+          : '<div class="pf-bos">Henüz görevli atanmadı.</div>') +
+        '<div class="acts pf-acts"><button type="button" class="pri" data-e="gorevEkle">＋ Görevli ekle</button></div></div>' +
+
+        '<div class="es-blok"><h3>Katılanlar <em>' + katilanlar.length + '</em></h3>' +
+        (katilanlar.length
+          ? '<div class="pf-tab"><table>' + katilanlar.map(function (k2) {
+              return '<tr><td>' + esc(k2.ad || '') + '</td><td>' + esc(k2.eposta || '') + '</td>' +
+                '<td class="pf-t">' + esc(k2.zaman ? k2.zaman : '') + '</td></tr>';
+            }).join('') + '</table></div>'
+          : '<div class="pf-bos">Henüz katılım kaydedilmedi. QR\'ı okutan üyeler burada görünür.</div>') +
+        '</div>';
+
+      var cv = q('#esQr');
+      if (cv && kasa.anahtar && window.QR) {
+        var sonuc = QR.uret(link);
+        if (sonuc.hata) {
+          cv.replaceWith(document.createTextNode('metin çok uzun'));
+        } else {
+          QR.tuvaleCiz(cv, sonuc, 6, 6);
+        }
+      }
+    }
+
+    /* olaylar (olay dinleme yerine yeniden çizim) */
+    var govde = q('#esGovde');
+    if (govde) {
+      govde.addEventListener('click', function (e2) {
+        var b = e2.target && e2.closest ? e2.closest('[data-e],[data-g]') : null;
+        if (!b) return;
+        var a = b.getAttribute('data-e'), gu = b.getAttribute('data-g');
+        if (a === 'kaydet') {
+          sayfaYaz(evId, {
+            konu: (q('#esKonu').value || '').trim(),
+            konuk: (q('#esKonuk').value || '').trim(),
+            saat: (q('#esSaat').value || '').trim(),
+            yer: (q('#esYer').value || '').trim(),
+            aciklama: (q('#esAciklama').value || '').trim()
+          }).then(function () {
+            toast('Etkinlik sayfası kaydedildi.', 4000);
+            ciz();
+          }).catch(function (x) { toast(MBGM.err(x), 6000); });
+          return;
+        }
+        if (a === 'yeniKod') {
+          kodYenile(evId, true).then(function () {
+            toast('Yeni kod üretildi.', 2500);
+            ciz();
+          }).catch(function (x) { toast(MBGM.err(x), 6000); });
+          return;
+        }
+        if (a === 'panoya') {
+          var kasa2 = kodKasa[evId];
+          if (!kasa2) return;
+          var yazi = qrUrl(evId, kasa2.anahtar);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(yazi).then(
+              function () { toast('Bağlantı kopyalandı.', 3000); },
+              function () { toast('Kopyalanamadı.', 3000); });
+          } else toast('Kopyalanamadı.', 3000);
+          return;
+        }
+        if (a === 'gorevEkle') { gorevliEkle(evId, function () { ciz(); }); return; }
+        if (gu === 'sil') {
+          var uid = b.getAttribute('data-u');
+          if (!confirm('Bu görevli listeden çıkarılsın mı?')) return;
+          MBGFB.gorevliSil(evId, uid).then(function () {
+            toast('Görevli çıkarıldı.', 3000);
+            ciz();
+          }).catch(function (x) { toast(MBGM.err(x), 6000); });
+        }
+      });
+    }
+  }
+
+  /* görevli seçme (yalnızca yönetici) */
+  function gorevliEkle(evId, bitti) {
+    if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
+    var m = q('#modal');
+    if (!m) return;
+    m.innerHTML = '<h2>Görevli ekle</h2>' +
+      '<div class="sub">Üyeler listesinden seç, görevini yaz ve kaydet</div>' +
+      '<div class="field"><label>Üye</label><select id="geUye"></select></div>' +
+      '<div class="field"><label>Görev</label><select id="geGorev">' +
+      MBGP.GOREV.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="acts"><button type="button" data-x="vaz">← Geri</button>' +
+      '<button type="button" class="pri" data-x="kay">Görevli ilan et</button></div>';
+    m.onclick = function (e2) {
+      var b = e2.target && e2.closest ? e2.closest('[data-x]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-x');
+      if (a === 'vaz') { etkinlikSayfasi(evId); return; }
+      if (a !== 'kay') return;
+      var uid = q('#geUye').value, gorev = q('#geGorev').value;
+      if (!uid) { toast('Önce üye listesinin yüklenmesini bekle.', 3500); return; }
+      MBGFB.gorevliEkle(evId, uid, gorev).then(function () {
+        toast('Görevli olarak ilan edildi.', 4000);
+        if (bitti) bitti();
+        else etkinlikSayfasi(evId);
+      }).catch(function (x) { toast(MBGM.err(x), 6500); });
+    };
+    q('#backdrop').classList.add('open');
+    MBGFB.listMembers().then(function (ls) {
+      var sel = q('#geUye');
+      if (!sel) return;
+      sel.innerHTML = ls.length
+        ? ls.map(function (u) {
+            return '<option value="' + esc(u.uid) + '">' +
+              esc((u.name || '') + ' — ' + (u.email || '')) + '</option>';
+          }).join('')
+        : '<option value="">üye yok</option>';
+    }).catch(function (x) {
+      var sel = q('#geUye');
+      if (sel) sel.innerHTML = '<option value="">(liste yüklenemedi)</option>';
+      toast(MBGM.err(x), 6000);
+    });
+  }
+
+  /* =====================================================================
+     ÜYE: etkinlik sayfasını görüntüle
+     ===================================================================== */
+  function etkinlikGoruntule(evId) {
+    var m = q('#modal');
+    if (!m) return;
+    var ev = evBul(evId);
+    if (!ev) { toast('Etkinlik bulunamadı.', 4000); return; }
+    m.innerHTML = '<h2>' + esc(ev.title) + '</h2>' +
+      '<div class="sub">' + esc(fmt(ev.date)) + (ev.weekLabel ? ' · ' + esc(ev.weekLabel) : '') + '</div>' +
+      '<div id="etSayfa"><div class="pf-bos">yükleniyor…</div></div>' +
+      '<div class="acts"><button type="button" data-x="kapat">Kapat</button></div>';
+    m.onclick = function (e2) {
+      var b = e2.target && e2.closest ? e2.closest('[data-x]') : null;
+      if (b) close();
+    };
+    q('#backdrop').classList.add('open');
+    Promise.all([sayfaOku(evId), katilanOku(evId), gorevliOku(evId)]).then(ciz);
+
+    function ciz() {
+      var kutu = q('#etSayfa');
+      if (!kutu) return;
+      var s = sayfalar[evId] || {};
+      var benimUid = MBGFB.user() ? MBGFB.user().uid : '';
+      var kattim = false;
+      for (var i = 0; i < katilanlar.length; i++) if (katilanlar[i].uid === benimUid) kattim = true;
+      var benimGorev = '';
+      for (i = 0; i < gorevler.length; i++) if (gorevler[i].uid === benimUid) benimGorev = gorevler[i].gorev;
+
+      var satirlar = [
+        s.konu ? ['Konu', s.konu] : null,
+        s.konuk ? ['Konuk', s.konuk] : null,
+        s.yer ? ['Nerede', s.yer] : null,
+        s.saat ? ['Saat', s.saat] : null,
+        s.aciklama ? ['Açıklama', s.aciklama] : null
+      ].filter(Boolean);
+
+      kutu.innerHTML =
+        (kattim ? '<div class="pf-ok">✓ Bu etkinliğe katıldın olarak işaretlendin.</div>'
+                : '<div class="sub">Katılım, etkinlik sırasında yönetiminin gösterdiği QR kod okutularak kaydedilir.</div>') +
+        (benimGorev ? '<div class="pf-ok">✓ Bu etkinlikte görevin: <b>' + esc(benimGorev) + '</b></div>' : '') +
+        (satirlar.length
+          ? '<div class="pf-tab"><table>' + satirlar.map(function (x) {
+              return '<tr><td class="pf-t">' + esc(x[0]) + '</td><td>' + esc(x[1]) + '</td></tr>';
+            }).join('') + '</table></div>'
+          : '<div class="pf-bos">Etkinlik sayfası içeriği henüz eklenmemiş.</div>') +
+        '<div class="es-blok"><h3>Görevliler <em>' + gorevler.length + '</em></h3>' +
+        (gorevler.length
+          ? '<div class="pf-tab"><table>' + gorevler.map(function (g) {
+              return '<tr><td>' + esc(g.ad || g.eposta || '') + '</td>' +
+                '<td><span class="pf-et">' + esc(g.gorev || '') + '</span></td></tr>';
+            }).join('') + '</table></div>'
+          : '<div class="pf-bos">Görevli listesi boş.</div>') + '</div>' +
+        '<div class="es-blok"><h3>Katılanlar <em>' + katilanlar.length + '</em></h3>' +
+        '<div class="pf-bos">' + katilanlar.length + ' kişi katılımını QR ile kaydetti.</div></div>';
+    }
+  }
+
+  /* =====================================================================
+     QR ile gelen üye: ?e=...&k=...
+     ===================================================================== */
+  function linktenIsle() {
+    var p = new URLSearchParams(location.search);
+    var evId = p.get('e'), anahtar = p.get('k');
+    if (!evId || !anahtar) return Promise.resolve(false);
+
+    function temizle() {
+      var yeni = location.pathname + location.hash;
+      try { history.replaceState({}, '', yeni); } catch (e) {}
+    }
+
+    function girisIstek() {
+      toast('Katılım için önce giriş yap ve e-postanı doğrula.', 7000);
+      close();
+      MBGM.authModal('giris');
+      var eski = null;
+      var dinle = setInterval(function () {
+        if (!MBGFB.user()) return;
+        clearInterval(dinle);
+        if (MBGFB.verified()) {
+          katilimiYaz(evId, anahtar);
+        } else {
+          toast('E-postanı doğrulamadan katılım kaydedilemez.', 6000);
+          MBGM.dogrulamaPaneli();
+        }
+        temizle();
+      }, 1500);
+      eski = dinle;
+      temizle();
+    }
+
+    if (!MBGFB.user()) { girisIstek(); return Promise.resolve(true); }
+    if (!MBGFB.verified()) {
+      close();
+      toast('E-postanı doğrulamadan katılım kaydedilemez.', 6000);
+      MBGM.dogrulamaPaneli();
+      temizle();
+      return Promise.resolve(true);
+    }
+    return katilimiYaz(evId, anahtar).then(function () { temizle(); return true; });
+  }
+
+  function katilimiYaz(evId, anahtar) {
+    var m = q('#modal');
+    if (m) {
+      m.innerHTML = '<h2>Katılım kaydediliyor…</h2><div class="sub">Lütfen bekleyin</div>';
+      q('#backdrop').classList.add('open');
+    }
+    return katilimKaydet(evId, anahtar).then(function () {
+      close();
+      toast('✓ Katılımın kaydedildi. Etkinlik sayfası açılıyor.', 6000);
+      setTimeout(function () { etkinlikGoruntule(evId); }, 350);
+    }).catch(function (e) {
+      close();
+      toast(MBGM.err(e), 8000);
+    });
+  }
+
+  /* ---------------- başlat ---------------- */
+  function init(app) {
+    A = app || (window.MBG || null);
+    if (!A || !MBGFB.configured()) return;
+    /* gelen bağlantıda ?e=&k= varsa katılım */
+    if (location.search.indexOf('e=') >= 0 && location.search.indexOf('k=') >= 0) {
+      var hazir = setInterval(function () {
+        if (!MBGFB.ready) return;
+        clearInterval(hazir);
+        MBGFB.ready().then(function () { linktenIsle(); });
+      }, 300);
+    }
+  }
+
+  return {
+    init: init, etkinlikSayfasi: etkinlikSayfasi, etkinlikGoruntule: etkinlikGoruntule,
+    gorevliEkle: gorevliEkle, kodYenile: kodYenile, linktenIsle: linktenIsle,
+    benimEtkinliklerim: benimEtkinliklerim, sayfaOku: sayfaOku, YENILE_MS: YENILE_MS
   };
 })();
 </script>
@@ -4387,8 +5363,11 @@ var MBGP = (function () {
       evs.forEach(function (i2, k2) {
         if (k2 >= CAP) return;
         var e2 = EV[i2];
-        h += '<button type="button" class="ev ' + e2.sem + '" data-ev="' + i2 + '"' +
-             ' title="' + esc(e2.title) + '">' + (e2.exact ? '📌 ' : '') + esc(e2.title) + '</button>';
+        h += '<span class="ev-wrap">' +
+             '<button type="button" class="ev ' + e2.sem + '" data-ev="' + i2 + '"' +
+             ' title="' + esc(e2.title) + '">' + (e2.exact ? '📌 ' : '') + esc(e2.title) + '</button>' +
+             '<button type="button" class="ev-sayfa" data-sayfa="' + i2 + '"' +
+             ' title="Etkinlik sayfası" aria-label="Etkinlik sayfası">i</button></span>';
       });
       if (evs.length > CAP) {
         h += '<button type="button" class="ev ev-more" data-ev="' + evs[CAP] + '"' +
@@ -4992,6 +5971,13 @@ var MBGP = (function () {
     $('#btnDna').onclick   = function () { setView('dna'); };
     $('#btnCal').onclick   = function () { setView('cal'); };
     $('#normalView').addEventListener('click', function (e) {
+      /* etkinlik sayfası düğmesi (rozetin sol ucundaki i) */
+      var sy = e.target && e.target.closest ? e.target.closest('.ev-sayfa') : null;
+      if (sy) {
+        var se2 = EV[+sy.getAttribute('data-sayfa')];
+        if (se2 && window.ETK) ETK.etkinlikGoruntule(String(se2.id));
+        return;
+      }
       var x = e.target && e.target.closest ? e.target.closest('[data-ev]') : null;
       if (x) {
         var ci = +x.getAttribute('data-ev');
