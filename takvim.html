@@ -402,6 +402,13 @@
   .day.etkin.tamam .nok{background:rgba(148,178,220,.45);box-shadow:none}
   .day.etkin:hover{border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.11);cursor:pointer}
   /* pencere kapatma: minik çarpı (her panelde sağ üstte) */
+  .sw-uyari{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:96;
+    display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;
+    background:linear-gradient(165deg,rgba(20,29,48,.97),rgba(9,14,26,.98));
+    border:1px solid rgba(56,189,248,.42);box-shadow:0 20px 44px -18px rgba(0,0,0,.9);
+    font-size:.82rem;color:#dbe6f5;max-width:min(420px,92vw)}
+  .sw-uyari button{flex:none;min-height:36px;padding:8px 14px;font-size:.78rem}
+  @media (max-width:680px){.sw-uyari{bottom:10px;font-size:.76rem;gap:9px;padding:9px 12px}}
   .modal-kapat{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;
     display:grid;place-items:center;font-size:1.05rem;line-height:1;padding:0;
     background:rgba(255,255,255,.06);border:1px solid rgba(148,178,220,.22);color:#9fb3cd;
@@ -955,7 +962,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.20.0 · çekirdek</span></div>
+<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.21.0 · çekirdek</span></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -7603,19 +7610,76 @@ var MBGO = (function () {
     }
     if (bi2 && !standalone && isIOS) installShown(true);
 
-    /* çevrimdışı kullanım (service worker) */
+    /* çevrimdışı kullanım (service worker) + sunucudaki sürüm denetimi */
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+      var sonEtkilesim = Date.now();
+      ['pointerdown', 'keydown'].forEach(function (ev) {
+        window.addEventListener(ev, function () { sonEtkilesim = Date.now(); }, { passive: true });
+      });
+
+      /* yeni sürüm çubuğu: "Şimdi yenile" düğmesi, kullanılmazsa kendi yeniler */
+      var swUyariTimer = null;
+      window.yeniSurumBildir = function () {
+        if (document.getElementById('swUyari')) return;
+        var t = document.createElement('div');
+        t.id = 'swUyari';
+        t.className = 'sw-uyari';
+        t.innerHTML = '<span>Yeni sürüm indirildi.</span>' +
+          '<button type="button" id="swYenile">Şimdi yenile</button>';
+        document.body.appendChild(t);
+        document.getElementById('swYenile').onclick = function () {
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage('skipWaiting');
+          }
+          location.reload();
+        };
+        clearTimeout(swUyariTimer);
+        swUyariTimer = setTimeout(function () {
+          if (Date.now() - sonEtkilesim > 6000) location.reload();
+          else if (t.parentNode) t.parentNode.removeChild(t);
+        }, 25000);
+      };
+
       navigator.serviceWorker.register('sw.js').then(function (reg) {
         reg.addEventListener('updatefound', function () {
           var nw = reg.installing;
           if (!nw) return;
           nw.addEventListener('statechange', function () {
-            if (this.state === 'installed' && navigator.serviceWorker.controller)
-              toast('Yeni sürüm indirildi — sayfayı yenileyerek kullan.', 6000);
+            if (this.state === 'installed' && navigator.serviceWorker.controller) {
+              window.yeniSurumBildir();
+            }
           });
         });
+        try { reg.update(); } catch (e1) {}
       }).catch(function () {});
+
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState !== 'visible') return;
+        navigator.serviceWorker.getRegistration().then(function (r) {
+          if (r) r.update();
+        }).catch(function () {});
+      });
+
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (sessionStorage.getItem('mbg_yenilendi') === '1') return;
+        sessionStorage.setItem('mbg_yenilendi', '1');
+        location.reload();
+      });
     }
+
+    /* sunucudaki sürümü doğrudan karşılaştır: servis çalışanı takılsa bile fark eder */
+    (function () {
+      if (!/^https?:$/.test(location.protocol)) return;
+      if (!window.MBG || !MBG.surum) return;
+      fetch('sw.js?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r && r.ok ? r.text() : ''; })
+        .then(function (t) {
+          var m = /akumgb-v([\d.]+)/.exec(t || '');
+          if (!m) return;
+          var benim = MBG.surum();
+          if (benim && m[1] !== benim && window.yeniSurumBildir) window.yeniSurumBildir();
+        }).catch(function () {});
+    })();
     /* Excel dugmesi kaldirildi: plan artik GitHub uzerinden surum guncellemesiyle gelir */
     /* ⋮ paneli: mobilde ikincil islemler */
     var sheet = $('#moreSheet'), more = $('#btnMore');
@@ -7771,6 +7835,12 @@ var MBGO = (function () {
         });
       },
       toast: toast, closeModal: closeModal, fmtDate: fmtDate, esc: esc,
+      /* çalışan sürüm (alt bardaki damgadan okunur; tek kaynak) */
+      surum: function () {
+        var v = document.querySelector('.ver');
+        var m = v ? /([\d]+\.[\d]+\.[\d]+)/.exec(v.textContent || '') : null;
+        return m ? m[1] : '';
+      },
       ayAd: function (m) { return P.AY_UST[m - 1] || ''; },
       mergeNote: mergeNote, mergeTodos: mergeTodos, todosDump: todosDump,
       notesDump: function () { return NOTES; },

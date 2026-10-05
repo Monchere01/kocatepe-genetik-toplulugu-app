@@ -7,7 +7,7 @@
    · HTML için önce ağ; ağ yoksa **veya hata dönerse** önbellek
    · Simge/manifest için önce önbellek, arkada tazele
    ===================================================================== */
-const VER = 'akumgb-v3.20.0';
+const VER = 'akumgb-v3.21.0';
 const SHELL = [
   './',
   './index.html',
@@ -89,5 +89,10 @@ self.addEventListener('fetch', (e) => {
 });
 
 self.addEventListener('message', (e) => {
-  if (e.data === 'skipWaiting') self.skipWaiting();
+  if (e.data === 'skipWaiting' || e.data === 'SKIP_WAITING') self.skipWaiting();
+});
+
+/* sayfa gorunur oldugunda yeni surumu kontrol et (tarayici 24 saat bekleyebilir) */
+self.addEventListener('periodicsync', (e) => {
+  if (e.tag === 'mbg-surum') e.waitUntil(self.registration.update());
 });
