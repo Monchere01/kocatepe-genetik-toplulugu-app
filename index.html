@@ -440,6 +440,37 @@
     .pf-tab{max-height:38vh}
     .pf-sel select{max-width:78px;font-size:.62rem}
   }
+  /* profil alt barı: tehlikeli işlemler (kırmızı) */
+  .pz{margin-top:18px;padding-top:14px;border-top:1px solid rgba(148,178,220,.16)}
+  .pz-baslik{font-size:.66rem;letter-spacing:.07em;color:#8296b4;margin:0 0 8px}
+  .pz button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    background:rgba(255,255,255,.04);border:1px solid rgba(148,178,220,.18);color:#e6edf7;
+    border-radius:12px;padding:10px 12px;margin:0 0 8px;cursor:pointer;font:inherit;
+    font-size:.82rem;transition:border-color .15s,background .15s}
+  .pz button:hover{background:rgba(148,178,220,.1)}
+  .pz button.pz-sil{border-color:rgba(255,120,120,.4);color:#ff9c9c;background:rgba(255,90,90,.09)}
+  .pz button.pz-sil:hover{background:rgba(255,90,90,.16);border-color:rgba(255,120,120,.65)}
+  .pz button.pz-son{margin-bottom:0}
+  .pz .pz-ikon{flex:0 0 26px;height:26px;border-radius:8px;display:grid;place-items:center;
+    background:rgba(255,255,255,.08);font-size:.9rem}
+  .pz button.pz-sil .pz-ikon{background:rgba(255,90,90,.18)}
+  .pz .pz-yazi{font-weight:600;flex:0 0 auto}
+  .pz button.pz-sil .pz-yazi{color:#ff8f8f}
+  .pz em{font-style:normal;font-size:.62rem;opacity:.78;display:block;margin-top:2px;
+    color:#9fb4d2;font-weight:400}
+  .pz button.pz-sil em{color:#e0a3a3}
+  .pz-onay{margin-top:10px}
+  .pz-onay-ic{background:rgba(148,178,220,.09);border:1px solid rgba(148,178,220,.28);
+    border-radius:12px;padding:11px 12px}
+  .pz-onay-ic.pz-uyari{background:rgba(255,90,90,.1);border-color:rgba(255,120,120,.45)}
+  .pz-onay-metni{font-size:.76rem;line-height:1.5;color:#e6edf7}
+  .pz-onay-dugmeler{display:flex;gap:8px;margin-top:10px}
+  .pz-onay-dugmeler button{border-radius:9px;padding:7px 13px;font-size:.76rem;cursor:pointer;
+    border:1px solid rgba(148,178,220,.3);background:rgba(148,178,220,.1);color:#e6edf7;width:auto;margin:0}
+  .pz-onay-dugmeler .pz-onayla{border-color:rgba(120,200,255,.5);background:rgba(120,200,255,.16);
+    color:#cfe8ff}
+  .pz-onay-dugmeler .pz-onayla-kirmizi{border-color:rgba(255,120,120,.6);background:rgba(255,90,90,.2);
+    color:#ffc9c9}
   .es-blok{margin-top:16px;padding-top:14px;border-top:1px solid rgba(148,178,220,.14)}
   .es-blok h3{font-size:.74rem;letter-spacing:.05em;color:#9fb4d2;margin:0 0 8px}
   .es-blok h3 em{font-style:normal;background:rgba(148,178,220,.16);border-radius:20px;
@@ -587,12 +618,10 @@
 </div>
 <div class="sheet" id="moreSheet" hidden>
   <button id="mAuth" type="button"><b>👤</b><span>Giriş yap / Üye ol</span></button>
-  <button id="mSignOut" type="button" hidden><b>🗢</b><span>Çıkış yap</span></button>
   <button id="mVerify" type="button" hidden><b>✉</b><span>E-postamı doğrula</span></button>
-  <button id="mDelete" type="button" hidden><b>🚪</b><span>Hesabımı sil</span></button>
   <button id="mAdmin" type="button" hidden><b>⚙️</b><span>Planı düzenle (yönetici)</span></button>
   <button id="mInstall" type="button"><b>⬇</b><span>Uygulamayı kur</span></button>
-  <button id="mClear" type="button"><b>🗑</b><span>Kişisel verileri temizle</span></button>
+  <button id="mClear" type="button"><b>🧹</b><span>Kişisel verileri temizle</span></button>
 <hr class="sheet-sep">
   <button id="mOneri" type="button"><b>💡</b><span>Öneri / görüş bildir</span></button>
   <button id="mBug" type="button"><b>🐞</b><span>Hata bildir</span></button>
@@ -615,7 +644,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.13.0 · çekirdek</span></div>
+<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.14.0 · çekirdek</span></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2306,7 +2335,6 @@ var MBGFB = (function () {
         girisYili: p.girisYili || '',
         rol: ADMINS.indexOf(String(u.email || '').toLowerCase()) >= 0 ? 'admin' : 'uye',
         dogrulandi: true,
-        profilGuncelAt: ts(),
         olusturmaAt: ts()
       };
       return db.collection('members').doc(u.uid).set(veri, { merge: true }).then(function () {
@@ -2338,6 +2366,49 @@ var MBGFB = (function () {
         state.dogrulama = 'tamam';
         return true;
       }).catch(function () { return false; });
+    });
+  }
+  /* ---- şifre: ayda bir kez değiştirilebilir ---- */
+  function sifreDegistiNeZaman() {
+    var p = state.profile || {};
+    var t = p.sifreDegistiAt;
+    if (t && typeof t.toDate === 'function') {
+      return t.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+    return '';
+  }
+  function sifreSikKalan() {
+    var p = state.profile || {};
+    var t = p.sifreDegistiAt;
+    var ms = t && typeof t.toMillis === 'function' ? t.toMillis() : null;
+    if (!ms) return 0;
+    var kalan = ms + 30 * 24 * 3600 * 1000 - Date.now();
+    return kalan > 0 ? kalan : 0;
+  }
+  function sifreDegistir(eskiPw, yeniPw) {
+    if (!auth || !auth.currentUser) return Promise.reject(new Error('Önce giriş yapmalısın.'));
+    var u = auth.currentUser;
+    if (sifreSikKalan() > 0) {
+      var k = Math.ceil(sifreSikKalan() / 86400000);
+      return Promise.reject(new Error('Şifreyi ayda bir kez değiştirebilirsin; ' + k + ' gün sonra tekrar dene.'));
+    }
+    return ready().then(function () {
+      /* mevcut şifreyi doğrula (güvenlik) */
+      return u.reauthenticateWithCredential(AU.EmailAuthProvider.credential(u.email, eskiPw));
+    }).then(function () {
+      return u.updatePassword(yeniPw);
+    }).then(function () {
+      /* damgayı Firestore'a yaz (kural buna izin veriyor) */
+      return db.collection('members').doc(u.uid).update({
+        sifreDegistiAt: ts(), sifreSayisi: ((state.profile && state.profile.sifreSayisi) || 0) + 1
+      }).then(function () {
+        return true;
+      }).catch(function () {
+        /* damga yazılamazsa da şifre değişmiştir; sessiz geç */
+        state.profile = state.profile || {};
+        state.profile.sifreDegistiAt = new Date();
+        return true;
+      });
     });
   }
   /* profil guncelleme: ayda bir kez (sunucu kurallari da ayni kurali uygular) */
@@ -2881,6 +2952,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     dogrulamaTamamla: dogrulamaTamamla,
     dogrulamaBekliyor: dogrulamaBekliyor,
     profilGuncelle: profilGuncelle, profilSikKalan: profilSikKalan,
+    sifreDegistir: sifreDegistir, sifreSikKalan: sifreSikKalan, sifreDegistiNeZaman: sifreDegistiNeZaman,
     logTopla: logTopla, addOneri: addOneri, listOneriler: listOneriler,
     sayfaOku: sayfaOku, sayfaYaz: sayfaYaz,
     qrKodYaz: qrKodYaz, qrKodOku: qrKodOku,
@@ -3137,6 +3209,24 @@ var MBGM = (function () {
     });
   }
 
+  /* ⋮ panelindeki temizleme (sadece misafirler için görünür) */
+  function onayTemizle() {
+    var m = q('#modal');
+    if (!m) return;
+    m.innerHTML = '<h2>Kişisel verileri temizle</h2>' +
+      '<div class="sub">Bu cihazdaki günlük notlar, yapılacaklar ve kişisel etkinlik kayıtları silinecek.</div>' +
+      '<div class="acts">' +
+        '<button type="button" data-t="vaz">Vazgeç</button>' +
+        '<button type="button" class="pz-onayla-kirmizi" data-t="evet">Evet, sil</button></div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-t]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-t') === 'vaz') { close(); return; }
+      close();
+      if (A && A.temizleKisisel) A.temizleKisisel();
+    };
+    q('#backdrop').classList.add('open');
+  }
   function cikis() {
     if (!confirm('Çıkış yapılsın mı? Bu cihazdaki kişisel not ve görevler silinmez.')) return;
     MBGFB.signOut().then(function () {
@@ -3338,6 +3428,9 @@ var MBGM = (function () {
       if (ds2) ds2.textContent = tamam ? 'E-posta doğrulandı' : 'E-postamı doğrula';
     }
     if (sil) sil.hidden = !u;
+    /* temizleme düğmesi artık profilin altında; panelde sadece misafire */
+    var tem = q('#mClear');
+    if (tem) tem.hidden = !!u;
   }
 
   /* ===================================================================
@@ -3771,6 +3864,7 @@ var MBGM = (function () {
   return {
     init: init, authModal: authModal, adminPanel: adminPanel, syncUI: syncUI,
     karsilama: karsilama, yenidenGonder: yenidenGonder, hesabiSil: hesabiSil,
+    cikis: cikis, onayTemizle: onayTemizle,
     dogrulamaPaneli: dogrulamaPaneli, geriBildirimFormu: geriBildirimFormu,
     iosKurulumYardim: iosKurulumYardim, KULLUP_MAIL: KULLUP_MAIL,
     uyeler: uyeler,
@@ -3939,6 +4033,7 @@ var MBGP = (function () {
         '<div class="acts pf-acts">' +
           '<button type="button" class="pri" data-k="kisisel">Kişisel bilgilerim</button>' +
           '<button type="button" data-k="duzenle">Katılımı düzenle</button>' +
+          '<button type="button" data-k="hesap">Hesap bilgilerim</button>' +
           '<button type="button" data-k="yenile">Yenile</button>' +
           '<button type="button" data-k="kapat">Kapat</button>' +
         '</div>' +
@@ -3974,6 +4069,7 @@ var MBGP = (function () {
           'Doğrulamadan sonra kişisel bilgilerin kaydedilir ve profilin çalışır. ' +
           'Şu an yalnızca bu cihazda tutuluyor: cihazı değiştirirsen kaybolur.</div>' + html;
       }
+      html += altBar();
       html += '<div class="sub pf-ipucu">Kişisel bilgilerin ayda bir kez güncellenebilir.</div>' +
       '<div class="sub pf-ipucu">' +
         (MBGFB.user()
@@ -3993,6 +4089,24 @@ var MBGP = (function () {
         if (a === 'yenile') { katilimYukle().then(ciz); return; }
         if (a === 'duzenle') { katilimForm(); return; }
         if (a === 'kisisel') { kisiselForm(); return; }
+        if (a === 'hesap') { hesapBilgileri(); return; }
+        var pz = ev.target && ev.target.closest ? ev.target.closest('[data-pz]') : null;
+        if (pz) {
+          var tip = pz.getAttribute('data-pz');
+          if (tip === 'cikis') {
+            onayAc('cikis', '<b>Çıkış yapmak istiyor musun?</b><br>' +
+              'Bu cihazdaki notların ve görevlerin silinmez; hesabına giriş yapınca yeniden görünür.');
+          } else if (tip === 'temizle') {
+            onayAc('temizle', '<b>Kişisel verilerin silinsin mi?</b><br>' +
+              'Bu cihazdaki günlük notlar, yapılacaklar ve kişisel etkinlik kayıtları silinir; ' +
+              'hesabında saklanan veriler etkilenmez.', true);
+          } else if (tip === 'hesabiSil') {
+            onayAc('hesabiSil', '<b>Hesabın kalıcı olarak silinecek.</b><br>' +
+              'Profil bilgilerin, notların, yapılacakların ve etkinlik kayıtların gider. ' +
+              'Bu işlem geri alınamaz.', true);
+          }
+          return;
+        }
         if (a === 'not') { close(); if (A && A.openNote) A.openNote(b.getAttribute('data-e')); return; }
         var es = ev.target && ev.target.closest ? ev.target.closest('[data-ev-sayfa]') : null;
         if (es && window.ETK) { ETK.etkinlikGoruntule(es.getAttribute('data-ev-sayfa')); return; }
@@ -4012,7 +4126,124 @@ var MBGP = (function () {
   }
 
 /* kişisel bilgiler: ayda bir kez güncellenebilir */
-  function kisiselForm() {
+/* profil alt barı: tehlikeli işlemler (çıkış / temizle / sil) */
+  function altBar() {
+    var cik = MBGFB.user();
+    var parcalar = [];
+    if (cik) {
+      parcalar.push(
+        '<button type="button" class="pz-cikis" data-pz="cikis">' +
+          '<span class="pz-ikon">↩</span><span class="pz-yazi">Çıkış yap</span>' +
+          '<em>' + esc((MBGFB.state.profile && MBGFB.state.profile.name) || cik.email || '') + '</em></button>'
+      );
+    }
+    parcalar.push(
+      '<button type="button" class="pz-sil" data-pz="temizle">' +
+        '<span class="pz-ikon">🧹</span><span class="pz-yazi">Kişisel verilerimi temizle</span>' +
+        '<em>Bu cihazdaki not, görev ve kişisel etkinlik kayıtlarını siler</em></button>'
+    );
+    if (cik) {
+      parcalar.push(
+        '<button type="button" class="pz-sil pz-son" data-pz="hesabiSil">' +
+          '<span class="pz-ikon">🚪</span><span class="pz-yazi">Hesabımı sil</span>' +
+          '<em>Hesabın, notların, görevlerin ve katılımların kalıcı olarak silinir</em></button>'
+      );
+    }
+    return '<div class="pz">' +
+      '<div class="pz-baslik">Hesap işlemleri</div>' +
+      parcalar.join('') +
+      '<div id="pzOnay" class="pz-onay" hidden></div>' +
+      '</div>';
+  }
+
+  /* onay barı: mesaj + Onayla / Vazgeç */
+  function onayAc(tur, mesaj, uyari) {
+    var kutu = q('#pzOnay');
+    if (!kutu) { toast(mesaj, 5000); return; }
+    kutu.innerHTML =
+      '<div class="pz-onay-ic' + (uyari ? ' pz-uyari' : '') + '">' +
+        '<div class="pz-onay-metni">' + mesaj + '</div>' +
+        '<div class="pz-onay-dugmeler">' +
+          '<button type="button" data-pzy="vaz">Vazgeç</button>' +
+          '<button type="button" class="pz-onayla' + (uyari ? ' pz-onayla-kirmizi' : '') + '" data-pzy="onay">' +
+            (uyari ? 'Evet, sil' : 'Evet, çıkış yap') + '</button>' +
+        '</div>' +
+      '</div>';
+    kutu.hidden = false;
+    kutu.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-pzy]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-pzy');
+      kutu.hidden = true;
+      kutu.innerHTML = '';
+      if (a === 'vaz') { toast('İşlem yapılmadı.', 2500); return; }
+      if (tur === 'cikis') { cikis(); return; }
+      if (tur === 'hesabiSil') { hesabiSil(); return; }
+      if (tur === 'temizle') {
+        if (A && A.temizleKisisel) A.temizleKisisel();
+        else toast('Kişisel veri temizleme kullanılamıyor.', 4000);
+      }
+    };
+    /* onay kutusuna odaklan */
+    var ilk = kutu.querySelector('[data-pzy="onay"]');
+    if (ilk) ilk.focus();
+  }
+/* hesap bilgileri: e-posta (değişmez) + şifre (ayda bir) */
+  function hesapBilgileri() {
+    var m = q('#modal');
+    if (!m) return;
+    var u = MBGFB.user();
+    if (!u) { toast('Önce giriş yapmalısın.', 3500); return; }
+    var kalan = MBGFB.sifreSikKalan();
+    var kilitli = kalan > 0;
+    var kalanGun = Math.ceil(kalan / 86400000);
+    var son = MBGFB.sifreDegistiNeZaman();
+    m.innerHTML =
+      '<h2>Hesap bilgilerim</h2>' +
+      '<div class="field"><label>E-posta adresi</label>' +
+        '<input value="' + esc(u.email || '') + '" disabled></div>' +
+      '<div class="sub pf-ipucu">E-posta adresi değiştirilemez: kulüp kaydın ve doğrulama ' +
+        'bu adrese bağlıdır.</div>' +
+      '<div class="es-blok"><h3>Şifre değiştir</h3>' +
+      '<div class="' + (kilitli ? 'pf-uyari' : 'pf-ok') + '">' +
+        (kilitli
+          ? '⏳ Bu ayki şifre değişikliğini kullandın; ' + kalanGun + ' gün sonra tekrar değiştirebilirsin.'
+          : '✅ Bu ayki şifre değişikliği hakkın hazır.' +
+            (son ? ' (son değişiklik: ' + son + ')' : '')) + '</div>' +
+      (kilitli ? '' :
+        '<div class="field"><label>Mevcut şifre</label>' +
+          '<input id="hbEski" type="password" autocomplete="current-password"></div>' +
+        '<div class="field"><label>Yeni şifre</label>' +
+          '<input id="hbYeni" type="password" autocomplete="new-password"></div>' +
+        '<div class="field"><label>Yeni şifre (tekrar)</label>' +
+          '<input id="hbYeni2" type="password" autocomplete="new-password"></div>') +
+      '<div class="acts"><button type="button" data-h="vaz">&larr; Geri</button>' +
+        (kilitli ? '' : '<button type="button" class="pri" data-h="kay">Şifreyi değiştir</button>') +
+      '</div></div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-h]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-h');
+      if (a === 'vaz') { profil(); return; }
+      if (a !== 'kay') return;
+      var eski = q('#hbEski').value || '';
+      var yeni = q('#hbYeni').value || '';
+      var yeni2 = q('#hbYeni2').value || '';
+      if (!eski) { toast('Mevcut şifreni gir.', 3500); q('#hbEski').focus(); return; }
+      if (yeni.length < 6) { toast('Yeni şifre en az 6 karakter olmalı.', 4500); q('#hbYeni').focus(); return; }
+      if (yeni !== yeni2) { toast('Yeni şifreler aynı değil.', 4500); q('#hbYeni2').focus(); return; }
+      if (yeni === eski) { toast('Yeni şifre eskisiyle aynı olamaz.', 4500); return; }
+      b.disabled = true; b.textContent = '…';
+      MBGFB.sifreDegistir(eski, yeni).then(function () {
+        toast('✓ Şifren değiştirildi.', 6000);
+        profil();
+      }).catch(function (x) {
+        b.disabled = false; b.textContent = 'Şifreyi değiştir';
+        toast(MBGM.err(x), 8000);
+      });
+    };
+    q('#backdrop').classList.add('open');
+  }  function kisiselForm() {
     var m = q('#modal');
     if (!m) return;
     var p = MBGFB.state.profile || {};
@@ -4157,6 +4388,7 @@ var MBGP = (function () {
 
   return {
     init: init, profil: profil, katilimForm: katilimForm, kisiselForm: kisiselForm,
+    hesapBilgileri: hesapBilgileri, altBar: altBar,
     katilimYukle: katilimYukle, istatistik: istatistik,
     GOREV: GOREV, state: function () { return KAT; }
   };
@@ -4634,139 +4866,200 @@ var ETK = (function () {
   /* =====================================================================
      YÖNETİCİ: etkinlik sayfası + QR + görevli
      ===================================================================== */
+/* YÖNETİCİ: etkinlik sayfası + QR + görevliler
+   Tek dinleyici: #modal üzerinde delegasyon (data-es). Böylece içerik
+   yeniden çizildiğinde düğmeler çalışmaya devam eder. */
   function etkinlikSayfasi(evId) {
     if (!MBGFB.isAdmin()) { toast('Bu sayfayı yalnızca yönetici açabilir.', 4000); return; }
     var m = q('#modal');
     if (!m) return;
     var ev = evBul(evId);
+    var d = { katilanlar: [], gorevli: [], sayfa: {}, kasa: {}, sayac: null, zamanAsimi: null };
+
+    function kapat() {
+      if (d.sayac) clearInterval(d.sayac);
+      if (d.zamanAsimi) clearTimeout(d.zamanAsimi);
+      d.sayac = null; d.zamanAsimi = null;
+    }
+
     m.innerHTML = '<h2>' + esc(ev ? ev.title : 'Etkinlik') + '</h2>' +
-      '<div class="sub" id="esTarih">…</div>' +
-      '<div class="sub">Etkinlik sayfası içeriği, katılım QR\'ı ve görevliler</div>' +
+      '<div class="sub">' + esc(ev ? fmt(ev.date) : '') + (ev && ev.weekLabel ? ' · ' + esc(ev.weekLabel) : '') + '</div>' +
+      '<div class="sub">Etkinlik sayfası içeriği, katılım QR kodu ve görevliler</div>' +
       '<div id="esGovde"><div class="pf-bos">yükleniyor…</div></div>' +
-      '<div class="acts"><button type="button" data-x="kapat">← Geri</button></div>';
-    m.onclick = function (ev2) {
-      var b = ev2.target && ev2.closest ? ev2.closest('[data-x]') : null;
-      if (b && b.getAttribute('data-x') === 'kapat') { MBGM.adminPanel(); }
+      '<div class="acts"><button type="button" data-es="kapat">&larr; Geri</button></div>';
+
+    m.onclick = function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('[data-es]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-es');
+
+      if (a === 'kapat') { kapat(); MBGM.adminPanel(); return; }
+      if (a === 'tekrar') { yenile(); return; }
+      if (a === 'kaydet') {
+        sayfaYaz(evId, {
+          konu: (q('#esKonu').value || '').trim(),
+          konuk: (q('#esKonuk').value || '').trim(),
+          saat: (q('#esSaat').value || '').trim(),
+          yer: (q('#esYer').value || '').trim(),
+          aciklama: (q('#esAciklama').value || '').trim()
+        }).then(function () {
+          toast('Etkinlik sayfası kaydedildi.', 4000);
+          yenile();
+        }).catch(function (x) { toast(MBGM.err(x), 6500); });
+        return;
+      }
+      if (a === 'yenileKod') {
+        b.disabled = true;
+        kodYenile(evId, true).then(function (yeni) {
+          d.kasa = { anahtar: yeni, uretilme: Date.now() };
+          ciz();
+          toast('Yeni kod üretildi.', 2500);
+        }).catch(function (x) { toast(MBGM.err(x), 6500); });
+        return;
+      }
+      if (a === 'kopyala') {
+        if (!d.kasa.anahtar) return;
+        var yazi = qrUrl(evId, d.kasa.anahtar);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(yazi).then(
+            function () { toast('Bağlantı kopyalandı.', 3000); },
+            function () { toast('Kopyalanamadı.', 3000); });
+        } else toast('Kopyalanamadı.', 3000);
+        return;
+      }
+      if (a === 'gorevEkle') { gorevliEkle(evId); return; }
+      if (a === 'gorevSil') {
+        var uid = b.getAttribute('data-u');
+        if (!confirm('Bu görevli listeden çıkarılsın mı?')) return;
+        MBGFB.gorevliSil(evId, uid).then(function () {
+          toast('Görevli çıkarıldı.', 3000);
+          yenile();
+        }).catch(function (x) { toast(MBGM.err(x), 6500); });
+      }
     };
+
     q('#backdrop').classList.add('open');
     yenile();
-    if (zamanlayici) clearInterval(zamanlayici);
-    zamanlayici = setInterval(function () {
-      if (!q('#esGovde')) { clearInterval(zamanlayici); zamanlayici = null; return; }
-      var k = kodKasa[evId];
-      if (k && (Date.now() - k.uretilme) >= YENILE_MS) kodYenile(evId, true).then(ciz);
-    }, 2500);
 
+    /* verileri çek, çiz, gerekirse kodu üret */
     function yenile() {
+      if (d.zamanAsimi) clearTimeout(d.zamanAsimi);
+      var g = q('#esGovde');
+      if (g) g.innerHTML = '<div class="pf-bos">yükleniyor…</div>';
+      d.zamanAsimi = setTimeout(function () {
+        var g2 = q('#esGovde');
+        if (g2 && g2.textContent.indexOf('yükleniyor') >= 0) {
+          g2.innerHTML = '<div class="pf-bos">Veriler yüklenemedi (internet bağlantısı?).' +
+            '<div class="acts pf-acts"><button type="button" class="pri" data-es="tekrar">Tekrar dene</button></div></div>';
+        }
+      }, 9000);
       Promise.all([sayfaOku(evId), kodOku(evId), katilanOku(evId), gorevliOku(evId)])
-        .then(ciz);
+        .then(function (r) {
+          if (d.zamanAsimi) clearTimeout(d.zamanAsimi);
+          d.sayfa = r[0] || {};
+          d.kasa = r[1] || {};
+          d.katilanlar = r[2] || [];
+          d.gorevli = r[3] || [];
+          ciz();
+          var yas = Date.now() - (d.kasa.uretilme || 0);
+          if (!d.kasa.anahtar || yas >= YENILE_MS) {
+            kodYenile(evId, true).then(function (yeni) {
+              d.kasa = { anahtar: yeni, uretilme: Date.now() };
+              ciz();
+            }).catch(function () { });
+          }
+        })
+        .catch(function (x) {
+          if (d.zamanAsimi) clearTimeout(d.zamanAsimi);
+          var g3 = q('#esGovde');
+          if (g3) g3.innerHTML = '<div class="pf-bos">Yüklenemedi: ' + esc(MBGM.err(x)) + '</div>';
+        });
     }
-    function ciz() {
-      var govde = q('#esGovde');
-      if (!govde) { clearInterval(zamanlayici); zamanlayici = null; return; }
-      var e = evBul(evId), s = sayfalar[evId] || {};
-      var kasa = kodKasa[evId] || {};
-      var kalan = Math.max(0, YENILE_MS - ((Date.now() - (kasa.uretilme || 0)) % YENILE_MS));
-      var link = kasa.anahtar ? qrUrl(evId, kasa.anahtar) : '';
 
-      govde.innerHTML =
+    function ciz() {
+      var g = q('#esGovde');
+      if (!g) { kapat(); return; }
+      var s = d.sayfa || {};
+      var kalan = d.kasa && d.kasa.anahtar
+        ? Math.max(0, YENILE_MS - ((Date.now() - (d.kasa.uretilme || 0)) % YENILE_MS))
+        : YENILE_MS;
+
+      g.innerHTML =
         '<div class="es-blok"><h3>Etkinlik sayfası içeriği</h3>' +
         '<div class="field"><label>Konu</label><input id="esKonu" maxlength="140" placeholder="Örn. CRISPR ve gen düzenleme" value="' + esc(s.konu || '') + '"></div>' +
         '<div class="field"><label>Konuk (ad soyad)</label><input id="esKonuk" maxlength="80" placeholder="Örn. Prof. Dr. Ayşe Yılmaz" value="' + esc(s.konuk || '') + '"></div>' +
         '<div class="field"><label>Konuşma saati</label><input id="esSaat" maxlength="40" placeholder="Örn. 14.00 – 15.30" value="' + esc(s.saat || '') + '"></div>' +
         '<div class="field"><label>Nerede</label><input id="esYer" maxlength="120" placeholder="Örn. Mühendislik Fakültesi, Seminer Salonu B" value="' + esc(s.yer || '') + '"></div>' +
         '<div class="field"><label>Açıklama</label><textarea id="esAciklama" maxlength="600">' + esc(s.aciklama || '') + '</textarea></div>' +
-        '<div class="acts pf-acts"><button type="button" class="pri" data-e="kaydet">Sayfayı kaydet</button></div></div>' +
+        '<div class="acts pf-acts"><button type="button" class="pri" data-es="kaydet">Sayfayı kaydet</button></div></div>' +
 
-        '<div class="es-blok"><h3>Katılım QR kodu <em>' + esc(kalan / 1000 | 0) + ' sn</em></h3>' +
-        '<div class="es-qr"><canvas id="esQr"></canvas>' +
-        '<div><div class="es-kod">' + esc(kasa.anahtar || '—') + '</div>' +
-        '<div class="pf-ipucu">Üyeler bu kodu telefon kamerasıyla okutur. Kod ' +
-        (YENILE_MS / 1000) + ' saniyede bir yenilenir; eski kod işe yaramaz.</div>' +
-        '<div class="acts pf-acts"><button type="button" data-e="yeniKod">Kodu şimdi yenile</button>' +
-        '<button type="button" data-e="panoya">Bağlantıyı kopyala</button></div></div></div></div>' +
+        '<div class="es-blok"><h3>Katılım QR kodu <em>' + Math.ceil(kalan / 1000) + ' sn</em></h3>' +
+        '<div class="es-qr"><canvas id="esQr"></canvas><div>' +
+        '<div class="es-kod">' + esc(d.kasa.anahtar || 'üretiliyor…') + '</div>' +
+        '<div class="pf-ipucu">Üyeler bu kodu telefon kamerasıyla okutur. Kod ' + (YENILE_MS / 1000) +
+        ' saniyede bir yenilenir; önceki kod işe yaramaz.</div>' +
+        '<div class="acts pf-acts">' +
+        '<button type="button" data-es="yenileKod">Kodu şimdi yenile</button>' +
+        '<button type="button" data-es="kopyala">Bağlantıyı kopyala</button>' +
+        '<button type="button" data-es="yenile">Yenile</button></div></div></div></div>' +
 
-        '<div class="es-blok"><h3>Görevliler <em>' + (gorevli.length) + '</em></h3>' +
-        (gorevli.length
-          ? '<div class="pf-tab"><table>' + gorevli.map(function (g) {
-              return '<tr><td>' + esc(g.ad || g.eposta || '') + '</td>' +
-                '<td><span class="pf-et">' + esc(g.gorev || '') + '</span></td>' +
-                '<td class="pf-s"><button type="button" class="td" data-g="sil" data-u="' + esc(g.uid) + '">Sil</button></td></tr>';
+        '<div class="es-blok"><h3>Görevliler <em>' + d.gorevli.length + '</em></h3>' +
+        (d.gorevli.length
+          ? '<div class="pf-tab"><table>' + d.gorevli.map(function (x) {
+              return '<tr><td>' + esc(x.ad || x.eposta || '') + '</td>' +
+                '<td><span class="pf-et">' + esc(x.gorev || '') + '</span></td>' +
+                '<td class="pf-s"><button type="button" class="td" data-es="gorevSil" data-u="' +
+                esc(x.uid) + '">Sil</button></td></tr>';
             }).join('') + '</table></div>'
           : '<div class="pf-bos">Henüz görevli atanmadı.</div>') +
-        '<div class="acts pf-acts"><button type="button" class="pri" data-e="gorevEkle">＋ Görevli ekle</button></div></div>' +
+        '<div class="acts pf-acts"><button type="button" class="pri" data-es="gorevEkle">＋ Görevli ekle</button></div></div>' +
 
-        '<div class="es-blok"><h3>Katılanlar <em>' + katilanlar.length + '</em></h3>' +
-        (katilanlar.length
-          ? '<div class="pf-tab"><table>' + katilanlar.map(function (k2) {
-              return '<tr><td>' + esc(k2.ad || '') + '</td><td>' + esc(k2.eposta || '') + '</td>' +
-                '<td class="pf-t">' + esc(k2.zaman ? k2.zaman : '') + '</td></tr>';
+        '<div class="es-blok"><h3>Katılanlar <em>' + d.katilanlar.length + '</em></h3>' +
+        (d.katilanlar.length
+          ? '<div class="pf-tab"><table>' + d.katilanlar.map(function (x) {
+              return '<tr><td>' + esc(x.ad || '') + '</td><td>' + esc(x.eposta || '') + '</td>' +
+                '<td class="pf-t">' + esc(x.zaman || '') + '</td></tr>';
             }).join('') + '</table></div>'
           : '<div class="pf-bos">Henüz katılım kaydedilmedi. QR\'ı okutan üyeler burada görünür.</div>') +
         '</div>';
 
+      /* QR çizimi (hata olursa sayfa bozulmaz) */
       var cv = q('#esQr');
-      if (cv && kasa.anahtar && window.QR) {
-        var sonuc = QR.uret(link);
-        if (sonuc.hata) {
-          cv.replaceWith(document.createTextNode('metin çok uzun'));
-        } else {
-          QR.tuvaleCiz(cv, sonuc, 6, 6);
+      if (cv && d.kasa.anahtar && window.QR) {
+        try {
+          var sonuc = QR.uret(qrUrl(evId, d.kasa.anahtar));
+          if (sonuc.hata) {
+            cv.parentNode.innerHTML = '<div class="pf-bos">Bağlantı çok uzun, QR üretilemedi.</div>';
+          } else {
+            QR.tuvaleCiz(cv, sonuc, 6, 6);
+          }
+        } catch (qe) {
+          cv.parentNode.innerHTML = '<div class="pf-bos">QR çizilemedi: ' +
+            esc(String(qe && qe.message ? qe.message : qe).slice(0, 80)) + '</div>';
         }
       }
-    }
 
-    /* olaylar (olay dinleme yerine yeniden çizim) */
-    var govde = q('#esGovde');
-    if (govde) {
-      govde.addEventListener('click', function (e2) {
-        var b = e2.target && e2.closest ? e2.closest('[data-e],[data-g]') : null;
-        if (!b) return;
-        var a = b.getAttribute('data-e'), gu = b.getAttribute('data-g');
-        if (a === 'kaydet') {
-          sayfaYaz(evId, {
-            konu: (q('#esKonu').value || '').trim(),
-            konuk: (q('#esKonuk').value || '').trim(),
-            saat: (q('#esSaat').value || '').trim(),
-            yer: (q('#esYer').value || '').trim(),
-            aciklama: (q('#esAciklama').value || '').trim()
-          }).then(function () {
-            toast('Etkinlik sayfası kaydedildi.', 4000);
+      /* geri sayım + kod tazeleme */
+      if (d.sayac) clearInterval(d.sayac);
+      d.sayac = setInterval(function () {
+        var gg = q('#esGovde');
+        if (!gg) { kapat(); return; }
+        var em = gg.querySelector('h3 em');
+        if (em) {
+          var kk = d.kasa && d.kasa.anahtar
+            ? Math.max(0, YENILE_MS - ((Date.now() - (d.kasa.uretilme || 0)) % YENILE_MS))
+            : YENILE_MS;
+          em.textContent = Math.ceil(kk / 1000) + ' sn';
+        }
+        if (d.kasa && d.kasa.anahtar && (Date.now() - (d.kasa.uretilme || 0)) >= YENILE_MS) {
+          kodYenile(evId, true).then(function (yeni) {
+            d.kasa = { anahtar: yeni, uretilme: Date.now() };
             ciz();
-          }).catch(function (x) { toast(MBGM.err(x), 6000); });
-          return;
+          }).catch(function () { });
         }
-        if (a === 'yeniKod') {
-          kodYenile(evId, true).then(function () {
-            toast('Yeni kod üretildi.', 2500);
-            ciz();
-          }).catch(function (x) { toast(MBGM.err(x), 6000); });
-          return;
-        }
-        if (a === 'panoya') {
-          var kasa2 = kodKasa[evId];
-          if (!kasa2) return;
-          var yazi = qrUrl(evId, kasa2.anahtar);
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(yazi).then(
-              function () { toast('Bağlantı kopyalandı.', 3000); },
-              function () { toast('Kopyalanamadı.', 3000); });
-          } else toast('Kopyalanamadı.', 3000);
-          return;
-        }
-        if (a === 'gorevEkle') { gorevliEkle(evId, function () { ciz(); }); return; }
-        if (gu === 'sil') {
-          var uid = b.getAttribute('data-u');
-          if (!confirm('Bu görevli listeden çıkarılsın mı?')) return;
-          MBGFB.gorevliSil(evId, uid).then(function () {
-            toast('Görevli çıkarıldı.', 3000);
-            ciz();
-          }).catch(function (x) { toast(MBGM.err(x), 6000); });
-        }
-      });
+      }, 1000);
     }
   }
-
   /* görevli seçme (yalnızca yönetici) */
   function gorevliEkle(evId, bitti) {
     if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
@@ -4790,8 +5083,7 @@ var ETK = (function () {
       if (!uid) { toast('Önce üye listesinin yüklenmesini bekle.', 3500); return; }
       MBGFB.gorevliEkle(evId, uid, gorev).then(function () {
         toast('Görevli olarak ilan edildi.', 4000);
-        if (bitti) bitti();
-        else etkinlikSayfasi(evId);
+        etkinlikSayfasi(evId);
       }).catch(function (x) { toast(MBGM.err(x), 6500); });
     };
     q('#backdrop').classList.add('open');
@@ -4828,12 +5120,23 @@ var ETK = (function () {
       if (b) close();
     };
     q('#backdrop').classList.add('open');
-    Promise.all([sayfaOku(evId), katilanOku(evId), gorevliOku(evId)]).then(ciz);
+    var katilanlar = [], gorevler = [], sayfaIceri = {};
+    Promise.all([sayfaOku(evId), katilanOku(evId), gorevliOku(evId)])
+      .then(function (r) {
+        sayfaIceri = r[0] || {};
+        katilanlar = r[1] || [];
+        gorevler = r[2] || [];
+        ciz();
+      })
+      .catch(function (x) {
+        var k = q('#etSayfa');
+        if (k) k.innerHTML = '<div class="pf-bos">Yüklenemedi: ' + esc(MBGM.err(x)) + '</div>';
+      });
 
     function ciz() {
       var kutu = q('#etSayfa');
       if (!kutu) return;
-      var s = sayfalar[evId] || {};
+      var s = sayfaIceri || {};
       var benimUid = MBGFB.user() ? MBGFB.user().uid : '';
       var kattim = false;
       for (var i = 0; i < katilanlar.length; i++) if (katilanlar[i].uid === benimUid) kattim = true;
@@ -4866,6 +5169,7 @@ var ETK = (function () {
           : '<div class="pf-bos">Görevli listesi boş.</div>') + '</div>' +
         '<div class="es-blok"><h3>Katılanlar <em>' + katilanlar.length + '</em></h3>' +
         '<div class="pf-bos">' + katilanlar.length + ' kişi katılımını QR ile kaydetti.</div></div>';
+      kutu.innerHTML = kutu.innerHTML;
     }
   }
 
@@ -6084,7 +6388,12 @@ var ETK = (function () {
       sheetOpen(false);
     });
     /* kurulum, hata bildirimi ve kisisel veri temizligi artik ⋮ panelinde */
-    $('#mClear').onclick = function () { clearPersonal(); };
+    /* misafirler icin: cihazdaki verileri temizle (profil sayfasinda da var) */
+    var mc = $('#mClear');
+    if (mc) mc.onclick = function () {
+      if (window.MBGM && MBGM.onayTemizle) MBGM.onayTemizle();
+      else if (confirm('Kişisel verilerin silinsin mi?')) clearPersonal();
+    };
     $('#mBug').onclick = function () { sheetOpen(false); openBugReport(); };
     $('#fileInput').onchange = function () {
       if (this.files && this.files[0]) readFile(this.files[0]);
@@ -6172,7 +6481,7 @@ var ETK = (function () {
       ayAd: function (m) { return P.AY_UST[m - 1] || ''; },
       mergeNote: mergeNote, mergeTodos: mergeTodos, todosDump: todosDump,
       notesDump: function () { return NOTES; },
-      openNote: openNote,
+      openNote: openNote, temizleKisisel: clearPersonal,
       planSrc: function () { return PLAN_SRC; },
       offset: function (d) { progT = clampP(progT + (+d || 0)); return progT; }
     };

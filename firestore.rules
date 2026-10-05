@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.13.0)
+   Firestore güvenlik kuralları  (v3.14.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -74,13 +74,17 @@ service cloud.firestore {
         && request.auth.uid == uid
         && dogrulandiMi();
 
-      /* yönetici her zaman düzenleyebilir;
-         üye kendi bilgilerini düzenler ama ayda bir kez */
+      /* Yönetici her zaman düzenleyebilir.
+         Üye kendi bilgilerini düzenler ama en fazla 30 GÜNDE BİR.
+         Kilit süresince yalnızca kendi damgalarını (şifre değişikliği gibi)
+         güncelleyebilir; profil alanlarına dokunamaz. */
       allow update: if adminMi()
         || (girisYapildi()
             && request.auth.uid == uid
             && dogrulandiMi()
-            && !profilSikiliMi());
+            && (!profilSikiliMi()
+                || request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['sifreDegistiAt', 'sifreSayisi'])));
 
       /* yönetici istediğini siler; üye de kendi hesabını silebilir
          (KVKK: hesap silme hakkı) */
