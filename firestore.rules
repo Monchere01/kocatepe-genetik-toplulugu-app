@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.14.0)
+   Firestore güvenlik kuralları  (v3.20.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -157,6 +157,29 @@ service cloud.firestore {
         && request.resource.data.anahtar ==
              get(/databases/$(database)/documents/events/$(eventId)/qr/anahtar).data.anahtar;
       allow update, delete: if adminMi();
+    }
+
+    /* --- ETKİNLİK YORUMLARI (sohbet) ---
+       Herkes okur. Yorum yazabilmek için: giriş + e-posta doğrulanmış olmak
+       VE o etkinliğe katılmış (ya da görevli olmak) gerekir.
+       Böylece yalnızca o etkinliğe katılan üyeler konuşabilir. --- */
+    match /events/{eventId}/yorumlar/{yorumId} {
+      function yorumYazabilir() {
+        return girisYapildi() && dogrulandiMi() && (
+          adminMi() ||
+          exists(/databases/$(database)/documents/events/$(eventId)/katilan/$(request.auth.uid)) ||
+          exists(/databases/$(database)/documents/events/$(eventId)/gorevli/$(request.auth.uid))
+        );
+      }
+      allow read: if true;
+      allow create: if yorumYazabilir()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.metin is string
+        && request.resource.data.metin.size() > 0
+        && request.resource.data.metin.size() <= 500;
+      allow update: if false;              /* yorumlar düzenlenmez */
+      allow delete: if adminMi() || (girisYapildi()
+        && resource.data.uid == request.auth.uid);
     }
 
     /* --- KİŞİSEL VERİLER: yalnızca sahibi --- */

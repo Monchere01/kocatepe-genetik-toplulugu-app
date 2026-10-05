@@ -203,11 +203,26 @@
   .backdrop{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;padding:16px;
     background:rgba(3,6,12,.72);backdrop-filter:blur(6px)}
   .backdrop.open{display:flex}
-    .modal::-webkit-scrollbar{width:0;height:0;display:none}
-  .modal{-ms-overflow-style:none}
-.modal{position:relative;width:min(580px,100%);max-height:88vh;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;border-radius:22px;padding:26px;
+    .modal::-webkit-scrollbar{width:9px}
+  .modal::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:9px}
+  .modal::-webkit-scrollbar-thumb{background:rgba(148,178,220,.26);border-radius:9px;
+    border:2px solid transparent;background-clip:content-box}
+  .modal::-webkit-scrollbar-thumb:hover{background:rgba(148,178,220,.5);background-clip:content-box}
+  .modal{scrollbar-width:thin;scrollbar-color:rgba(148,178,220,.3) transparent}
+.modal{position:relative;width:min(580px,100%);max-height:88vh;overflow-y:auto;-ms-overflow-style:none;border-radius:22px;
+    /* üstte ve sağda çarpı düğmesi için pay bırak */
+    padding:54px 28px 26px;
     border:1px solid var(--stroke-2);background:linear-gradient(160deg,#131c2c,#0a101c);
     box-shadow:0 40px 90px -30px rgba(0,0,0,1)}
+  /* geniş panel: profil + planı düzenle */
+  .modal.genis{width:min(920px,100%)}
+  @media (max-width:680px){.modal.genis{width:100%}}
+  /* ince, siteye uygun kaydırma çubuğu */
+  .kaydirma{scrollbar-width:thin;scrollbar-color:rgba(148,178,220,.3) transparent}
+  .kaydirma::-webkit-scrollbar{width:9px}
+  .kaydirma::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:9px}
+  .kaydirma::-webkit-scrollbar-thumb{background:rgba(148,178,220,.24);border-radius:9px;border:2px solid transparent;background-clip:content-box}
+  .kaydirma::-webkit-scrollbar-thumb:hover{background:rgba(148,178,220,.45);background-clip:content-box}
   .modal h2{font-size:1.18rem;line-height:1.32;margin:10px 0 6px;letter-spacing:-.01em}
   .modal .sub{font-size:.75rem;color:var(--muted);margin-bottom:14px}
   .modal p.body{font-size:.92rem;line-height:1.65;color:#b7c6da;margin-bottom:18px}
@@ -318,6 +333,42 @@
   body.cal #normalView{display:block;position:fixed;left:0;right:0;top:calc(var(--tbh,77px) + var(--tbb,48px) + 12px);
     bottom:0;z-index:30;overflow-y:auto;padding:16px clamp(12px,4vw,40px) 70px}
   .cal-wrap{max-width:1020px;margin:0 auto}
+  /* ---------------- etkinlik sayfaları görünümü ---------------- */
+  #sayfaView{display:none}
+  body.sayfa #dna,body.sayfa main,body.sayfa #rail,body.sayfa #hint,
+  body.sayfa #normalView{display:none!important}
+  body.sayfa #sayfaView{display:block;position:fixed;left:0;right:0;top:calc(var(--tbh,77px) + var(--tbb,48px) + 12px);
+    bottom:0;z-index:30;overflow-y:auto;padding:16px clamp(12px,4vw,40px) 70px;
+    scrollbar-width:thin;scrollbar-color:rgba(148,178,220,.3) transparent}
+  #sayfaView::-webkit-scrollbar{width:9px}
+  #sayfaView::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:9px}
+  #sayfaView::-webkit-scrollbar-thumb{background:rgba(148,178,220,.24);border-radius:9px;
+    border:2px solid transparent;background-clip:content-box}
+  #sayfaView::-webkit-scrollbar-thumb:hover{background:rgba(148,178,220,.45);background-clip:content-box}
+  .etp-liste-basi{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;
+    margin:4px 0 18px}
+  .etp-liste-basi h2{font-size:1.3rem;margin:0 0 4px;color:#f2f7ff;padding-right:0}
+  .etp-liste-basi p{margin:0;font-size:.82rem;color:var(--muted);max-width:56ch;line-height:1.55}
+  .etp-liste-ara{flex:0 1 300px;min-width:220px}
+  .etp-kart-liste{display:flex;flex-direction:column;gap:9px}
+  .etp-liste{width:100%;display:flex;align-items:center;gap:14px;text-align:left;cursor:pointer;
+    padding:14px 16px;border-radius:16px;font:inherit;color:var(--text);
+    background:linear-gradient(135deg,rgba(56,189,248,.07),rgba(148,178,220,.04));
+    border:1px solid rgba(148,178,220,.14);transition:.16s}
+  .etp-liste:hover{border-color:rgba(56,189,248,.45);background:rgba(56,189,248,.1);transform:translateY(-1px)}
+  .etp-liste:focus-visible{outline:2px solid rgba(56,189,248,.6);outline-offset:2px}
+  .etp-liste .lno{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+    font-size:.76rem;font-weight:700;color:#7dd3fc;background:rgba(56,189,248,.12);
+    border:1px solid rgba(56,189,248,.28);font-variant-numeric:tabular-nums}
+  .etp-liste.bahar .lno{color:#6ee7b7;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3)}
+  .etp-liste.ozel .lno{color:#c4b5fd;background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.3)}
+  .etp-liste .lbilgi{flex:1;min-width:0}
+  .etp-liste .lbilgi b{display:block;font-size:.95rem;font-weight:600;color:#e6edf7;line-height:1.35}
+  .etp-liste .lbilgi small{display:block;font-size:.72rem;color:var(--muted);margin-top:3px}
+  .etp-liste .lrozet{font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+    padding:4px 9px;border-radius:999px;white-space:nowrap;
+    background:rgba(148,178,220,.1);border:1px solid rgba(148,178,220,.2);color:#9fb3cd}
+  .etp-liste .lrozet.hazir{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.34);color:#6ee7b7}
   .cal-stats{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
   .stat-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .pbar{display:block;height:5px;border-radius:5px;background:rgba(148,178,220,.16);
@@ -340,6 +391,89 @@
     transition:border-color .15s ease,box-shadow .15s ease,background .15s ease,transform .15s ease}
   .day.blank{background:none;border-color:transparent}
   .day .dn{font-weight:700;color:#9fb3cd;font-variant-numeric:tabular-nums}
+  /* etkinlik olan gün: köşede işaret noktası + hafif vurgu */
+  .day.etkin{background:rgba(56,189,248,.07);border-color:rgba(56,189,248,.24)}
+  .day.etkin .nok{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;
+    background:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,.9)}
+  .day.etkin.bahar .nok{background:#34d399;box-shadow:0 0 8px rgba(52,211,153,.9)}
+  .day.etkin.ozel .nok{background:#a78bfa;box-shadow:0 0 8px rgba(167,139,250,.9)}
+  .day.etkin .dn{padding-right:12px}
+  .day.etkin.tamam{background:rgba(148,178,220,.05);border-color:rgba(148,178,220,.13)}
+  .day.etkin.tamam .nok{background:rgba(148,178,220,.45);box-shadow:none}
+  .day.etkin:hover{border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.11);cursor:pointer}
+  /* pencere kapatma: minik çarpı (her panelde sağ üstte) */
+  .modal-kapat{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;
+    display:grid;place-items:center;font-size:1.05rem;line-height:1;padding:0;
+    background:rgba(255,255,255,.06);border:1px solid rgba(148,178,220,.22);color:#9fb3cd;
+    cursor:pointer;z-index:6;transition:.15s}
+  .modal-kapat:hover{background:rgba(255,90,90,.16);border-color:rgba(255,120,120,.5);color:#ffb4b4}
+  .modal-kapat:focus-visible{outline:2px solid rgba(56,189,248,.6);outline-offset:2px}
+  .modal h2{padding-right:38px}
+  /* profil başlığı: büyük isim, profesyonel görünüm */
+  .pf-kart-h{display:flex;align-items:center;gap:16px;padding:18px 18px 16px;margin:0 0 16px;
+    background:linear-gradient(135deg,rgba(56,189,248,.1),rgba(167,139,250,.08));
+    border:1px solid rgba(148,178,220,.16);border-radius:18px}
+  .pf-avatar{flex:none;width:58px;height:58px;border-radius:18px;display:grid;place-items:center;
+    font-size:1.5rem;font-weight:700;color:#e6edf7;letter-spacing:.02em;
+    background:linear-gradient(160deg,rgba(56,189,248,.32),rgba(167,139,250,.28));
+    border:1px solid rgba(148,178,220,.3);box-shadow:0 10px 24px -14px rgba(56,189,248,.9)}
+  .pf-kimlik{flex:1;min-width:0}
+  .pf-kimlik h2{font-size:1.55rem;line-height:1.18;margin:0 0 5px;letter-spacing:-.02em;color:#f2f7ff}
+  .pf-alt{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+  .pf-alt span{font-size:.7rem;background:rgba(148,178,220,.1);border:1px solid rgba(148,178,220,.18);
+    border-radius:999px;padding:2px 9px;color:#c9d6ea}
+  .pf-mail{font-size:.76rem;color:var(--muted);word-break:break-all}
+  .pf-dogrulama{flex:none;align-self:flex-start;font-size:.66rem;font-weight:700;letter-spacing:.04em;
+    color:#34d399;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);
+    border-radius:999px;padding:4px 10px;white-space:nowrap}
+  @media (max-width:560px){
+    .pf-kart-h{flex-wrap:wrap;gap:11px;padding:14px}
+    .pf-avatar{width:48px;height:48px;font-size:1.2rem;border-radius:15px}
+    .pf-kimlik{flex:1 1 auto;min-width:0}
+    .pf-kimlik h2{font-size:1.22rem;line-height:1.2}
+    /* doğrulama rozeti kendi satırında: adı sıkıştırmasın */
+    .pf-dogrulama{order:3;flex:1 1 100%;justify-content:center;align-self:auto;text-align:center}
+    .pf-alt{gap:5px}
+    .pf-alt span{font-size:.66rem;padding:2px 8px}
+    .pf-mail{font-size:.7rem;word-break:normal;overflow-wrap:anywhere}
+  }
+  /* planı düzenle: geniş satırlar (todo span kuralına yenilmemeli) */
+  .adm-satir{display:flex;align-items:center;gap:12px;padding:11px 13px}
+  .adm-satir .adm-no{flex:0 0 28px;width:28px;height:28px;border-radius:9px;display:grid;
+    place-items:center;font-size:.7rem;font-weight:700;color:#7dd3fc;background:rgba(56,189,248,.1);
+    border:1px solid rgba(56,189,248,.25);font-variant-numeric:tabular-nums;line-height:1;
+    min-width:28px;max-width:28px;overflow:hidden}
+  .adm-satir .adm-bilgi{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .adm-satir .adm-bilgi b{font-size:.86rem;font-weight:600;color:#e6edf7;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .adm-satir .adm-bilgi small{font-size:.7rem;color:var(--muted)}
+  .adm-satir .td{flex:0 0 auto}
+  .td-sil{color:#ff9d9d;border-color:rgba(255,120,120,.32)}
+  .td-sil:hover{background:rgba(255,90,90,.14);border-color:rgba(255,120,120,.5)}
+  .gun-panel .gp-tarih{font-size:.78rem;letter-spacing:.1em;color:#5f7392;margin-bottom:4px;
+    display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .gun-panel .gp-tarih .gp-etiket{font-size:.68rem;padding:3px 10px;letter-spacing:.06em}
+  .gp-kart{background:rgba(148,178,220,.05);border:1px solid rgba(148,178,220,.14);
+    border-radius:14px;padding:13px 14px;margin:12px 0}
+  .gp-kart + .gp-kart{margin-top:9px}
+  .gp-kart h3{font-size:.94rem;font-weight:700;margin:0 0 3px;color:#e6edf7;display:flex;
+    align-items:center;gap:8px}
+  .gp-kart h3 i{width:8px;height:8px;border-radius:50%;background:#38bdf8;flex:none}
+  .gp-kart.bahar h3 i{background:#34d399}
+  .gp-kart.ozel h3 i{background:#a78bfa}
+  .gp-kart h3 em{font-style:normal;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+    color:#41526b;font-weight:700;white-space:nowrap}
+  .gp-kart h3 span{flex:1;min-width:0;line-height:1.35}
+  .gp-kart p{margin:6px 0 0;font-size:.85rem;line-height:1.6;color:#b7c6da;white-space:pre-wrap}
+  .gp-kart p:empty{display:none}
+  .gp-satir{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0}
+  .gp-etiket{font-size:.72rem;background:rgba(148,178,220,.08);border:1px solid rgba(148,178,220,.16);
+    border-radius:999px;padding:3px 10px;color:#c9d6ea}
+  .gp-not{font-size:.84rem;line-height:1.6;color:#fcd34d;background:rgba(252,211,77,.08);
+    border:1px solid rgba(252,211,77,.22);border-radius:12px;padding:10px 12px;margin-top:10px}
+  .gp-not b{display:block;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;
+    color:#f59e0b;margin-bottom:4px}
+  .gp-bos{font-size:.84rem;color:var(--muted);padding:14px 2px;text-align:center}
   .day.today{border-color:rgba(56,189,248,.65);box-shadow:0 0 16px -6px rgba(56,189,248,.7)}
   .day.today .dn{color:#7dd3fc}
   /* fare ile uzerine gelinen gun: mavi isaret oraya gider */
@@ -441,6 +575,100 @@
     .pf-sel select{max-width:78px;font-size:.62rem}
   }
   /* profil alt barı: tehlikeli işlemler (kırmızı) */
+  /* onay penceresi */
+  /* ---- arama kutusu (üye listeleri) ---- */
+  .pf-ara{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:7px 11px}
+  .pf-ara-ikon{color:var(--accent);font-size:1rem;line-height:1}
+  .pf-ara input{flex:1;min-width:0;background:none;border:none;color:var(--text);
+    font-size:.86rem;padding:3px 0;outline:none}
+  .pf-ara input::placeholder{color:var(--muted)}
+  .pf-ara input::-webkit-search-cancel-button{-webkit-appearance:none}
+  .pf-ara-sonuc{font-size:.72rem;color:var(--muted);margin:7px 2px 6px}
+  .pf-ara-liste{max-height:min(46vh,360px);overflow:auto;display:flex;flex-direction:column;gap:6px}
+  .pf-ara-liste .todo{padding:8px 10px}
+  .ge-uye{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+    border-radius:11px;padding:9px 11px;color:var(--text);cursor:pointer;font:inherit}
+  .ge-uye:hover{border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.09)}
+  .ge-uye small{color:var(--muted);font-size:.72rem;word-break:break-word}
+  .ge-uye.secili{border-color:var(--accent);background:rgba(56,189,248,.16);
+    box-shadow:0 0 0 1px rgba(56,189,248,.35) inset}
+  .ge-uye.secili::after{content:" ✓ seçildi";color:var(--accent);font-size:.72rem}
+  .pf-kutu{margin:10px 0 4px}
+  /* etkinlik sayfasında arama kutusu: QR bloğundan ayrı dursun */
+  .es-ara{margin:20px 0 6px}
+  /* ================= üyelere açık etkinlik sayfası ================= */
+  .etp-kapak{position:relative;margin:0 0 16px;padding:22px 20px 20px;border-radius:20px;
+    background:linear-gradient(135deg,rgba(56,189,248,.16),rgba(167,139,250,.14) 55%,rgba(52,211,153,.1));
+    border:1px solid rgba(148,178,220,.2);overflow:hidden}
+  .etp-kapak::after{content:"";position:absolute;right:-40px;top:-46px;width:170px;height:170px;
+    border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,.22),transparent 70%)}
+  .etp-donem{position:relative;display:inline-flex;align-items:center;gap:7px;font-size:.64rem;
+    font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#7dd3fc;
+    background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);border-radius:999px;
+    padding:4px 11px}
+  .etp-kapak h3{position:relative;font-size:1.42rem;line-height:1.24;margin:11px 0 8px;
+    letter-spacing:-.015em;color:#f2f7ff;font-weight:700}
+  .etp-tarih{position:relative;display:flex;flex-wrap:wrap;gap:8px 14px;font-size:.8rem;color:#b7c6da}
+  .etp-tarih b{color:#e6edf7;font-weight:600}
+  .etp-durum{position:relative;display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .etp-pill{display:inline-flex;align-items:center;gap:6px;font-size:.74rem;padding:5px 12px;
+    border-radius:999px;border:1px solid rgba(148,178,220,.2);background:rgba(255,255,255,.05);color:#c9d6ea}
+  .etp-pill.katildi{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.42);color:#6ee7b7}
+  .etp-pill.gorev{background:rgba(56,189,248,.14);border-color:rgba(56,189,248,.4);color:#7dd3fc}
+  .etp-pill.bekliyor{background:rgba(252,211,77,.1);border-color:rgba(252,211,77,.34);color:#fcd34d}
+  .etp-izgara{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:4px 0 0}
+  .etp-kart{background:rgba(148,178,220,.05);border:1px solid rgba(148,178,220,.15);border-radius:15px;
+    padding:13px 15px}
+  .etp-kart em{display:flex;align-items:center;gap:7px;font-style:normal;font-size:.63rem;
+    font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#5f7392;margin-bottom:6px}
+  .etp-kart b{font-size:.92rem;font-weight:600;color:#e6edf7;line-height:1.45}
+  .etp-kart.aciklama b{font-weight:400;font-size:.87rem;line-height:1.65;color:#b7c6da;white-space:pre-wrap}
+  .etp-rozetler{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+  .etp-rozet{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;padding:6px 12px;
+    border-radius:999px;background:rgba(148,178,220,.08);border:1px solid rgba(148,178,220,.18);color:#d5e1f2}
+  .etp-rozet i{width:7px;height:7px;border-radius:50%;background:#38bdf8;flex:none}
+  .etp-rozet b{font-weight:600;color:#f2f7ff}
+  .etp-not{display:flex;gap:11px;align-items:flex-start;margin-top:16px;padding:13px 15px;border-radius:15px;
+    background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.24);font-size:.83rem;line-height:1.6;color:#c9d6ea}
+  .etp-not i{font-style:normal;font-size:1.05rem;line-height:1.3}
+  .etp-baslik{display:flex;align-items:center;gap:9px;font-size:.72rem;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:#5f7392;margin:20px 0 10px}
+  .etp-baslik::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(148,178,220,.22),transparent)}
+  .etp-sayi{font-size:.8rem;color:var(--muted)}
+  /* etkinlik yorumları (sohbet) */
+  .etp-yorum{margin-top:26px}
+  .etp-baslik em{font-style:normal;font-size:.68rem;color:#41526b;margin-left:6px}
+  #yrListe{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .yr{background:rgba(148,178,220,.05);border:1px solid rgba(148,178,220,.14);
+    border-radius:14px;padding:10px 13px}
+  .yr.benim{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.26)}
+  .yr-bas{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .yr-ad{font-size:.78rem;font-weight:600;color:#e6edf7}
+  .yr.benim .yr-ad{color:#7dd3fc}
+  .yr-zaman{font-size:.68rem;color:var(--muted);margin-left:auto}
+  .yr-sil{flex:none}
+  .yr-metin{font-size:.85rem;line-height:1.6;color:#c9d6ea;white-space:pre-wrap;word-break:break-word}
+  .yr-yaz{background:rgba(148,178,220,.05);border:1px solid rgba(148,178,220,.16);
+    border-radius:14px;padding:10px 12px}
+  .yr-yaz textarea{width:100%;background:none;border:none;color:var(--text);font:inherit;
+    font-size:.85rem;line-height:1.55;resize:vertical;min-height:52px;outline:none}
+  .yr-yaz textarea::placeholder{color:#5f7392}
+  .yr-yaz-alt{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+  .yr-yaz-alt small{font-size:.7rem;color:var(--muted)}
+  .pf-secim{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.35);
+    border-radius:12px;padding:10px 12px;margin-top:8px;font-size:.82rem}
+  .pf-secim b{color:var(--accent)}
+  .pf-secim.sesiz{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.12);color:var(--muted)}
+  .onay-icerik{font-size:.86rem;line-height:1.55;color:#e6edf7;margin:6px 0 4px}
+  .onay-uyari{background:rgba(255,90,90,.1);border:1px solid rgba(255,120,120,.4);
+    border-radius:12px;padding:11px 13px;color:#ffd0d0}
+  .onay-acts{justify-content:flex-end}
+  .onay-acts .onay-tehlike{background:linear-gradient(180deg,#ef4444,#dc2626);
+    border-color:#ef4444;color:#fff;font-weight:600}
+  .onay-acts .onay-tehlike:hover{filter:brightness(1.08)}
   .pz{margin-top:18px;padding-top:14px;border-top:1px solid rgba(148,178,220,.16)}
   .pz-baslik{font-size:.66rem;letter-spacing:.07em;color:#8296b4;margin:0 0 8px}
   .pz button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
@@ -513,63 +741,130 @@
 
   /* ================= MOBİL (v3.6) ================= */
   @media (max-width:680px){
-    /* ust bar: tek satira kisalt */
-    .topbar{padding:7px 11px;gap:9px}
-    .logo{width:32px;height:32px;border-radius:10px}
+    /* ---- üst bar: daha derli toplu, tek satır ---- */
+    .topbar{padding:6px 10px;gap:8px}
+    .logo{width:28px;height:28px;border-radius:9px}
     .titles{min-width:0;flex:1 1 auto}
-    .titles h1{font-size:.84rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .titles p{font-size:.64rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:0}
-    .badge{padding:4px 9px;font-size:.56rem;letter-spacing:.07em}
-    /* arac cubugu: 2 satir, 42px dokunma alani */
-    .toolbar{gap:7px;padding:7px 9px}
-    .toolbar button{min-height:42px;padding:8px 11px;font-size:.76rem}
-    .toolbar .grp{gap:6px}
-    .toolbar .tview{order:1;flex:1 1 100%;display:flex}
-    .toolbar .tview #btnDna,.toolbar .tview #btnCal{flex:1 1 0;min-width:0;
-      justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .toolbar .tview #btnDna,.toolbar .tview #btnCal{padding:8px 6px}
-    .toolbar .tview #btnMore{order:2;display:inline-flex;flex:0 0 42px;padding:0;font-size:1.15rem;
-      align-items:center;justify-content:center}
-    .toolbar .tview #btnInstall{display:none}
+    .titles h1{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+    .titles p{font-size:.6rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+    .badge{padding:3px 8px;font-size:.52rem;letter-spacing:.05em}
+    .tail{display:none}
+    /* ---- araç çubuğu: iki satır ama 36 px (42 px değil) ---- */
+    .toolbar{gap:6px;padding:6px 8px}
+    .toolbar button{min-height:36px;padding:6px 9px;font-size:.73rem;border-radius:11px}
+    .toolbar .grp{gap:5px}
     .toolbar .tnav{order:2;flex:0 0 auto}
-    #search{order:3;flex:1 1 76px;min-width:66px;font-size:.76rem;padding:10px 12px;border-radius:12px}
+    .toolbar .tview{order:1;flex:1 1 100%;display:flex;gap:5px}
+    .toolbar .tview #btnDna,.toolbar .tview #btnCal,.toolbar .tview #btnSayfa{flex:1 1 0;min-width:0;
+      justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      padding:6px 4px;font-size:.72rem;font-weight:600}
+    .toolbar .tview #btnMore{order:2;display:inline-flex;flex:0 0 36px;padding:0;font-size:1.05rem;
+      align-items:center;justify-content:center;min-height:36px}
+    .toolbar .tview #btnInstall{display:none}
+    #search{order:3;flex:1 1 60px;min-width:56px;font-size:.74rem;padding:8px 11px;border-radius:11px}
+    #btnToday{padding:6px 10px;font-size:.73rem}
+    #btnTop,#btnPrev,#btnNext{padding:6px 8px;font-size:.8rem}
+    /* seçili görünüm düğmesi daha belirgin */
+    .toolbar .tview button.on{background:rgba(56,189,248,.16);border-color:rgba(56,189,248,.55);
+      color:#bae6fd;box-shadow:0 0 0 1px rgba(56,189,248,.18) inset}
     #hint{display:none!important}
     /* ⋮ paneli arac cubugunun altinda */
     .sheet{top:calc(var(--tbh,77px) + var(--tbb,48px) - 6px);right:8px;min-width:min(272px,calc(100vw - 16px))}
     /* ray ince */
     #rail{right:5px;top:calc(var(--tbh,77px) + var(--tbb,48px) + 10px);bottom:14px}
-    #railCv{width:27px}
+    #railCv{width:24px}
+    /* DNA kartı: arkadaki yazılar sızmasın */
+    .node .card{background:rgba(7,11,20,.94);border-color:rgba(148,178,220,.18)}
+    .node.active .card{background:rgba(13,20,34,.96)}
     /* normal takvim */
-    body.cal #normalView{padding:11px 9px 44px}
-    .cal-stats{gap:8px;margin-bottom:13px}
+    body.cal #normalView{padding:10px 8px 44px}
+    .cal-stats{gap:7px;margin-bottom:12px}
     /* istatistikler telefonda iki kolon kalir (8 kart alt alta yigilmasin) */
-    .stat-pair{grid-template-columns:1fr 1fr;gap:7px}
-    .stat{padding:7px 9px;border-radius:11px;min-width:0}
-    .stat b{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .stat span{font-size:.53rem;letter-spacing:.06em;white-space:nowrap;overflow:hidden;
+    .stat-pair{grid-template-columns:1fr 1fr;gap:6px}
+    .stat{padding:6px 8px;border-radius:10px;min-width:0}
+    .stat b{font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .stat span{font-size:.5rem;letter-spacing:.05em;white-space:nowrap;overflow:hidden;
       text-overflow:ellipsis;display:block}
-    .stat small{font-size:.61rem;margin-top:2px;white-space:nowrap;overflow:hidden;
+    .stat small{font-size:.58rem;margin-top:1px;white-space:nowrap;overflow:hidden;
       text-overflow:ellipsis;display:block}
-    .pbar{margin:6px 0 0}
-    .cal-month{margin-bottom:17px}
-    .cal-month h3{font-size:.84rem;margin-bottom:6px}
+    .pbar{margin:5px 0 0}
+    /* istatistikler: telefonda ilk 2 kart g\u00f6sterilir, gerisi a\u00e7\u0131l\u0131r */
+    #calStats .stat-pair:nth-child(n+3){display:none}
+    #calStats.acik .stat-pair{display:grid}
+    .ist-ac{width:100%;margin-top:8px;justify-content:center;background:rgba(148,178,220,.07);
+      border:1px dashed rgba(148,178,220,.24);color:#9fb3cd;font-size:.72rem;min-height:34px}
+    .todos{padding:10px 11px;border-radius:14px;margin-bottom:15px}
+    .todos h3{font-size:.82rem;margin-bottom:7px}
+    .todo-add input{font-size:.78rem;padding:8px 10px}
+    .todo{font-size:.78rem;padding:7px 2px}
+    .todo .tk{width:28px;height:28px}
+    .cal-month{margin-bottom:15px}
+    .cal-month h3{font-size:.82rem;margin-bottom:6px}
     .cal-grid{gap:3px}
     .dow{font-size:.54rem;padding:2px 0}
-    .day{min-height:56px;font-size:.66rem;padding:3px 4px;border-radius:8px}
-    .dnote{width:28px;height:28px;font-size:.85rem;top:3px;right:3px}
-    .day .nt{margin-left:0}
-    .ev{font-size:.55rem;line-height:1.25;margin-top:2px;padding:2px 4px;border-radius:5px}
-    .todos{padding:11px 12px;border-radius:14px;margin-bottom:17px}
-    .todos h3{font-size:.84rem;margin-bottom:8px}
-    .todo-add input{font-size:.8rem;padding:9px 11px}
-    .todo{font-size:.8rem;padding:8px 2px}
-    .todo .tk{width:30px;height:30px}
+    /* günler: yazı rozeti yerine renkli nokta (telefonda okunur) */
+    .day{min-height:50px;font-size:.7rem;padding:3px 3px;border-radius:9px;
+      display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+    .day .dn{font-size:.72rem;padding-right:11px}
+    .day .nt{position:absolute;left:3px;bottom:2px;margin:0;font-size:.62rem}
+    .dnote{width:20px;height:20px;font-size:.7rem;top:auto;right:2px;bottom:1px;opacity:.5}
+    /* etkinlik rozetleri: küçük renkli noktalar */
+    .day .ev-wrap{display:flex;gap:3px;flex-wrap:wrap;align-items:center;width:100%}
+    .day .ev{font-size:0;line-height:0;width:7px;height:7px;padding:0;border-radius:50%;
+      border:0;background:#38bdf8;margin:0;opacity:.95}
+    .day .ev.guz{background:#38bdf8}.day .ev.bahar{background:#34d399}.day .ev.ozel{background:#a78bfa}
+    .day .ev-more{display:none}
+    .day .ev-sayfa{display:none}
+    .day.etkin{background:rgba(56,189,248,.09)}
+    .day.etkin .nok{width:5px;height:5px;top:6px;right:5px}
+    .day.today{box-shadow:0 0 12px -5px rgba(56,189,248,.8)}
+    .todos{padding:10px 11px;border-radius:14px;margin-bottom:15px}
+    .todos h3{font-size:.82rem;margin-bottom:7px}
+    .todo-add input{font-size:.78rem;padding:8px 10px}
+    .todo{font-size:.78rem;padding:7px 2px}
+    .todo .tk{width:28px;height:28px}
+    /* etkinlikler listesi: kartlari biraz daha sikilastir */
+    .etp-liste-basi{gap:10px;margin:2px 0 14px}
+    .etp-liste-basi h2{font-size:1.14rem}
+    .etp-liste-basi p{font-size:.76rem;line-height:1.5}
+    .etp-liste-ara{flex:1 1 100%}
+    .etp-liste{padding:12px 13px;gap:11px;border-radius:14px}
+    .etp-liste .lno{width:30px;height:30px;border-radius:10px;font-size:.7rem}
+    .etp-liste .lbilgi b{font-size:.88rem}
+    .etp-liste .lbilgi small{font-size:.68rem;line-height:1.45}
+    .etp-liste .lrozet{font-size:.58rem;padding:3px 8px}
+    /* etkinlik sayfası: kartlar tek kolon */
+    .etp-kapak{padding:18px 16px 16px;border-radius:17px}
+    .etp-kapak h3{font-size:1.16rem}
+    .etp-izgara{grid-template-columns:1fr;gap:8px}
+    .etp-izgara .etp-kart{padding:11px 13px}
+    /* ---- gün paneli: telefon için daha okunur ---- */
+    .modal.genis.gun-panel{padding:44px 14px 18px}
+    .gun-panel .gp-tarih{margin:2px 0 14px;font-size:.76rem;gap:8px}
+    .gun-panel .gp-tarih .gp-etiket{font-size:.66rem;padding:3px 9px}
+    .gun-panel .gp-kart{padding:14px 14px;margin:0;border-radius:16px}
+    .gun-panel .gp-kart h3{font-size:1rem;line-height:1.35;margin:0 0 9px;align-items:flex-start}
+    .gun-panel .gp-kart h3 i{margin-top:5px}
+    .gun-panel .gp-kart h3 em{font-size:.6rem;padding:2px 7px}
+    .gun-panel .gp-satir{gap:6px}
+    .gun-panel .gp-etiket{font-size:.72rem;padding:5px 11px;border-radius:999px}
+    .gun-panel .gp-kart p{font-size:.88rem;line-height:1.62;margin-top:9px}
+    /* kart içi ve alt düğmeler tam genişlik: dokunması kolay */
+    .gun-panel .gp-kart .acts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .gun-panel .gp-kart .acts button{width:100%;min-height:44px;justify-content:center}
+    .gun-panel > .acts{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+    .gun-panel > .acts button{width:100%;min-height:46px;justify-content:center;font-size:.86rem}
+    .gp-not{font-size:.86rem;line-height:1.6;padding:12px 13px}
   }
 
   @media (max-width:400px){
-    .toolbar button{font-size:.7rem;padding:8px 8px}
-    .titles h1{font-size:.8rem}
-    .badge{padding:4px 7px;font-size:.52rem}
+    .toolbar button{font-size:.68rem;padding:6px 7px}
+    .titles h1{font-size:.74rem}
+    .titles p{font-size:.56rem}
+    .badge{padding:3px 7px;font-size:.5rem}
+    .toolbar .tview #btnDna,.toolbar .tview #btnCal,.toolbar .tview #btnSayfa{font-size:.68rem}
+    .day{min-height:46px}
+    .day .dn{font-size:.68rem}
   }
 
   @media print{
@@ -608,10 +903,11 @@
     <button id="btnToday" class="now" title="Bugünün gününe git — etkinlik yoksa da o gün (T)">Bugün</button>
     <button id="btnNext" class="ic" title="Sonraki etkinlik (↓)">▶</button>
   </div>
-  <input id="search" type="search" placeholder="Ara: CRISPR, Kasım, DNA günü…" autocomplete="off">
+  <input id="search" type="search" placeholder="Ara: CRISPR, Kasım…" autocomplete="off">
   <div class="grp tview">
-    <button id="btnDna" class="on" title="DNA sarmalı görünümü (D)">DNA Takvim</button>
-    <button id="btnCal" title="Düz takvim görünümü">Normal Takvim</button>
+    <button id="btnDna" class="on" title="DNA sarmalı görünümü (D)">DNA</button>
+    <button id="btnCal" title="Düz takvim görünümü">Takvim</button>
+    <button id="btnSayfa" title="Tüm etkinlik sayfaları">Etkinlikler</button>
     <button id="btnMore" class="ic" title="Diğer işlemler" aria-label="Diğer işlemler" aria-expanded="false">⋮</button>
   </div>
   <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
@@ -643,8 +939,23 @@
     <div id="calMonths"></div>
   </div>
 </section>
+<section id="sayfaView" aria-label="Etkinlik sayfaları">
+  <div class="cal-wrap">
+    <div class="etp-liste-basi">
+      <div>
+        <h2>Etkinlik sayfaları</h2>
+        <p>Tarih sırasıyla bütün etkinlikler. Bir etkinliğe tıkla — konu, konuk, yer, saat ve
+           katılımcı yorumlarını gör.</p>
+      </div>
+      <div class="pf-ara etp-liste-ara"><span class="pf-ara-ikon">⌕</span>
+        <input type="search" id="etpAra" autocomplete="off" spellcheck="false"
+               placeholder="Ara: başlık, tarih, hafta"></div>
+    </div>
+    <div id="etpListe"></div>
+  </div>
+</section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.14.0 · çekirdek</span></div>
+<div id="hint">Tekerlek / dokunma ile sarmalı sür · karta tıkla büyüt · kaydır/Esc ile kapat · <span class="ver">sürüm 3.20.0 · çekirdek</span></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2659,11 +2970,22 @@ var MBGFB = (function () {
   function deleteEvent(id) {
     return ready().then(function () { return db.collection('events').doc(String(id)).delete(); });
   }
+  /* sunucudaki planın tam yüklendiğinin işareti (meta/plan) */
+  function planMeta() {
+    return ready().then(function () {
+      return db.collection('meta').doc('plan').get().then(function (s) {
+        return s.exists ? (s.data() || {}) : null;
+      }).catch(function () { return null; });
+    });
+  }
   function eventIds() {
     return ready().then(function () {
       return db.collection('events').orderBy('order').get().then(function (snap) {
         var out = [];
-        snap.forEach(function (d) { out.push({ id: d.id, order: (d.data() || {}).order }); });
+        snap.forEach(function (d) {
+          var v = d.data() || {};
+          out.push({ id: d.id, order: v.order, date: v.date || '', title: v.title || '' });
+        });
         return out;
       });
     });
@@ -2834,6 +3156,67 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     });
   }
 
+  /* =====================================================================
+     ETKİNLİK YORUMLARI (sohbet)
+     ---------------------------------------------------------------------
+     Yalnızca o etkinliğe katılımı kaydedilmiş (veya görevi olan) üyeler
+     yorum yazabilir. Yazma yetkisi Firestore kurallarında da denetlenir.
+     ===================================================================== */
+  function yorumOku(evId) {
+    return ready().then(function () {
+      return evRef(evId).collection('yorumlar').orderBy('at', 'asc').get()
+        .then(function (snap) {
+          var out = [];
+          snap.forEach(function (d) {
+            var o = d.data() || {};
+            o.id = d.id;
+            o.zaman = o.at && typeof o.at.toDate === 'function'
+              ? o.at.toDate().toLocaleString('tr-TR',
+                  { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+              : '';
+            out.push(o);
+          });
+          return out;
+        }).catch(function () { return []; });
+    });
+  }
+  function yorumYaz(evId, metin) {
+    if (!state.user) return Promise.reject(new Error('Önce giriş yapmalısın.'));
+    if (!verified()) return Promise.reject(new Error('E-posta doğrulanmadan yorum yazamazsın.'));
+    var m = String(metin || '').trim();
+    if (!m) return Promise.reject(new Error('Yorum boş olamaz.'));
+    if (m.length > 500) return Promise.reject(new Error('Yorum en fazla 500 karakter olabilir.'));
+    return ready().then(function () {
+      var p = state.profile || {};
+      return evRef(evId).collection('yorumlar').add({
+        uid: state.user.uid,
+        ad: p.name || state.user.email || '',
+        eposta: state.user.email || '',
+        metin: m,
+        at: ts()
+      }).then(function (r) { return r.id; });
+    });
+  }
+  function yorumSil(evId, yid) {
+    if (!state.user) return Promise.reject(new Error('Önce giriş yapmalısın.'));
+    return ready().then(function () {
+      return evRef(evId).collection('yorumlar').doc(String(yid)).delete();
+    });
+  }
+  /* bu üye bu etkinliğe katıldı mı / görevli mi (yorum hakkı) */
+  function yorumHakki(evId) {
+    if (!state.user) return Promise.resolve(false);
+    return ready().then(function () {
+      var uid = state.user.uid;
+      return Promise.all([
+        evRef(evId).collection('katilan').doc(uid).get(),
+        evRef(evId).collection('gorevli').doc(uid).get()
+      ]).then(function (r) {
+        return !!(r[0].exists || r[1].exists);
+      }).catch(function () { return false; });
+    });
+  }
+
   /* görevliler (yalnızca yönetici yazar) */
   function gorevliOku(evId) {
     return ready().then(function () {
@@ -2957,11 +3340,12 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     sayfaOku: sayfaOku, sayfaYaz: sayfaYaz,
     qrKodYaz: qrKodYaz, qrKodOku: qrKodOku,
     katilanOku: katilanOku, katilanYaz: katilanYaz,
+    yorumOku: yorumOku, yorumYaz: yorumYaz, yorumSil: yorumSil, yorumHakki: yorumHakki,
     gorevliOku: gorevliOku, gorevliEkle: gorevliEkle, gorevliSil: gorevliSil,
     benimKatildiklarim: benimKatildiklarim, benimGorevlerim: benimGorevlerim,
     listMembers: listMembers, deleteMember: deleteMember, setMemberRole: setMemberRole,
     watchEvents: watchEvents, replaceEvents: replaceEvents, upsertEvent: upsertEvent,
-    deleteEvent: deleteEvent, eventIds: eventIds,
+    deleteEvent: deleteEvent, eventIds: eventIds, planMeta: planMeta,
     saveTodos: saveTodos, loadTodos: loadTodos, saveNote: saveNote, loadNotes: loadNotes,
     loadKatilim: loadKatilim, saveKatilim: saveKatilim,
     watchNews: watchNews, addNews: addNews, addReport: addReport, listReports: listReports
@@ -3227,12 +3611,27 @@ var MBGM = (function () {
     };
     q('#backdrop').classList.add('open');
   }
-  function cikis() {
-    if (!confirm('Çıkış yapılsın mı? Bu cihazdaki kişisel not ve görevler silinmez.')) return;
-    MBGFB.signOut().then(function () {
-      toast('Çıkış yapıldı.', 3000);
-      syncUI();
-    });
+  function cikis(ondan) {
+    var yap = function () {
+      MBGO.islem({
+        baslat: 'Çıkış yapılıyor…',
+        islem: function () { return MBGFB.signOut(); },
+        basarili: '✓ Çıkış yapıldı. Ana sayfaya dönüyorsun.',
+        sonra: function () {
+          close();              /* profil panelini kapat */
+          syncUI();             /* ⋮ menüsü "Üye ol / Giriş yap" olur */
+          if (A && A.syncUI) A.syncUI();
+        }
+      });
+    };
+    if (ondan) { yap(); return; }   /* onay penceresi zaten sordu */
+    MBGO.sor({
+      baslik: 'Çıkış yap',
+      ikon: '🚪',
+      mesaj: 'Oturumun kapatılacak.',
+      not: 'Bu cihazdaki kişisel not ve görevlerin silinmez.',
+      onayMetni: 'Evet, çıkış yap'
+    }).then(function (ok) { if (ok) yap(); });
   }
 
 /* doğrulama e-postasını tekrar gönder */
@@ -3281,8 +3680,7 @@ var MBGM = (function () {
       '<div class="acts">' +
         '<button type="button" data-x="tekrar">E-postayı tekrar gönder</button>' +
         '<button type="button" class="pri" data-x="kontrol">Doğruladım, kontrol et</button>' +
-      '</div>' +
-      '<div class="sub" style="margin-top:10px"><a href="#" data-x="kapat">Kapat</a></div>';
+      '</div>';
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-x]') : null;
       if (!b) return;
@@ -3386,15 +3784,28 @@ var MBGM = (function () {
     };
     q('#backdrop').classList.add('open');
   }
-  function hesabiSil() {
+  function hesabiSil(ondan) {
     if (!MBGFB.user()) return;
-    if (!confirm('Hesabın, notların ve yapılacakların kalıcı olarak silinecek.\n\n' +
-                 'Bu işlem geri alınamaz. Emin misin?')) return;
-    MBGFB.deleteMe().then(function () {
-      close();
-      toast('Hesabın ve kişisel verilerin silindi.', 4500);
-      syncUI();
-    }).catch(function (e) { toast(err(e), 7000); });
+    var u = MBGFB.user();
+    var yap = function () {
+      MBGO.islem({
+        baslat: 'Hesabın ve kişisel verilerin siliniyor…',
+        bekleme: 9000,
+        islem: function () { return MBGFB.deleteMe(); },
+        basarili: '✓ Hesabın ve kişisel verilerin silindi.',
+        sonra: function () { close(); syncUI(); }
+      });
+    };
+    if (ondan) { yap(); return; }   /* onay penceresi zaten sordu */
+    MBGO.sor({
+      baslik: 'Hesabımı sil',
+      uyari: true,
+      ikon: '⚠',
+      mesaj: '<b>' + esc(u.email || 'Hesabın') + '</b> kalıcı olarak silinecek.',
+      not: 'Profil bilgilerin, notların ve yapılacakların tamamen gider. ' +
+           'Bu işlem geri alınamaz.',
+      onayMetni: 'Evet, hesabımı sil'
+    }).then(function (ok) { if (ok) yap(); });
   }
 
   /* --- ⋮ panelindeki durum --- */
@@ -3438,12 +3849,23 @@ var MBGM = (function () {
      =================================================================== */
   function planBagla() {
     if (!MBGFB.configured()) return;
+    var bakildi = false;
     MBGFB.watchEvents(function (list, e) {
       if (e || !list || !list.length) return;
-      if (A && A.applyPlan) {
-        A.applyPlan(list, 'sunucu');
-        planSrc = 'sunucu';
-      }
+      /* Sunucudaki liste ancak "tam plan" yüklendiyse (meta/plan) geçerlidir.
+         Aksi hâlde ekranda gömülü Excel planı korunur: tek bir ekleme
+         27 etkinliklik planı silmesin. */
+      if (bakildi) return;
+      bakildi = true;
+      var yerel = A && A.events ? A.events().length : 0;
+      MBGFB.planMeta().then(function (m) {
+        if (m) { A.applyPlan(list, 'sunucu'); planSrc = 'sunucu'; return; }
+        if (yerel && list.length < yerel) {
+          toast('☁️ Sunucuda ' + list.length + ' etkinlik var; ekrandaki ' + yerel +
+            ' etkinliklik plan korunuyor. Tam planı yüklemek için "Excel dosyasından içe aktar"ı kullan.',
+            7500);
+        }
+      });
     });
   }
 
@@ -3546,6 +3968,7 @@ var MBGM = (function () {
     if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
     var m = q('#modal');
     if (!m) return;
+    m.className = 'modal genis';
     m.innerHTML =
       '<h2>Planı düzenle</h2>' +
       '<div class="sub">Değişiklikler tüm üyelerde anında görünür</div>' +
@@ -3556,21 +3979,63 @@ var MBGM = (function () {
         '<button type="button" data-a="uyeler">Üyeler</button>' +
         '<button type="button" data-a="rapor">Hata bildirimleri</button>' +
         '<button type="button" data-a="gorus">Öneri / görüşler</button>' +
-        '<button type="button" data-a="kapat">Kapat</button>' +
       '</div>' +
-      '<div id="admList" style="margin-top:14px;max-height:44vh;overflow:auto"></div>' +
+      '<div class="pf-ara" style="margin-top:14px"><span class="pf-ara-ikon">⌕</span>' +
+        '<input type="search" id="admAra" autocomplete="off" spellcheck="false" ' +
+        'placeholder="Ara: etkinlik adı, tarih, hafta, konu"></div>' +
+      '<div class="pf-ara-sonuc" id="admAraSayi"></div>' +
+      '<div id="admList" class="kaydirma" style="margin-top:2px;max-height:46vh;overflow:auto"></div>' +
       '<input type="file" id="admXlsx" accept=".xlsx,.xls,.csv" hidden>';
     var list = q('#admList');
+    var araMetin = '';
     function ciz() {
       var ev = A && A.events ? A.events() : [];
-      list.innerHTML = ev.map(function (e, i) {
-        return '<div class="todo"><span>' + esc(fmt(e.date)) + ' · ' +
-          esc(String(e.title).slice(0, 64)) + '</span>' +
+      var s = MBGO.duz(araMetin);
+      var goster = ev.map(function (e, i) { return { e: e, i: i }; }).filter(function (x) {
+        if (!s) return true;
+        return MBGO.duz([x.e.title, x.e.date, x.e.weekLabel, x.e.desc, x.e.topic].join(' ')).indexOf(s) >= 0;
+      });
+      var say = q('#admAraSayi');
+      if (say) say.textContent = goster.length + ' / ' + ev.length + ' etkinlik' + (s ? ' · "' + araMetin + '"' : '');
+      list.innerHTML = goster.map(function (x) {
+        var e = x.e, i = x.i;
+        return '<div class="todo adm-satir">' +
+          '<span class="adm-no">' + (i + 1) + '</span>' +
+          '<span class="adm-bilgi"><b>' + esc(String(e.title).slice(0, 70)) + '</b>' +
+            '<small>' + esc(fmt(e.date)) +
+              (e.weekLabel ? ' · ' + esc(e.weekLabel) : '') +
+              (e.exact ? ' · kesin tarih' : '') + '</small></span>' +
           '<button type="button" class="td" data-p="' + i + '">Sayfası</button>' +
-          '<button type="button" class="td" data-i="' + i + '">Sil</button></div>';
-      }).join('') || '<div class="todo-empty">Plan boş.</div>';
+          '<button type="button" class="td td-sil" data-i="' + i + '">Sil</button></div>';
+      }).join('') || (ev.length ? '<div class="todo-empty">Aramana uyan etkinlik yok.</div>'
+        : '<div class="todo-empty">Plan boş.</div>');
     }
     ciz();
+    var araGirdi = q('#admAra');
+    if (araGirdi) {
+      araGirdi.oninput = function () { araMetin = araGirdi.value; ciz(); };
+      araGirdi.onkeydown = function (ev2) { if (ev2.key === 'Escape') { araGirdi.value = ''; araMetin = ''; ciz(); } };
+    }
+    /* yerel sıradaki etkinliğin sunucudaki karşılığını bul (tarih + başlık) */
+    function sunucuId(i) {
+      var e = (A.events() || [])[i];
+      if (!e) return Promise.resolve(null);
+      return MBGFB.eventIds().then(function (ids) {
+        var a = null;
+        a = ids.filter(function (x) {
+          return x.date === e.date && String(x.title) === String(e.title);
+        })[0];
+        if (a) return a.id;
+        a = ids.filter(function (x) { return x.date === e.date; })[0];
+        if (a) return a.id;
+        if (e.order != null) {
+          a = ids.filter(function (x) { return x.order === e.order; })[0];
+          if (a) return a.id;
+        }
+        return (ids[i] || {}).id || null;
+      });
+    }
+
     list.onclick = function (ev) {
       var say = ev.target && ev.target.closest ? ev.target.closest('[data-p]') : null;
       if (say) {
@@ -3582,13 +4047,36 @@ var MBGM = (function () {
       if (!b) return;
       var i = +b.getAttribute('data-i');
       var e = (A.events() || [])[i];
-      if (!e) return;
-      if (!confirm('"' + String(e.title).slice(0, 50) + '" silinsin mi?')) return;
-      MBGFB.eventIds().then(function (ids) {
-        var id = ids[i];
-        if (!id) { toast('Bu kayıt sunucuda yok.', 3000); return; }
-        return MBGFB.deleteEvent(id).then(function () { toast('Etkinlik silindi.', 3000); });
-      }).catch(function (x) { toast(err(x), 5000); });
+      if (!e) { toast('Bu etkinlik listede bulunamadı. Sayfayı yenile.', 4000); return; }
+      var baslik = String(e.title).slice(0, 60);
+      MBGO.sor({
+        baslik: 'Etkinliği sil',
+        uyari: true,
+        ikon: '⚠',
+        mesaj: '<b>' + esc(baslik) + '</b> listeden silinecek.',
+        not: (fmt(e.date) || '') + ' · Etkinlik sayfası, katılım kayıtları ve görevliler de silinir.',
+        onayMetni: 'Evet, sil',
+        geri: adminPanel          /* vazgeçte liste arama/duğmeleri canlı döner */
+      }).then(function (ok) {
+        if (!ok) return;
+        MBGO.islem({
+          baslat: baslik + ' siliniyor…',
+          bekleme: 8000,
+          islem: function () { return sunucuId(i).then(function (id) {
+            if (!id) return { yerel: true };          /* sunucuda yok: yerelden kaldır */
+            return MBGFB.deleteEvent(id).then(function () { return { id: id }; });
+          }); },
+          basarili: '✓ ' + baslik + ' silindi.',
+          sonra: function (sonuc) {
+            var silindi = A.planSil ? A.planSil(i) : false;
+            ciz();
+            if (!silindi) adminPanel();   /* indeks kaymışsa paneli tazele */
+            if (sonuc && sonuc.yerel) {
+              toast('Bu kayıt sunucuda yoktu; yalnızca ekrandan kaldırıldı.', 5000);
+            }
+          }
+        });
+      });
     };
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-a]') : null;
@@ -3605,10 +4093,18 @@ var MBGM = (function () {
     q('#admXlsx').onchange = function () {
       var f = this.files && this.files[0];
       if (!f) return;
+      var btn = q('[data-a="aktar"]');
+      if (btn) btn.disabled = true;
+      var bitir = function () { if (btn) btn.disabled = false; };
       if (A && A.importExcel) {
-        A.importExcel(f).then(function (n) {
-          toast(n + ' etkinlik sunucuya yüklendi.', 5000);
-        }).catch(function (x) { toast(err(x), 6000); });
+        A.importExcel(f).then(function (r) {
+          bitir();
+          if (r && r.iptal) { toast('İçeri aktarma iptal edildi — hiçbir şey değişmedi.', 4200); return; }
+          adminPanel();   /* liste güncel kalsın */
+        }).catch(function () { bitir(); });
+      } else {
+        bitir();
+        toast('Excel aktarımı kullanılamıyor.', 4000);
       }
       this.value = '';
     };
@@ -3623,8 +4119,8 @@ var MBGM = (function () {
       '<h2>Üyeler</h2>' +
       '<div class="sub">Yönetici e-postası: <b>b.gul.baba.can@hotmail.com</b> · ' +
       'kayıtlı üye: <b id="uyeSay">…</b></div>' +
-      '<div id="uyeList" style="margin-top:12px;max-height:52vh;overflow:auto"></div>' +
-      '<div class="acts"><button type="button" data-a="v">Kapat</button>' +
+      '<div id="uyeList" style="margin-top:12px"></div>' +
+      '<div class="acts"><button type="button" data-a="v">← Geri</button>' +
       '<button type="button" data-a="t">Yenile</button></div>';
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-a]') : null;
@@ -3634,44 +4130,70 @@ var MBGM = (function () {
       if (a === 't') { listele(); return; }
     };
     q('#backdrop').classList.add('open');
+    var ls = null;
     listele();
 
     function listele() {
-      MBGFB.listMembers().then(function (ls) {
+      var kap0 = q('#uyeList');
+      if (kap0) kap0.innerHTML = '<div class="pf-bos">Üye listesi yükleniyor…</div>';
+      MBGFB.listMembers().then(function (d) {
+        ls = d;
         var box = q('#uyeList'), say = q('#uyeSay');
         if (say) say.textContent = String(ls.length);
         if (!box) return;
-        if (!ls.length) { box.innerHTML = '<div class="todo-empty">Henüz üye yok.</div>'; return; }
         var benimUid = MBGFB.user() ? MBGFB.user().uid : '';
-        box.innerHTML = ls.map(function (u) {
-          var yonetici = MBGFB.role() === 'admin' && u.email &&
-            String(u.email).toLowerCase() === 'b.gul.baba.can@hotmail.com';
-          var bilgi = [u.name, u.no, u.dept, u.year].filter(function (x) { return x; }).join(' · ');
-          return '<div class="todo"><span><b>' + esc(u.email || '(e-posta yok)') + '</b>' +
-            (yonetici ? ' <em>(yönetici)</em>' : '') +
-            (bilgi ? '<br><small>' + esc(bilgi) + '</small>' : '') + '</span>' +
-            (u.uid === benimUid || yonetici ? '' :
-              '<button type="button" class="td" data-u="' + esc(u.uid) + '">Sil</button>') +
-            '</div>';
-        }).join('');
+        MBGO.uyeAra({
+          kutu: '#uyeList',
+          liste: ls,
+          ipucu: 'Üye ara: ad, e-posta, öğrenci no, bölüm',
+          alan: function (u) {
+            return [u.name, u.email, u.no, u.dept, u.year].filter(function (x) { return x; }).join(' ');
+          },
+          ciz: function (goster) {
+            return goster.map(function (u) {
+              var yonetici = MBGFB.role() === 'admin' && u.email &&
+                String(u.email).toLowerCase() === 'b.gul.baba.can@hotmail.com';
+              var bilgi = [u.name, u.no, u.dept, u.year].filter(function (x) { return x; }).join(' · ');
+              return '<div class="todo"><span><b>' + esc(u.name || u.email || '(isim yok)') + '</b>' +
+                (yonetici ? ' <em>(yönetici)</em>' : '') +
+                (bilgi ? '<br><small>' + esc(bilgi) + '</small>' : '') + '</span>' +
+                (u.uid === benimUid || yonetici ? '' :
+                  '<button type="button" class="td" data-u="' + esc(u.uid) + '">Sil</button>') +
+                '</div>';
+            }).join('');
+          }
+        });
         box.onclick = function (ev) {
           var b = ev.target && ev.target.closest ? ev.target.closest('[data-u]') : null;
           if (!b) return;
           var uid = b.getAttribute('data-u');
-          var u = ls.filter(function (x) { return x.uid === uid; })[0];
+          var u = (ls || []).filter(function (x) { return x.uid === uid; })[0];
           if (!u) return;
-          if (!confirm('"' + (u.email || uid) + '" üye kaydı silinsin mi?\n\n' +
-                       'Not: e-posta doğrulaması yapılmamışsa yalnızca profil kaydı silinir; ' +
-                       'giriş hesabı Firebase Auth içinde kalır.')) return;
+          var kim = u.name || u.email || uid;
           b.disabled = true;
-          MBGFB.deleteMember(uid).then(function () {
-            toast('Üye kaydı silindi.', 3500);
-            listele();
-          }).catch(function (x) { b.disabled = false; toast(err(x), 6000); });
+          MBGO.sor({
+            baslik: 'Üye kaydını sil',
+            uyari: true,
+            ikon: '⚠',
+            mesaj: '<b>' + esc(kim) + '</b> üye listesinden silinecek.',
+            not: 'Not: e-posta doğrulaması yapılmamışsa yalnızca profil kaydı silinir; ' +
+                 'giriş hesabı Firebase Auth içinde kalır.',
+            onayMetni: 'Evet, sil',
+            geri: uyeler
+          }).then(function (ok) {
+            if (!ok) { b.disabled = false; return; }
+            MBGO.islem({
+              baslat: kim + ' siliniyor…',
+              islem: function () { return MBGFB.deleteMember(uid); },
+              basarili: '✓ ' + kim + ' silindi.',
+              sonra: listele
+            });
+          });
         };
       }).catch(function (x) {
         var box = q('#uyeList');
-        if (box) box.innerHTML = '<div class="todo-empty">' + esc(err(x)) + '</div>';
+        if (box) box.innerHTML = '<div class="todo-empty">Liste yüklenemedi: ' + esc(err(x)) + '</div>';
+        toast('Üye listesi yüklenemedi: ' + err(x), 6500);
       });
     }
   }
@@ -3709,10 +4231,15 @@ var MBGM = (function () {
         week: 0, weekLabel: 'Özel etkinlik'
       };
       if (existing && existing.__id) rec.__id = existing.__id;
-      MBGFB.upsertEvent(rec).then(function () {
-        toast('Kaydedildi — herkeste görünecek.', 4000);
-        close();
-      }).catch(function (x) { toast(err(x), 6000); });
+      MBGFB.upsertEvent(rec).then(function (id) {
+        if (existing && existing.__id) {
+          if (A && A.planGuncelle) A.planGuncelle(existing.__id, rec);
+        } else if (A && A.planEkle) {
+          A.planEkle(rec);
+        }
+        toast('✓ Kaydedildi — herkeste görünecek.', 4000);
+        adminPanel();
+      }).catch(function (x) { toast('Kaydedilemedi: ' + err(x), 6500); });
     };
     q('#backdrop').classList.add('open');
   }
@@ -3746,7 +4273,7 @@ var MBGM = (function () {
     var m = q('#modal');
     if (!m) return;
     m.innerHTML = '<h2>Öneri / görüşler</h2><div id="gList"></div>' +
-      '<div class="acts"><button type="button" data-a="v">Geri</button>' +
+      '<div class="acts"><button type="button" data-a="v">← Geri</button>' +
       '<button type="button" data-a="t">Yenile</button></div>';
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-a]') : null;
@@ -3776,11 +4303,14 @@ var MBGM = (function () {
     var m = q('#modal');
     if (!m) return;
     m.innerHTML = '<h2>Hata bildirimleri</h2><div id="adRep"></div>' +
-      '<div class="acts"><button type="button" data-a="v">Geri</button>' +
+      '<div class="acts"><button type="button" data-a="v">← Geri</button>' +
       '<button type="button" data-a="t">Yenile</button></div>';
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-a]') : null;
-      if (b && b.getAttribute('data-a') === 'v') close();
+      if (!b) return;
+      var a = b.getAttribute('data-a');
+      if (a === 'v') { adminPanel(); return; }
+      if (a === 't') { toast('Hata bildirimleri yenileniyor…', 2200); listele(); }
     };
     q('#backdrop').classList.add('open');
     listele();
@@ -4013,12 +4543,19 @@ var MBGP = (function () {
       var gt = gorevler().filter(function (t) { return t.done; });
 
       var html =
-        '<h2>Profil</h2>' +
-        '<div class="sub">' + esc(p.name || '(İsim soyisim girilmemiş)') +
-          (p.dept ? ' · ' + esc(p.dept) : '') +
-          (p.girisYili || p.year ? ' · ' + esc(String(p.girisYili || p.year) + ' giriş') : '') +
-          (p.no ? ' · Öğrenci no ' + esc(p.no) : '') + '</div>' +
-        '<div class="sub pf-mail">' + esc(u.email || '') + '</div>' +
+        '<div class="pf-kart-h">' +
+          '<div class="pf-avatar">' + esc((p.name || u.email || '?').trim().slice(0, 1).toUpperCase()) + '</div>' +
+          '<div class="pf-kimlik">' +
+            '<h2>' + esc(p.name || 'İsim soyisim girilmemiş') + '</h2>' +
+            '<div class="pf-alt">' +
+              (p.dept ? '<span>' + esc(p.dept) + '</span>' : '') +
+              (p.girisYili || p.year ? '<span>' + esc(String(p.girisYili || p.year)) + ' giriş yılı</span>' : '') +
+              (p.no ? '<span>Öğrenci no ' + esc(p.no) + '</span>' : '') +
+            '</div>' +
+            '<div class="pf-mail">' + esc(u.email || '') + '</div>' +
+          '</div>' +
+          (MBGFB.verified() ? '<span class="pf-dogrulama">✓ E-posta doğrulandı</span>' : '') +
+        '</div>' +
 
         '<div class="pf-ist">' +
           ist('Planda etkinlik', s.toplamEtkinlik) +
@@ -4032,10 +4569,9 @@ var MBGP = (function () {
 
         '<div class="acts pf-acts">' +
           '<button type="button" class="pri" data-k="kisisel">Kişisel bilgilerim</button>' +
-          '<button type="button" data-k="duzenle">Katılımı düzenle</button>' +
-          '<button type="button" data-k="hesap">Hesap bilgilerim</button>' +
+          '<button type="button" class="pri" data-k="hesap">Hesap bilgilerim</button>' +
+          (MBGFB.isAdmin() ? '<button type="button" data-k="duzenle">Katılımı düzenle</button>' : '') +
           '<button type="button" data-k="yenile">Yenile</button>' +
-          '<button type="button" data-k="kapat">Kapat</button>' +
         '</div>' +
 
         tablo('Katıldığım etkinlikler', katildi.length,
@@ -4080,8 +4616,27 @@ var MBGP = (function () {
             'Katılım ve görev bilgisi yalnızca giriş yapınca kullanılabilir.') +
         '</div>';
 
+      m.className = 'modal genis';
       m.innerHTML = html;
       m.onclick = function (ev) {
+        /* önce profil alt barı (data-pz), sonra üst düğmeler (data-k) */
+        var pz0 = ev.target && ev.target.closest ? ev.target.closest('[data-pz]') : null;
+        if (pz0) {
+          var tip0 = pz0.getAttribute('data-pz');
+          if (tip0 === 'cikis') {
+            onayAc('cikis', '<b>Çıkış yapmak istiyor musun?</b><br>' +
+              'Bu cihazdaki notların ve görevlerin silinmez; hesabına giriş yapınca yeniden görünür.');
+          } else if (tip0 === 'temizle') {
+            onayAc('temizle', '<b>Kişisel verilerin silinsin mi?</b><br>' +
+              'Bu cihazdaki günlük notlar, yapılacaklar ve kişisel etkinlik kayıtları silinir; ' +
+              'hesabında saklanan veriler etkilenmez.', true);
+          } else if (tip0 === 'hesabiSil') {
+            onayAc('hesabiSil', '<b>Hesabın kalıcı olarak silinecek.</b><br>' +
+              'Profil bilgilerin, notların, yapılacakların ve etkinlik kayıtların gider. ' +
+              'Bu işlem geri alınamaz.', true);
+          }
+          return;
+        }
         var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
         if (!b) return;
         var a = b.getAttribute('data-k');
@@ -4090,23 +4645,6 @@ var MBGP = (function () {
         if (a === 'duzenle') { katilimForm(); return; }
         if (a === 'kisisel') { kisiselForm(); return; }
         if (a === 'hesap') { hesapBilgileri(); return; }
-        var pz = ev.target && ev.target.closest ? ev.target.closest('[data-pz]') : null;
-        if (pz) {
-          var tip = pz.getAttribute('data-pz');
-          if (tip === 'cikis') {
-            onayAc('cikis', '<b>Çıkış yapmak istiyor musun?</b><br>' +
-              'Bu cihazdaki notların ve görevlerin silinmez; hesabına giriş yapınca yeniden görünür.');
-          } else if (tip === 'temizle') {
-            onayAc('temizle', '<b>Kişisel verilerin silinsin mi?</b><br>' +
-              'Bu cihazdaki günlük notlar, yapılacaklar ve kişisel etkinlik kayıtları silinir; ' +
-              'hesabında saklanan veriler etkilenmez.', true);
-          } else if (tip === 'hesabiSil') {
-            onayAc('hesabiSil', '<b>Hesabın kalıcı olarak silinecek.</b><br>' +
-              'Profil bilgilerin, notların, yapılacakların ve etkinlik kayıtların gider. ' +
-              'Bu işlem geri alınamaz.', true);
-          }
-          return;
-        }
         if (a === 'not') { close(); if (A && A.openNote) A.openNote(b.getAttribute('data-e')); return; }
         var es = ev.target && ev.target.closest ? ev.target.closest('[data-ev-sayfa]') : null;
         if (es && window.ETK) { ETK.etkinlikGoruntule(es.getAttribute('data-ev-sayfa')); return; }
@@ -4152,41 +4690,38 @@ var MBGP = (function () {
     return '<div class="pz">' +
       '<div class="pz-baslik">Hesap işlemleri</div>' +
       parcalar.join('') +
-      '<div id="pzOnay" class="pz-onay" hidden></div>' +
       '</div>';
   }
 
-  /* onay barı: mesaj + Onayla / Vazgeç */
+  /* onay penceresi: mesaj + Onayla / Vazgeç (ayrı pencere) */
   function onayAc(tur, mesaj, uyari) {
-    var kutu = q('#pzOnay');
-    if (!kutu) { toast(mesaj, 5000); return; }
-    kutu.innerHTML =
-      '<div class="pz-onay-ic' + (uyari ? ' pz-uyari' : '') + '">' +
-        '<div class="pz-onay-metni">' + mesaj + '</div>' +
-        '<div class="pz-onay-dugmeler">' +
-          '<button type="button" data-pzy="vaz">Vazgeç</button>' +
-          '<button type="button" class="pz-onayla' + (uyari ? ' pz-onayla-kirmizi' : '') + '" data-pzy="onay">' +
-            (uyari ? 'Evet, sil' : 'Evet, çıkış yap') + '</button>' +
-        '</div>' +
-      '</div>';
-    kutu.hidden = false;
-    kutu.onclick = function (ev) {
-      var b = ev.target && ev.target.closest ? ev.target.closest('[data-pzy]') : null;
-      if (!b) return;
-      var a = b.getAttribute('data-pzy');
-      kutu.hidden = true;
-      kutu.innerHTML = '';
-      if (a === 'vaz') { toast('İşlem yapılmadı.', 2500); return; }
-      if (tur === 'cikis') { cikis(); return; }
-      if (tur === 'hesabiSil') { hesabiSil(); return; }
-      if (tur === 'temizle') {
-        if (A && A.temizleKisisel) A.temizleKisisel();
-        else toast('Kişisel veri temizleme kullanılamıyor.', 4000);
+    var kutu = MBGFB.user();
+    var u = kutu ? kutu.email : '';
+    MBGO.onay({
+      baslik: tur === 'cikis' ? 'Çıkış yap' : tur === 'hesabiSil' ? 'Hesabımı sil' : 'Kişisel verilerimi temizle',
+      uyari: !!uyari,
+      ikon: tur === 'cikis' ? '↩' : tur === 'hesabiSil' ? '🚪' : '🧹',
+      mesaj: mesaj + (u ? '<br><small>Hesap: ' + esc(u) + '</small>' : ''),
+      onayMetni: tur === 'cikis' ? 'Evet, çıkış yap' : tur === 'hesabiSil' ? 'Evet, hesabımı sil' : 'Evet, temizle',
+      geri: function () { profil(); },
+      islem: function (sonra) {
+        /* onay penceresi zaten sordu → ikinci kez sorma (ondan = true) */
+        if (tur === 'cikis') {
+          if (window.MBGM && MBGM.cikis) MBGM.cikis(true);
+          else { close(); MBGFB.signOut().then(function () { toast('✓ Çıkış yapıldı.'); }); }
+          return;
+        }
+        if (tur === 'hesabiSil') {
+          if (window.MBGM && MBGM.hesabiSil) MBGM.hesabiSil(true);
+          else toast('Hesap silme kullanılamıyor.', 4000);
+          return;
+        }
+        if (tur === 'temizle') {
+          if (A && A.temizleKisisel) A.temizleKisisel();
+          else toast('Kişisel veri temizleme kullanılamıyor.', 4000);
+        }
       }
-    };
-    /* onay kutusuna odaklan */
-    var ilk = kutu.querySelector('[data-pzy="onay"]');
-    if (ilk) ilk.focus();
+    });
   }
 /* hesap bilgileri: e-posta (değişmez) + şifre (ayda bir) */
   function hesapBilgileri() {
@@ -4873,8 +5408,9 @@ var ETK = (function () {
     if (!MBGFB.isAdmin()) { toast('Bu sayfayı yalnızca yönetici açabilir.', 4000); return; }
     var m = q('#modal');
     if (!m) return;
+    m.className = 'modal genis';
     var ev = evBul(evId);
-    var d = { katilanlar: [], gorevli: [], sayfa: {}, kasa: {}, sayac: null, zamanAsimi: null };
+    var d = { katilanlar: [], gorevli: [], sayfa: {}, kasa: {}, sayac: null, zamanAsimi: null, ara: '' };
 
     function kapat() {
       if (d.sayac) clearInterval(d.sayac);
@@ -4903,7 +5439,7 @@ var ETK = (function () {
           yer: (q('#esYer').value || '').trim(),
           aciklama: (q('#esAciklama').value || '').trim()
         }).then(function () {
-          toast('Etkinlik sayfası kaydedildi.', 4000);
+          toast('✓ Etkinlik sayfası kaydedildi.', 4000);
           yenile();
         }).catch(function (x) { toast(MBGM.err(x), 6500); });
         return;
@@ -4930,14 +5466,35 @@ var ETK = (function () {
       if (a === 'gorevEkle') { gorevliEkle(evId); return; }
       if (a === 'gorevSil') {
         var uid = b.getAttribute('data-u');
-        if (!confirm('Bu görevli listeden çıkarılsın mı?')) return;
-        MBGFB.gorevliSil(evId, uid).then(function () {
-          toast('Görevli çıkarıldı.', 3000);
-          yenile();
-        }).catch(function (x) { toast(MBGM.err(x), 6500); });
+        var kim = (b.getAttribute('data-ad') || 'Bu üye');
+        b.disabled = true;
+        MBGO.sor({
+          baslik: 'Görevliden çıkar',
+          uyari: true,
+          ikon: '⚠',
+          mesaj: '<b>' + esc(kim) + '</b> bu etkinliğin görevli listesinden çıkarılacak.',
+          not: 'Katılımı varsa silinmez; yalnızca görevli kaydı kaldırılır.',
+          onayMetni: 'Evet, çıkar',
+          geri: function () { etkinlikSayfasi(evId); }
+        }).then(function (ok) {
+          if (!ok) { b.disabled = false; return; }
+          MBGO.islem({
+            baslat: kim + ' görevli listesinden çıkarılıyor…',
+            islem: function () { return MBGFB.gorevliSil(evId, uid); },
+            basarili: '✓ ' + kim + ' görevli listesinden çıkarıldı.',
+            sonra: yenile
+          });
+        });
       }
     };
 
+    m.oninput = function (e) {
+      if (!e.target || e.target.id !== 'esAra') return;
+      d.ara = e.target.value;
+      ciz();
+      var i2 = q('#esAra');
+      if (i2) { try { i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); } catch (x2) {} }
+    };
     q('#backdrop').classList.add('open');
     yenile();
 
@@ -4980,6 +5537,13 @@ var ETK = (function () {
       var g = q('#esGovde');
       if (!g) { kapat(); return; }
       var s = d.sayfa || {};
+      var ara = MBGO.duz(d.ara || '');
+      var gList = ara ? d.gorevli.filter(function (x) {
+        return MBGO.duz((x.ad || '') + ' ' + (x.eposta || '') + ' ' + (x.gorev || '')).indexOf(ara) >= 0;
+      }) : d.gorevli;
+      var kList = ara ? d.katilanlar.filter(function (x) {
+        return MBGO.duz((x.ad || '') + ' ' + (x.eposta || '')).indexOf(ara) >= 0;
+      }) : d.katilanlar;
       var kalan = d.kasa && d.kasa.anahtar
         ? Math.max(0, YENILE_MS - ((Date.now() - (d.kasa.uretilme || 0)) % YENILE_MS))
         : YENILE_MS;
@@ -5003,24 +5567,31 @@ var ETK = (function () {
         '<button type="button" data-es="kopyala">Bağlantıyı kopyala</button>' +
         '<button type="button" data-es="yenile">Yenile</button></div></div></div></div>' +
 
-        '<div class="es-blok"><h3>Görevliler <em>' + d.gorevli.length + '</em></h3>' +
-        (d.gorevli.length
-          ? '<div class="pf-tab"><table>' + d.gorevli.map(function (x) {
+        '<div class="pf-ara es-ara"><span class="pf-ara-ikon">⌕</span>' +
+        '<input type="search" id="esAra" autocomplete="off" spellcheck="false" placeholder="Ara: görevli veya katılan adı, e-postası, görevi" value="' +
+        esc(d.ara || '') + '"></div>' +
+        '<div class="es-blok"><h3>Görevliler <em>' + gList.length + (gList.length !== d.gorevli.length ? ' / ' + d.gorevli.length : '') + '</em></h3>' +
+        (gList.length
+          ? '<div class="pf-tab"><table>' + gList.map(function (x) {
               return '<tr><td>' + esc(x.ad || x.eposta || '') + '</td>' +
                 '<td><span class="pf-et">' + esc(x.gorev || '') + '</span></td>' +
                 '<td class="pf-s"><button type="button" class="td" data-es="gorevSil" data-u="' +
-                esc(x.uid) + '">Sil</button></td></tr>';
+                esc(x.uid) + '" data-ad="' + esc(x.ad || x.eposta || 'Bu üye') + '">Sil</button></td></tr>';
             }).join('') + '</table></div>'
-          : '<div class="pf-bos">Henüz görevli atanmadı.</div>') +
+          : (d.gorevli.length
+              ? '<div class="pf-bos">Aramana uyan görevli yok.</div>'
+              : '<div class="pf-bos">Henüz görevli atanmadı.</div>')) +
         '<div class="acts pf-acts"><button type="button" class="pri" data-es="gorevEkle">＋ Görevli ekle</button></div></div>' +
 
-        '<div class="es-blok"><h3>Katılanlar <em>' + d.katilanlar.length + '</em></h3>' +
-        (d.katilanlar.length
-          ? '<div class="pf-tab"><table>' + d.katilanlar.map(function (x) {
+        '<div class="es-blok"><h3>Katılanlar <em>' + kList.length + (kList.length !== d.katilanlar.length ? ' / ' + d.katilanlar.length : '') + '</em></h3>' +
+        (kList.length
+          ? '<div class="pf-tab"><table>' + kList.map(function (x) {
               return '<tr><td>' + esc(x.ad || '') + '</td><td>' + esc(x.eposta || '') + '</td>' +
                 '<td class="pf-t">' + esc(x.zaman || '') + '</td></tr>';
             }).join('') + '</table></div>'
-          : '<div class="pf-bos">Henüz katılım kaydedilmedi. QR\'ı okutan üyeler burada görünür.</div>') +
+          : (d.katilanlar.length
+              ? '<div class="pf-bos">Aramana uyan katılım yok.</div>'
+              : '<div class="pf-bos">Henüz katılım kaydedilmedi. QR\'ı okutan üyeler burada görünür.</div>')) +
         '</div>';
 
       /* QR çizimi (hata olursa sayfa bozulmaz) */
@@ -5060,116 +5631,349 @@ var ETK = (function () {
       }, 1000);
     }
   }
-  /* görevli seçme (yalnızca yönetici) */
-  function gorevliEkle(evId, bitti) {
+/* görevli seçme (yalnızca yönetici) — arama çubuklu üye listesi */
+  function gorevliEkle(evId) {
     if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
     var m = q('#modal');
     if (!m) return;
+    m.className = 'modal genis';
+    var secili = '', seciliAd = '';
+
     m.innerHTML = '<h2>Görevli ekle</h2>' +
-      '<div class="sub">Üyeler listesinden seç, görevini yaz ve kaydet</div>' +
-      '<div class="field"><label>Üye</label><select id="geUye"></select></div>' +
+      '<div class="sub">Listeden üyeyi seç, görevini yaz ve kaydet</div>' +
       '<div class="field"><label>Görev</label><select id="geGorev">' +
-      MBGP.GOREV.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('') +
+        MBGP.GOREV.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('') +
       '</select></div>' +
+      '<div id="geKutu" class="pf-kutu"><div class="pf-bos">Üye listesi yükleniyor…</div></div>' +
+      '<div id="geSecili" class="pf-secim sesiz"><span>Seçilen üye: <b>—</b></span></div>' +
       '<div class="acts"><button type="button" data-x="vaz">← Geri</button>' +
-      '<button type="button" class="pri" data-x="kay">Görevli ilan et</button></div>';
+      '<button type="button" class="pri" data-x="kay" disabled>Görevli ilan et</button></div>';
+
+    var kayBtn = m.querySelector('[data-x="kay"]');
+    m.oninput = null;
     m.onclick = function (e2) {
-      var b = e2.target && e2.closest ? e2.closest('[data-x]') : null;
+      var b = e2.target && e2.target.closest ? e2.target.closest('[data-x]') : null;
       if (!b) return;
       var a = b.getAttribute('data-x');
       if (a === 'vaz') { etkinlikSayfasi(evId); return; }
       if (a !== 'kay') return;
-      var uid = q('#geUye').value, gorev = q('#geGorev').value;
-      if (!uid) { toast('Önce üye listesinin yüklenmesini bekle.', 3500); return; }
-      MBGFB.gorevliEkle(evId, uid, gorev).then(function () {
-        toast('Görevli olarak ilan edildi.', 4000);
-        etkinlikSayfasi(evId);
-      }).catch(function (x) { toast(MBGM.err(x), 6500); });
+      if (!secili) { toast('Önce listeden bir üye seç.', 3500); return; }
+      var gorev = (q('#geGorev') || {}).value || '';
+      if (kayBtn) { kayBtn.disabled = true; kayBtn.textContent = '… yazılıyor'; }
+      MBGO.islem({
+        baslat: seciliAd + ' görevli olarak atanıyor…',
+        islem: function () { return MBGFB.gorevliEkle(evId, secili, gorev); },
+        basarili: '✓ ' + seciliAd + ' → ' + gorev + ' görevine atandı.',
+        sonra: function () { etkinlikSayfasi(evId); }
+      });
     };
     q('#backdrop').classList.add('open');
+    toast('Üye listesi yükleniyor…', 2600);
+
     MBGFB.listMembers().then(function (ls) {
-      var sel = q('#geUye');
-      if (!sel) return;
-      sel.innerHTML = ls.length
-        ? ls.map(function (u) {
-            return '<option value="' + esc(u.uid) + '">' +
-              esc((u.name || '') + ' — ' + (u.email || '')) + '</option>';
-          }).join('')
-        : '<option value="">üye yok</option>';
+      var kap = q('#geKutu');
+      if (!kap) return;
+      MBGO.uyeAra({
+        kutu: '#geKutu',
+        liste: ls,
+        ipucu: 'Üye ara: ad, e-posta, öğrenci no, bölüm',
+        alan: function (u) {
+          return [u.name, u.email, u.no, u.dept, u.year].filter(function (x) { return x; }).join(' ');
+        },
+        ciz: function (goster) {
+          return goster.map(function (u) {
+            var bilgi = [u.no, u.dept, u.year].filter(function (x) { return x; }).join(' · ');
+            return '<button type="button" class="ge-uye' + (secili === u.uid ? ' secili' : '') +
+              '" data-u="' + esc(u.uid) + '">' +
+              '<b>' + esc(u.name || '(isim girilmemiş)') + '</b>' +
+              '<small>' + esc(u.email || '') + (bilgi ? ' · ' + esc(bilgi) : '') + '</small>' +
+              '</button>';
+          }).join('');
+        }
+      });
+      /* üye seçimi — delegasyon: liste yeniden çizilse de çalışır */
+      kap.onclick = function (e3) {
+        var b = e3.target && e3.target.closest ? e3.target.closest('[data-u]') : null;
+        if (!b) return;
+        secili = b.getAttribute('data-u');
+        var u = ls.filter(function (x) { return x.uid === secili; })[0] || {};
+        seciliAd = u.name || u.email || 'Üye';
+        var diger = kap.querySelectorAll('.ge-uye');
+        for (var i = 0; i < diger.length; i++) {
+          diger[i].className = 'ge-uye' + (diger[i].getAttribute('data-u') === secili ? ' secili' : '');
+        }
+        var s = q('#geSecili');
+        if (s) {
+          s.className = 'pf-secim';
+          s.innerHTML = '<span>Seçilen üye: <b>' + esc(seciliAd) + '</b>' +
+            (u.email ? ' <small>(' + esc(u.email) + ')</small>' : '') + '</span>' +
+            '<button type="button" class="td" data-x="secKaldir">kaldır</button>';
+        }
+        if (kayBtn) kayBtn.disabled = false;
+        toast(seciliAd + ' seçildi — görevini yaz ve "Görevli ilan et"e bas.', 4000);
+      };
+      if (!ls.length) toast('Listede üye yok. Önce üye kaydı gerekiyor.', 5000);
+      else toast(ls.length + ' üye listelendi — arama kutusuyla bulabilirsin.', 3800);
     }).catch(function (x) {
-      var sel = q('#geUye');
-      if (sel) sel.innerHTML = '<option value="">(liste yüklenemedi)</option>';
-      toast(MBGM.err(x), 6000);
+      var kap = q('#geKutu');
+      if (kap) kap.innerHTML = '<div class="todo-empty">Üye listesi yüklenemedi: ' + esc(MBGM.err(x)) + '</div>';
+      toast('Üye listesi yüklenemedi: ' + MBGM.err(x), 6500);
     });
   }
 
   /* =====================================================================
      ÜYE: etkinlik sayfasını görüntüle
      ===================================================================== */
+/* =====================================================================
+     ÜYE: etkinlik sayfası — herkesin görebileceği şık sayfa
+     (yönetici de aynı sayfayı görür; düzenleme ayrı panelde kalır)
+     ===================================================================== */
+  var SEM_ROZET = { guz: 'GÜZ DÖNEMİ', bahar: 'BAHAR DÖNEMİ', ozel: 'ÖZEL PROGRAM' };
+
+/* =====================================================================
+     Etkinlik sayfası — yorum / sohbet paneli (altta)
+     Yalnızca o etkinliğe katılan (veya görevli olan) üyeler yazabilir.
+     ===================================================================== */
+  function yorumPaneli(evId, katildiMi) {
+    var kap = '<div class="etp-yorum">' +
+      '<div class="etp-baslik">Yorumlar <em id="yrSayi"></em></div>' +
+      '<div id="yrListe"><div class="gp-bos">Yorumlar yükleniyor…</div></div>' +
+      '<div id="yrYazma"></div>' +
+    '</div>';
+    return kap;
+  }
+
+  function yorumlariCiz(evId, uid, admin) {
+    var liste = q('#yrListe');
+    if (!liste) return;
+    MBGFB.yorumOku(evId).then(function (ls) {
+      var l = q('#yrListe');
+      if (!l) return;
+      var say = q('#yrSayi');
+      if (say) say.textContent = ls.length ? ls.length + ' yorum' : '';
+      if (!ls.length) {
+        l.innerHTML = '<div class="gp-bos">Henüz yorum yok. Katılan üyeler ilk yorumu yazabilir.</div>';
+        return;
+      }
+      l.innerHTML = ls.map(function (y) {
+        var benim = uid && y.uid === uid;
+        return '<div class="yr' + (benim ? ' benim' : '') + '">' +
+          '<div class="yr-bas"><span class="yr-ad">' +
+            esc((y.ad || y.eposta || 'Üye').slice(0, 40)) + '</span>' +
+            '<span class="yr-zaman">' + esc(y.zaman || '') + '</span>' +
+            (benim || admin
+              ? '<button type="button" class="td yr-sil" data-yid="' + esc(y.id) + '">Sil</button>'
+              : '') +
+          '</div>' +
+          '<div class="yr-metin">' + esc(y.metin || '') + '</div>' +
+        '</div>';
+      }).join('');
+    }).catch(function () {
+      var l2 = q('#yrListe');
+      if (l2) l2.innerHTML = '<div class="gp-bos">Yorumlar okunamadı.</div>';
+    });
+  }
+
+  function yorumKutusu(evId, hak, uid, admin) {
+    var kap = q('#yrYazma');
+    if (!kap) return;
+    if (!MBGFB.user()) {
+      kap.innerHTML = '<div class="etp-not"><i>🔒</i><span>Yorum yazmak için giriş yapmalısın.</span></div>';
+      return;
+    }
+    if (!hak) {
+      kap.innerHTML = '<div class="etp-not"><i>💬</i><span>Yorum yazabilmek için bu etkinliğe ' +
+        'katılmış olman gerekir. Katılım, etkinlik sırasında QR kod okutularak kaydedilir.</span></div>';
+      return;
+    }
+    kap.innerHTML =
+      '<div class="yr-yaz">' +
+        '<textarea id="yrGirdi" maxlength="500" rows="2" ' +
+          'placeholder="Katılımcıların yorumu… (en fazla 500 karakter)"></textarea>' +
+        '<div class="yr-yaz-alt"><small id="yrSayac">0 / 500</small>' +
+          '<button type="button" class="pri" id="yrGonder">Yorumu gönder</button></div>' +
+      '</div>';
+    var ta = q('#yrGirdi'), sa = q('#yrSayac');
+    if (ta && sa) {
+      ta.oninput = function () { sa.textContent = ta.value.length + ' / 500'; };
+      ta.onkeydown = function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') gonder();
+      };
+    }
+    q('#yrGonder').onclick = gonder;
+
+    function gonder() {
+      var m = (q('#yrGirdi') || {}).value || '';
+      if (!m.trim()) { toast('Yorum boş olamaz.', 3000); return; }
+      var b = q('#yrGonder');
+      if (b) { b.disabled = true; b.textContent = '…'; }
+      var p = MBGO.islem({
+        baslat: 'Yorumun gönderiliyor…',
+        islem: function () { return MBGFB.yorumYaz(evId, m); },
+        basarili: '✓ Yorumun eklendi.',
+        sonra: function () {
+          var t = q('#yrGirdi');
+          if (t) t.value = '';
+          var s = q('#yrSayac');
+          if (s) s.textContent = '0 / 500';
+          yorumlariCiz(evId, uid, admin);
+        }
+      });
+      /* hata olursa düğmeyi yeniden aç */
+      if (p && p.catch) p.catch(function () {
+        var b2 = q('#yrGonder');
+        if (b2) { b2.disabled = false; b2.textContent = 'Yorumu gönder'; }
+      });
+    }
+  }
+
+  /* sohbeti bağla (silme olayları dahil) */
+  function yorumBagla(evId, uid, admin) {
+    var kap = q('#etSayfa');
+    if (!kap) return;
+    kap.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-yid]') : null;
+      if (!b) return;
+      var yid = b.getAttribute('data-yid');
+      MBGO.sor({
+        baslik: 'Yorumu sil',
+        uyari: true,
+        ikon: '⚠',
+        mesaj: 'Bu yorum kalıcı olarak silinecek.',
+        onayMetni: 'Evet, sil',
+        geri: function () { yorumlariCiz(evId, uid, admin); }
+      }).then(function (ok) {
+        if (!ok) return;
+        MBGO.islem({
+          baslat: 'Yorum siliniyor…',
+          islem: function () { return MBGFB.yorumSil(evId, yid); },
+          basarili: '✓ Yorum silindi.',
+          sonra: function () { yorumlariCiz(evId, uid, admin); }
+        });
+      });
+    };
+  }
+
   function etkinlikGoruntule(evId) {
     var m = q('#modal');
     if (!m) return;
+    m.className = 'modal genis';
     var ev = evBul(evId);
     if (!ev) { toast('Etkinlik bulunamadı.', 4000); return; }
-    m.innerHTML = '<h2>' + esc(ev.title) + '</h2>' +
-      '<div class="sub">' + esc(fmt(ev.date)) + (ev.weekLabel ? ' · ' + esc(ev.weekLabel) : '') + '</div>' +
-      '<div id="etSayfa"><div class="pf-bos">yükleniyor…</div></div>' +
-      '<div class="acts"><button type="button" data-x="kapat">Kapat</button></div>';
+
+    var hafta = new Date(ev.date + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'long' });
+    m.innerHTML =
+      '<div class="etp-kapak">' +
+        '<span class="etp-donem">' + esc(SEM_ROZET[ev.sem] || 'ETKİNLİK') + '</span>' +
+        '<h3>' + esc(ev.title) + '</h3>' +
+        '<div class="etp-tarih">' +
+          '<span><b>' + esc(fmt(ev.date)) + '</b> · ' + esc(hafta) + '</span>' +
+          (ev.weekLabel ? '<span>' + esc(ev.weekLabel) + '</span>' : '') +
+          (ev.exact ? '<span>📌 kesin tarih</span>' : '') +
+          (ev.tag && ev.tag.lbl ? '<span>' + esc(ev.tag.lbl) + '</span>' : '') +
+        '</div>' +
+        '<div class="etp-durum" id="etpDurum"></div>' +
+      '</div>' +
+      '<div id="etSayfa"><div class="pf-bos">Sayfa yükleniyor…</div></div>';
+    m.oninput = null;
     m.onclick = function (e2) {
-      var b = e2.target && e2.closest ? e2.closest('[data-x]') : null;
-      if (b) close();
+      var b = e2.target && e2.target.closest ? e2.target.closest('[data-x]') : null;
+      if (b && b.getAttribute('data-x') === 'geri') { geri(); return; }
+      if (b && b.getAttribute('data-x') === 'qr') {
+        var k = (q('#etQrKod') || {}).textContent;
+        if (k && window.location.origin.indexOf('localhost') < 0) {
+          toast('Katılımı QR kodunu okutarak kaydedersin.', 4200);
+        }
+      }
     };
     q('#backdrop').classList.add('open');
+
+    /* geri: nereden gelindiyse oraya */
+    var geldigi = window.MBG && MBG.gunPaneliAc ? MBG.gunPaneliAc : null;
+    function geri() {
+      if (geldigi) geldigi();
+      else close();
+    }
+
     var katilanlar = [], gorevler = [], sayfaIceri = {};
     Promise.all([sayfaOku(evId), katilanOku(evId), gorevliOku(evId)])
       .then(function (r) {
         sayfaIceri = r[0] || {};
         katilanlar = r[1] || [];
-        gorevler = r[2] || [];
+        gorevler = r[2] || {};
         ciz();
       })
       .catch(function (x) {
         var k = q('#etSayfa');
-        if (k) k.innerHTML = '<div class="pf-bos">Yüklenemedi: ' + esc(MBGM.err(x)) + '</div>';
+        if (k) k.innerHTML = '<div class="pf-bos">Sayfa yüklenemedi: ' + esc(MBGM.err(x)) + '</div>';
       });
 
     function ciz() {
-      var kutu = q('#etSayfa');
-      if (!kutu) return;
       var s = sayfaIceri || {};
       var benimUid = MBGFB.user() ? MBGFB.user().uid : '';
-      var kattim = false;
-      for (var i = 0; i < katilanlar.length; i++) if (katilanlar[i].uid === benimUid) kattim = true;
-      var benimGorev = '';
+      var kattim = false, benimGorev = '', i;
+      for (i = 0; i < katilanlar.length; i++) if (katilanlar[i].uid === benimUid) kattim = true;
       for (i = 0; i < gorevler.length; i++) if (gorevler[i].uid === benimUid) benimGorev = gorevler[i].gorev;
 
-      var satirlar = [
-        s.konu ? ['Konu', s.konu] : null,
-        s.konuk ? ['Konuk', s.konuk] : null,
-        s.yer ? ['Nerede', s.yer] : null,
-        s.saat ? ['Saat', s.saat] : null,
-        s.aciklama ? ['Açıklama', s.aciklama] : null
-      ].filter(Boolean);
+      /* rozetler */
+      var durum = q('#etpDurum');
+      if (durum) {
+        durum.innerHTML =
+          (kattim
+            ? '<span class="etp-pill katildi">✓ Bu etkinliğe katıldın</span>'
+            : '<span class="etp-pill bekliyor">Katılımın QR ile kaydedilecek</span>') +
+          (benimGorev ? '<span class="etp-pill gorev">🎤 Görevin: ' + esc(benimGorev) + '</span>' : '') +
+          '<span class="etp-pill">' + katilanlar.length + ' kişi katıldı</span>' +
+          '<span class="etp-pill">' + gorevler.length + ' görevli</span>';
+      }
 
+      var kart = function (ikon, baslik, deger, ekstra) {
+        return '<div class="etp-kart' + (ekstra ? ' aciklama' : '') + '">' +
+          '<em>' + ikon + ' ' + esc(baslik) + '</em><b>' + esc(deger) + '</b></div>';
+      };
+      var kutular = '';
+      if (s.konu) kutular += kart('🧬', 'Konu', s.konu);
+      if (s.konuk) kutular += kart('🎤', 'Konuk', s.konuk);
+      if (s.saat) kutular += kart('⏰', 'Saat', s.saat);
+      if (s.yer) kutular += kart('📍', 'Nerede', s.yer);
+
+      var kutu = q('#etSayfa');
+      if (!kutu) return;
+      var adminMi2 = MBGFB.isAdmin();
+      var uid2 = benimUid;
       kutu.innerHTML =
-        (kattim ? '<div class="pf-ok">✓ Bu etkinliğe katıldın olarak işaretlendin.</div>'
-                : '<div class="sub">Katılım, etkinlik sırasında yönetiminin gösterdiği QR kod okutularak kaydedilir.</div>') +
-        (benimGorev ? '<div class="pf-ok">✓ Bu etkinlikte görevin: <b>' + esc(benimGorev) + '</b></div>' : '') +
-        (satirlar.length
-          ? '<div class="pf-tab"><table>' + satirlar.map(function (x) {
-              return '<tr><td class="pf-t">' + esc(x[0]) + '</td><td>' + esc(x[1]) + '</td></tr>';
-            }).join('') + '</table></div>'
-          : '<div class="pf-bos">Etkinlik sayfası içeriği henüz eklenmemiş.</div>') +
-        '<div class="es-blok"><h3>Görevliler <em>' + gorevler.length + '</em></h3>' +
+        (kutular ? '<div class="etp-izgara">' + kutular + '</div>'
+                 : '<div class="pf-bos">Bu etkinlik için henüz ayrıntı girilmemiş.</div>') +
+        (s.aciklama ? kart('📝', 'Açıklama', s.aciklama, true) : '') +
+        (ev.desc ? kart('📌', 'Program notu', ev.desc, true) : '') +
+
         (gorevler.length
-          ? '<div class="pf-tab"><table>' + gorevler.map(function (g) {
-              return '<tr><td>' + esc(g.ad || g.eposta || '') + '</td>' +
-                '<td><span class="pf-et">' + esc(g.gorev || '') + '</span></td></tr>';
-            }).join('') + '</table></div>'
-          : '<div class="pf-bos">Görevli listesi boş.</div>') + '</div>' +
-        '<div class="es-blok"><h3>Katılanlar <em>' + katilanlar.length + '</em></h3>' +
-        '<div class="pf-bos">' + katilanlar.length + ' kişi katılımını QR ile kaydetti.</div></div>';
-      kutu.innerHTML = kutu.innerHTML;
+          ? '<div class="etp-baslik">Görevliler</div>' +
+            '<div class="etp-rozetler">' + gorevler.map(function (g) {
+              return '<span class="etp-rozet"><i></i>' +
+                (g.ad ? '<b>' + esc(g.ad) + '</b>' : '') +
+                (g.gorev ? ' · ' + esc(g.gorev) : '') + '</span>';
+            }).join('') + '</div>'
+          : '') +
+
+        '<div class="etp-baslik">Katılım</div>' +
+        '<div class="etp-not"><i>' + (kattim ? '✓' : '📱') + '</i><span>' +
+          (kattim
+            ? 'Katılımın kaydedildi. Yönetici listesinde görünüyorsun.'
+            : 'Etkinlik başlarken yönetiminin ekranda gösterdiği QR kodu okutman yeterli; ' +
+              'kaydın otomatik yapılır.') +
+        '</span></div>' +
+
+        yorumPaneli(evId, kattim) +
+        '<div class="acts" style="margin-top:20px">' +
+          '<button type="button" data-x="geri">← Geri</button>' +
+        '</div>';
+
+      yorumBagla(evId, uid2, adminMi2);
+      MBGFB.yorumHakki(evId).then(function (hak) {
+        yorumlariCiz(evId, uid2, adminMi2);
+        yorumKutusu(evId, hak || adminMi2 || kattim, uid2, adminMi2);
+      });
     }
   }
 
@@ -5252,6 +6056,235 @@ var ETK = (function () {
     gorevliEkle: gorevliEkle, kodYenile: kodYenile, linktenIsle: linktenIsle,
     benimEtkinliklerim: benimEtkinliklerim, sayfaOku: sayfaOku, YENILE_MS: YENILE_MS
   };
+})();
+/* =====================================================================
+   src/onay.js — Onay penceresi + işlem bildirimi + üye arama kutusu
+   ---------------------------------------------------------------------
+   Kullanım:
+     MBGO.sor({ baslik, mesaj, uyari, onayMetni })  → Promise<boolean>
+     MBGO.onay({ ..., islem: fn, sonra: fn })        → işlemi çalıştırır
+     MBGO.islem({ baslat, islem, basarili, sonra })  → anlık bildirimli işlem
+     MBGO.uyeAra({ kutu, liste, alan, ciz })         → arama çubuklu üye listesi
+   ===================================================================== */
+var MBGO = (function () {
+  'use strict';
+
+  function q(s) { return document.querySelector(s); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function api() { return window.MBG || null; }
+  function toast(m, ms) { var a = api(); if (a && a.toast) a.toast(m, ms || 4000); }
+  function kapat() { var a = api(); if (a && a.closeModal) a.closeModal(); }
+
+  /* Türkçe harf duyarsız arama için küçültme */
+  function duz(s) {
+    return String(s == null ? '' : s).toLocaleLowerCase('tr')
+      .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/İ/g, 'i')
+      .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
+  }
+
+  /* hata mesajını anlaşılır Türkçeye çevir */
+  function hata(e) {
+    var m = (e && e.code) || '';
+    var harita = {
+      'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+      'auth/wrong-password': 'Mevcut şifre hatalı.',
+      'auth/weak-password': 'Yeni şifre en az 6 karakter olmalı.',
+      'auth/too-many-requests': 'Çok fazla deneme yapıldı, biraz sonra tekrar dene.',
+      'auth/network-request-failed': 'İnternet yok — bağlantı gerekiyor.',
+      'auth/requires-recent-login': 'Güvenlik için önce tekrar giriş yap.',
+      'auth/user-not-found': 'Böyle bir hesap bulunamadı.',
+      'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
+      'permission-denied': 'İzin yok (Firestore kuralları güncel mi?).',
+      'unavailable': 'Sunucuya ulaşılamıyor.',
+      'not-found': 'Kayıt bulunamadı.',
+      'failed-precondition': 'İşlem için önce başka bir adım gerekiyor.'
+    };
+    if (harita[m]) return harita[m];
+    var s = String((e && e.message) || e || '').slice(0, 110);
+    return s || 'Bilinmeyen hata';
+  }
+
+  /* ===================================================================
+     1) Onay penceresi (tarayıcının confirm() yerine)
+     -------------------------------------------------------------------
+     Pencere açılırken modalın eski içeriği saklanır; Vazgeç / ESC /
+     arka plana tıklayınca o ekrana geri dönülür.
+     =================================================================== */
+  var yedek = null;
+
+  function cerceve(opt) {
+    var m = q('#modal');
+    if (!m) return null;
+    var bd0 = q('#backdrop');
+    yedek = {
+      html: m.innerHTML, onclick: m.onclick, oninput: m.oninput,
+      acik: bd0 ? bd0.classList.contains('open') : false
+    };
+    var onay = opt.onayMetni || 'Evet, devam et';
+    var iptal = opt.iptalMetni || 'Vazgeç';
+    m.innerHTML =
+      (opt.baslik ? '<h2>' + esc(opt.baslik) + '</h2>' : '') +
+      '<div class="onay-icerik' + (opt.uyari ? ' onay-uyari' : '') + '">' +
+        (opt.ikon || (opt.uyari ? '⚠' : 'ℹ')) + ' ' + (opt.mesaj || '') +
+      '</div>' +
+      (opt.not ? '<div class="sub pf-ipucu">' + opt.not + '</div>' : '') +
+      '<div class="acts onay-acts">' +
+        '<button type="button" data-o="vaz">' + esc(iptal) + '</button>' +
+        '<button type="button" class="pri' + (opt.uyari ? ' onay-tehlike' : '') + '" data-o="evet">' +
+          esc(onay) + '</button>' +
+      '</div>';
+    var bd = q('#backdrop');
+    if (bd) { bd.classList.add('open'); bd.onclick = null; }
+    setTimeout(function () {
+      var b = m.querySelector('[data-o="evet"]');
+      if (b) b.focus();
+    }, 60);
+    return m;
+  }
+
+  /* vazgeç: eski ekrana dön */
+  function geriAl(opt) {
+    var m = q('#modal');
+    if (yedek && m) {
+      m.innerHTML = yedek.html;
+      m.onclick = yedek.onclick;
+      m.oninput = yedek.oninput;
+      var bd = q('#backdrop');
+      if (bd) { bd.onclick = null; if (yedek.acik) bd.classList.add('open'); else bd.classList.remove('open'); }
+    } else if (m) {
+      var b2 = q('#backdrop');
+      if (b2) b2.classList.remove('open');
+    }
+    yedek = null;
+    if (typeof (opt || {}).geri === 'function') {
+      try { opt.geri(); } catch (e) { toast(hata(e), 6000); }
+    }
+  }
+
+  /* soru: Promise<boolean> */
+  function sor(opt) {
+    return new Promise(function (coz) {
+      var m = cerceve(opt);
+      if (!m) { coz(false); return; }
+      m.oninput = null;
+      m.onclick = function (ev) {
+        var b = ev.target && ev.target.closest ? ev.target.closest('[data-o]') : null;
+        if (!b) return;
+        if (b.getAttribute('data-o') === 'vaz') {
+          geriAl(opt); coz(false); toast('İşlem yapılmadı.', 2500); return;
+        }
+        /* onaylandı: önce eski ekrana dön, sonra işlemi çalıştır */
+        geriAl(opt);
+        coz(true);
+      };
+      var bd = q('#backdrop');
+      if (bd) bd.onclick = function (ev) {
+        if (ev.target !== bd) return;
+        geriAl(opt);
+        coz(false);
+        toast('İşlem yapılmadı.', 2500);
+      };
+    });
+  }
+
+  /* onayla: pencere aç, işlemi çalıştır */
+  function onay(opt) {
+    var m = cerceve(opt);
+    if (!m) return;
+    m.oninput = null;
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-o]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-o') === 'vaz') { geriAl(opt); toast('İşlem yapılmadı.', 2500); return; }
+      /* onaylandı: eski ekrana dön, işlemi çalıştır */
+      geriAl(opt);
+      if (typeof opt.islem === 'function') opt.islem(opt.sonra);
+    };
+    var bd = q('#backdrop');
+    if (bd) bd.onclick = function (ev) {
+      if (ev.target !== bd) return;
+      geriAl(opt);
+      toast('İşlem yapılmadı.', 2500);
+    };
+  }
+
+  /* ===================================================================
+     2) Anlık bildirimli işlem: "yapılıyor → sonuç"
+     =================================================================== */
+  function islem(opt) {
+    var bitti = false;
+    toast(opt.baslat || 'İşlem yapılıyor…', 2600);
+    var yavas = setTimeout(function () {
+      if (!bitti) toast('Sunucu yanıt vermiyor — bağlantı yavaş olabilir, biraz bekle…', 5000);
+    }, opt.bekleme || 6000);
+
+    function bitir(h, v) {
+      if (bitti) return;
+      bitti = true;
+      clearTimeout(yavas);
+      if (h) { toast(typeof h === 'string' ? h : hata(h), 6500); return; }
+      toast(opt.basarili || '✓ İşlem tamamlandı.', opt.sure || 4000);
+      if (typeof opt.sonra === 'function') {
+        try { opt.sonra(v); } catch (e) { toast(hata(e), 6000); }
+      }
+    }
+
+    var p;
+    try { p = typeof opt.islem === 'function' ? opt.islem() : opt.islem; }
+    catch (e) { bitir(e); return; }
+    Promise.resolve(p).then(function (v) { bitir(null, v); }, function (e) { bitir(e); });
+    return p;
+  }
+
+  /* ===================================================================
+     3) Arama çubuklu liste (üye listeleri için)
+     -------------------------------------------------------------------
+     opts: { kutu, liste, alan(u)->metin, ciz(liste)->html, bos, ipucu }
+     Sonuç: #geKutu gibi bir kutuya arama + sayaç + satırlar basar.
+     =================================================================== */
+  function uyeAra(opts) {
+    var kutu = q(opts.kutu);
+    if (!kutu) return null;
+    var liste = opts.liste || [];
+    var t = opts.ilk || '';
+    kutu.innerHTML =
+      '<div class="pf-ara">' +
+        '<span class="pf-ara-ikon">⌕</span>' +
+        '<input type="search" id="pfArama" autocomplete="off" spellcheck="false" placeholder="' +
+          esc(opts.ipucu || 'Ara: ad, e-posta, öğrenci no, bölüm') + '">' +
+      '</div>' +
+      '<div class="pf-ara-sonuc" id="pfAraSayi"></div>' +
+      '<div class="pf-ara-liste" id="pfAraSonuc"></div>';
+
+    function ciz() {
+      var s = duz(t);
+      var sonuc = s ? liste.filter(function (u) { return duz(opts.alan(u)).indexOf(s) >= 0; }) : liste.slice();
+      var sk = q('#pfAraSayi');
+      if (sk) sk.textContent = sonuc.length + ' / ' + liste.length + ' kişi' + (s ? ' · "' + t + '"' : '');
+      var k = q('#pfAraSonuc');
+      if (k) {
+        k.innerHTML = sonuc.length
+          ? opts.ciz(sonuc)
+          : '<div class="todo-empty">' + esc(opts.bos || 'Aramana uyan üye yok. Yazıyı silip tekrar dene.') + '</div>';
+      }
+      if (typeof opts.cizildi === 'function') opts.cizildi(sonuc);
+    }
+    var inp = q('#pfArama');
+    if (inp) {
+      inp.value = t;
+      inp.oninput = function () { t = inp.value; ciz(); };
+      inp.onkeydown = function (e) {
+        if (e.key === 'Escape') { inp.value = ''; t = ''; ciz(); }
+      };
+    }
+    ciz();
+    return { ciz: ciz, arama: function () { return t; } };
+  }
+
+  return { sor: sor, onay: onay, islem: islem, uyeAra: uyeAra, hata: hata, duz: duz };
 })();
 </script>
 <script>
@@ -5557,6 +6590,7 @@ var ETK = (function () {
              '<span class="d">' + esc(SEM_AD[e.sem]) + '</span></div>';
     }).join('');
     hitList = null;
+    if (view === 'sayfa') renderSayfalar();
     if (!EV.length) {
       stage.appendChild(el('div', 'empty',
         'Gösterilecek etkinlik yok. <b>＋ Etkinlik</b> ile kendi etkinliğini ekleyebilirsin.'));
@@ -5612,19 +6646,61 @@ var ETK = (function () {
 
   /* ---------------- normal takvim ---------------- */
   var view = 'dna';
+  var istAc = false;          /* telefonda istatistiklerin tamamı açık mı */
   var DOW = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
   function todayISO() { var n = new Date(); return iso(n.getFullYear(), n.getMonth() + 1, n.getDate()); }
   function setView(v) {
-    view = (v === 'cal') ? 'cal' : 'dna';
+    view = (v === 'cal') ? 'cal' : (v === 'sayfa' ? 'sayfa' : 'dna');
     document.body.classList.toggle('cal', view === 'cal');
-    var bd = $('#btnDna'), bc = $('#btnCal');
+    document.body.classList.toggle('sayfa', view === 'sayfa');
+    var bd = $('#btnDna'), bc = $('#btnCal'), bs = $('#btnSayfa');
     if (bd) bd.classList.toggle('on', view === 'dna');
     if (bc) bc.classList.toggle('on', view === 'cal');
+    if (bs) bs.classList.toggle('on', view === 'sayfa');
     try { DNA3D.setExpanded(-1); } catch (e) {}
     try { DNA3D.toggle(view === 'dna'); } catch (e2) {}
     try { DNA3D.resize(); rail.resize(); } catch (e3) {}
     try { rail.draw(D1 > D0 ? (prog - D0) / (D1 - D0) : 0, prog); } catch (e4b) {}
     if (view === 'cal') { var nv = $('#normalView'); if (nv) nv.scrollTop = 0; }
+    if (view === 'sayfa') { var sv = $('#sayfaView'); if (sv) sv.scrollTop = 0; renderSayfalar(); }
+  }
+
+  /* =====================================================================
+     ETKİNLİK SAYFALARI: bütün etkinlikler, tarih sırasıyla
+     ===================================================================== */
+  var sayfaAra = '';
+  function renderSayfalar() {
+    var box = $('#etpListe');
+    if (!box) return;
+    var t = todayISO();
+    var s = String(sayfaAra || '').toLocaleLowerCase('tr')
+      .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i')
+      .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
+    var liste = EV.map(function (e, i) { return { e: e, i: i }; }).filter(function (x) {
+      if (!s) return true;
+      return [x.e.title, x.e.date, x.e.weekLabel, x.e.desc].join(' ').toLocaleLowerCase('tr')
+        .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i')
+        .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').indexOf(s) >= 0;
+    });
+    if (!liste.length) {
+      box.innerHTML = '<div class="gp-bos">' +
+        (s ? 'Aramana uyan etkinlik yok. Yazıyı silip tekrar dene.' : 'Planda etkinlik yok.') +
+        '</div>';
+      return;
+    }
+    box.innerHTML = '<div class="etp-kart-liste">' + liste.map(function (x) {
+      var e = x.e;
+      var durum = e.date < t ? 'geçti' : e.date === t ? 'bugün' : 'yaklaşıyor';
+      return '<button type="button" class="etp-liste ' + esc(e.sem || 'guz') + '" data-sy="' + x.i + '">' +
+        '<span class="lno">' + (x.i + 1) + '</span>' +
+        '<span class="lbilgi"><b>' + esc(e.title) + '</b>' +
+          '<small>' + esc(fmtDate(e.date)) +
+          (e.weekLabel ? ' · ' + esc(e.weekLabel) : '') +
+          (e.exact ? ' · kesin tarih' : '') +
+          (e.desc ? ' · ' + esc(String(e.desc).slice(0, 60)) : '') + '</small></span>' +
+        '<span class="lrozet ' + (e.date < t ? '' : 'hazir') + '">' + durum + '</span>' +
+        '</button>';
+    }).join('') + '</div>';
   }
   function statRow(label, val, sub, extra) {
     return '<div class="stat"><span>' + label + '</span><b>' + val + '</b>' +
@@ -5654,8 +6730,15 @@ var ETK = (function () {
     for (dd = 1; dd <= dim; dd++) {
       var ds = iso(y, m, dd);
       var evs = byDate[ds] || [];
-      h += '<div class="day' + (ds === t ? ' today' : '') + '" data-date="' + ds + '">' +
+      /* etkinlik olan gün: isaret noktasi + vurgu; gecmise donuk */
+      var sinyaller = '';
+      if (evs.length) {
+        var ilkSem = (EV[evs[0]] || {}).sem || 'guz';
+        sinyaller = ' etkin' + (ilkSem ? ' ' + ilkSem : '') + (ds < t ? ' tamam' : '');
+      }
+      h += '<div class="day' + (ds === t ? ' today' : '') + sinyaller + '" data-date="' + ds + '">' +
              '<span class="dn">' + dd + '</span>' +
+             (evs.length ? '<i class="nok" aria-hidden="true"></i>' : '') +
              (NOTES[ds] ? '<span class="nt" title="' + esc(NOTES[ds]) + '">📝</span>' : '');
       /* her gune not dugmesi: etkinlik oldugu gunde de not alinabilir */
       if (!NOTES[ds]) {
@@ -5681,6 +6764,115 @@ var ETK = (function () {
     }
     return h + '</div></div>';
   }
+  /* =====================================================================
+     Normal takvimde bir güne tıklanınca açılan BİLGİ PANELİ
+     (DNA takvime yönlendirmez; kendi penceresinde anlatır)
+     ===================================================================== */
+  var SEM_ADI = { guz: 'Güz dönemi', bahar: 'Bahar dönemi', ozel: 'Özel program' };
+  var sonGunPanel = null;
+  function gunPaneli(ds, tekIdx) {
+    var m = $('#modal');
+    if (!m) return;
+    sonGunPanel = { ds: ds, idx: tekIdx == null ? null : tekIdx };
+    var idx = [], i;
+    for (i = 0; i < EV.length; i++) if (EV[i].date === ds) idx.push(i);
+    if (tekIdx != null && idx.indexOf(tekIdx) < 0) idx.push(tekIdx);
+    var t = todayISO();
+    var hafta = new Date(ds + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'long' });
+    var durum = ds === t ? '<span class="gp-etiket" style="border-color:rgba(56,189,248,.5);color:#7dd3fc">BUGÜN</span>'
+      : ds < t ? '<span class="gp-etiket">geçti</span>' : '<span class="gp-etiket">yaklaşıyor</span>';
+
+    function kart(k) {
+      var e = EV[k];
+      if (!e) return '';
+      /* ay etiketi: veri "Ekim" gibi ad da olabilir, sayı da */
+      var ayAd = '';
+      if (e.month != null && e.month !== '') {
+        ayAd = /^\d+$/.test(String(e.month))
+          ? (P.AY_UST[+e.month - 1] || '')
+          : String(e.month);
+      }
+      return '<div class="gp-kart ' + esc(e.sem || 'guz') + '">' +
+        '<h3><i></i><span>' + esc(e.title) +
+          (e.tag && e.tag.lbl ? ' <em>' + esc(e.tag.lbl) + '</em>' : '') + '</span></h3>' +
+        '<div class="gp-satir">' +
+          (e.exact ? '<span class="gp-etiket">📌 kesin tarih</span>'
+                   : '<span class="gp-etiket">' + esc(e.weekLabel || 'Hafta bilgisi yok') + '</span>') +
+          (ayAd ? '<span class="gp-etiket">' + esc(ayAd) + '</span>' : '') +
+          '<span class="gp-etiket">' + esc(SEM_ADI[e.sem] || 'Etkinlik') + '</span>' +
+        '</div>' +
+        (e.desc ? '<p>' + esc(e.desc) + '</p>' : '') +
+        '<div class="gp-ek" data-ek="' + esc(String(e.id || k)) + '"></div>' +
+        '<div class="acts" style="margin-top:10px;gap:7px">' +
+          (e.id ? '<button type="button" class="td" data-gp-sayfa="' + k + '">Etkinlik sayfası</button>' : '') +
+          '<button type="button" class="td" data-gp-dna="' + k + '">DNA takvimde aç</button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    m.className = 'modal genis gun-panel';
+    m.innerHTML =
+      '<div class="gp-tarih">' + esc(hafta) + ' · ' + esc(fmtDate(ds)) + ' ' + durum + '</div>' +
+      (idx.length ? idx.map(kart).join('')
+                  : '<div class="gp-bos">Bu günde etkinlik yok.<br>' +
+                    'Takvimde bu güne işaretli bir etkinlik bulunmuyor.</div>') +
+      (NOTES[ds] ? '<div class="gp-not"><b>Bu günün notu</b>' + esc(NOTES[ds]) + '</div>' : '') +
+      '<div class="acts" style="margin-top:16px">' +
+        '<button type="button" class="pri" data-gp="not">✎ Bu güne not ekle</button>' +
+        '<button type="button" data-gp="kapat">← Geri</button>' +
+      '</div>';
+
+    $('#backdrop').classList.add('open');
+    m.onclick = function (e) {
+      var sy = e.target && e.target.closest ? e.target.closest('[data-gp-sayfa]') : null;
+      if (sy) {
+        var ke = EV[+sy.getAttribute('data-gp-sayfa')];
+        /* herkes aynı şık sayfayı görür — yönetici paneli DEĞİL */
+        if (ke && window.ETK) ETK.etkinlikGoruntule(String(ke.id));
+        return;
+      }
+      var dn = e.target && e.target.closest ? e.target.closest('[data-gp-dna]') : null;
+      if (dn) {
+        var kd = +dn.getAttribute('data-gp-dna');
+        closeModal();
+        setView('dna');
+        DNA3D.setExpanded(kd);
+        goTo(kd);
+        return;
+      }
+      var b = e.target && e.target.closest ? e.target.closest('[data-gp]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-gp');
+      if (a === 'not') { openNote(ds); return; }
+      if (a === 'kapat') closeModal();
+    };
+
+    /* etkinlik sayfası bilgileri (konu, konuk, saat, yer) sunucudan */
+    if (window.ETK && ETK.sayfaOku && idx.length) {
+      idx.forEach(function (k) {
+        var e = EV[k];
+        if (!e || !e.id) return;
+        var kap = m.querySelector('[data-ek="' + String(e.id) + '"]');
+        if (!kap) return;
+        ETK.sayfaOku(String(e.id)).then(function (s) {
+          if (!kap.isConnected) return;
+          var parcalar = [];
+          if (s.konu) parcalar.push('<b>Konu:</b> ' + esc(s.konu));
+          if (s.konuk) parcalar.push('<b>Konuk:</b> ' + esc(s.konuk));
+          if (s.saat) parcalar.push('<b>Saat:</b> ' + esc(s.saat));
+          if (s.yer) parcalar.push('<b>Yer:</b> ' + esc(s.yer));
+          if (s.aciklama) parcalar.push(esc(s.aciklama));
+          kap.innerHTML = parcalar.length
+            ? '<div class="gp-satir" style="margin-top:9px">' + parcalar.slice(0, 4).map(function (x) {
+                return '<span class="gp-etiket">' + x + '</span>';
+              }).join('') + '</div>' +
+              (parcalar[4] ? '<p>' + parcalar[4] + '</p>' : '')
+            : '';
+        }).catch(function () { });
+      });
+    }
+  }
+
   function renderCal() {
     var box = $('#calStats'), mon = $('#calMonths');
     if (!box || !mon) return;
@@ -5740,7 +6932,14 @@ var ETK = (function () {
       ['Notlarım', nN, nN ? 'günlük not' : 'not yok'],
       ['Görevler', (nAll - nT) + ' / ' + nAll,
        (nAll - nT) + ' tamamlandı · ' + nT + ' bekliyor', bar]);
-    box.innerHTML = h;
+    box.innerHTML = h + '<button type="button" class="ist-ac" id="istAc" aria-expanded="' +
+      (istAc ? 'true' : 'false') + '">' + (istAc ? '▲ İstatistikleri kapat' : 'Tüm istatistikleri göster ▼') + '</button>';
+    var ac = $('#istAc');
+    if (ac) {
+      ac.onclick = function () { istAc = !istAc; renderCal(); };
+    }
+    var sb = $('#calStats');
+    if (sb) sb.classList.toggle('acik', istAc);
     setHovDay(null);
     var byDate = {};
     EV.forEach(function (e2, i2) { (byDate[e2.date] = byDate[e2.date] || []).push(i2); });
@@ -5801,23 +7000,33 @@ var ETK = (function () {
         '<p><b>Android (Chrome):</b> Sağ üstteki ⋮ ⇢ <b>Ana ekrana ekle</b>.</p>' +
         '<p><b>Bilgisayar (Chrome / Edge):</b> Adres çubuğundaki kurulum simgesine tıkla.</p>' +
         '<p class="dim">Kurulum için sayfanın <b>https</b> (ya da <b>localhost</b>) üzerinden açılması gerekir.</p>' +
-        '</div></div>' +
-      '<div class="acts"><button type="button" data-act="close">Kapat</button></div>';
-    m.querySelector('[data-act="close"]').onclick = closeModal;
+        '</div></div>';
     $('#backdrop').classList.add('open');
   }
   /* ---- kisisel verileri temizle (etkinlik + not + gorev) ---- */
   function clearPersonal() {
     var n1 = CUSTOM.length, n2 = Object.keys(NOTES).length, n3 = TODOS.length;
-    if (!n1 && !n2 && !n3) { toast('Silinecek kişisel veri yok.'); return; }
-    var msg = (n1 ? n1 + ' kişisel etkinlik' + (n1 > 1 ? '' : '') + '\n' : '') +
-      (n2 ? n2 + ' günlük not\n' : '') + (n3 ? n3 + ' görev\n' : '') +
-      '\nHepsi kalıcı olarak silinsin mi?';
-    if (!confirm(msg)) return;
-    CUSTOM = []; NOTES = {}; TODOS = [];
-    saveCustom(); saveNotes(); saveTodos();
-    merge(); render();
-    toast('Kişisel veriler silindi.', 4000);
+    if (!n1 && !n2 && !n3) { toast('Bu cihazda silinecek kişisel veri yok.'); return; }
+    var liste = (n1 ? '<div>• ' + n1 + ' kişisel etkinlik kaydı</div>' : '') +
+      (n2 ? '<div>• ' + n2 + ' günlük not</div>' : '') +
+      (n3 ? '<div>• ' + n3 + ' görev</div>' : '');
+    var u = window.MBGFB && MBGFB.user() ? MBGFB.user().email : '';
+    window.MBGO.onay({
+      baslik: 'Kişisel verilerimi temizle',
+      uyari: true,
+      ikon: '🧹',
+      mesaj: '<b>Bu cihazdaki kişisel veriler silinecek:</b>' + liste,
+      not: (u
+        ? 'Hesabında saklanan veriler etkilenmez (<b>' + u + '</b>).'
+        : 'Sunucuda saklanan veriler etkilenmez.') + ' İşlem geri alınamaz.',
+      onayMetni: 'Evet, temizle',
+      islem: function () {
+        CUSTOM = []; NOTES = {}; TODOS = [];
+        saveCustom(); saveNotes(); saveTodos();
+        merge(); render();
+        toast('✓ Kişisel veriler silindi.', 4000);
+      }
+    });
   }
 
   /* ---- hata bildirimi: e-posta ile kulup yoneticisine gider ---- */
@@ -5960,7 +7169,31 @@ var ETK = (function () {
   /* ------------------------------------------------------------------
      5) Modal (ayrıntı + ekleme/düzenleme) — mRNA parçası çerçeve
      ------------------------------------------------------------------ */
-  function closeModal() { $('#backdrop').classList.remove('open'); }
+  /* Her panelde sağ üstte minik çarpı (Kapat) düğmesi — içerik yeniden
+   çizildiğinde de kalsın diye gözlemci ile takip edilir. */
+  (function kapatDugmesi() {
+    var md = $('#modal');
+    if (!md || !window.MutationObserver) return;
+    var ekle = function () {
+      if (md.querySelector('.modal-kapat')) return;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'modal-kapat';
+      b.title = 'Kapat';
+      b.setAttribute('aria-label', 'Kapat');
+      b.innerHTML = '&times;';
+      b.onclick = function (e) { e.stopPropagation(); closeModal(); };
+      md.appendChild(b);
+    };
+    ekle();
+    new MutationObserver(ekle).observe(md, { childList: true });
+  })();
+
+  function closeModal() {
+    $('#backdrop').classList.remove('open');
+    var md = $('#modal');
+    if (md) { md.className = 'modal'; md.innerHTML = ''; md.onclick = null; md.oninput = null; }
+  }
 
 
   function defaultDate() {
@@ -6274,6 +7507,27 @@ var ETK = (function () {
     var bAdd = $('#btnAdd'); if (bAdd) bAdd.onclick = function () { openForm(null); };
     $('#btnDna').onclick   = function () { setView('dna'); };
     $('#btnCal').onclick   = function () { setView('cal'); };
+    var bSy = $('#btnSayfa');
+    if (bSy) bSy.onclick = function () { setView('sayfa'); };
+    var sv = $('#sayfaView');
+    if (sv) {
+      sv.addEventListener('click', function (e) {
+        var b = e.target && e.target.closest ? e.target.closest('[data-sy]') : null;
+        if (!b) return;
+        var i = +b.getAttribute('data-sy');
+        var ev2 = EV[i];
+        if (!ev2) return;
+        if (window.ETK && ev2.id) ETK.etkinlikGoruntule(String(ev2.id));
+        else toast('Bu etkinliğin sunucu kaydı yok.', 4000);
+      });
+    }
+    var etpAra = $('#etpAra');
+    if (etpAra) {
+      etpAra.oninput = function () { sayfaAra = etpAra.value; renderSayfalar(); };
+      etpAra.onkeydown = function (e) {
+        if (e.key === 'Escape') { etpAra.value = ''; sayfaAra = ''; renderSayfalar(); }
+      };
+    }
     $('#normalView').addEventListener('click', function (e) {
       /* etkinlik sayfası düğmesi (rozetin sol ucundaki i) */
       var sy = e.target && e.target.closest ? e.target.closest('.ev-sayfa') : null;
@@ -6286,20 +7540,18 @@ var ETK = (function () {
       if (x) {
         var ci = +x.getAttribute('data-ev');
         if (!isFinite(ci) || !EV[ci]) return;
-        setView('dna');
-        DNA3D.setExpanded(ci);
-        goTo(ci);
+        gunPaneli(EV[ci].date, ci);      /* bilgi paneli: DNA'ya atlamaz */
         return;
       }
       var nt = e.target && e.target.closest ? e.target.closest('[data-note]') : null;
       if (nt) { openNote(nt.getAttribute('data-note')); return; }
       var dy = e.target && e.target.closest ? e.target.closest('.day[data-date]') : null;
-      if (dy && !e.target.closest('input,button')) openNote(dy.getAttribute('data-date'));
-      var ci = +x.getAttribute('data-ev');
-      if (!isFinite(ci) || !EV[ci]) return;
-      setView('dna');
-      DNA3D.setExpanded(ci);
-      goTo(ci);
+      if (!dy) return;
+      var gund = dy.getAttribute('data-date');
+      var varMi = false, k;
+      for (k = 0; k < EV.length; k++) { if (EV[k].date === gund) { varMi = true; break; } }
+      if (varMi) { gunPaneli(gund); return; }   /* etkinlik varsa panel */
+      openNote(gund);                           /* etkinlik yoksa doğrudan not */
     });
     $('#calTodos').addEventListener('click', function (e) {
       var b = e.target && e.target.closest ? e.target.closest('[data-tact]') : null;
@@ -6392,7 +7644,7 @@ var ETK = (function () {
     var mc = $('#mClear');
     if (mc) mc.onclick = function () {
       if (window.MBGM && MBGM.onayTemizle) MBGM.onayTemizle();
-      else if (confirm('Kişisel verilerin silinsin mi?')) clearPersonal();
+      else clearPersonal();
     };
     $('#mBug').onclick = function () { sheetOpen(false); openBugReport(); };
     $('#fileInput').onchange = function () {
@@ -6454,6 +7706,23 @@ var ETK = (function () {
 
     /* konsoldan kullanılabilir küçük yardımcı:  MBG.goTo(3) · MBG.goToday() · MBG.dna() */
     window.MBG = {
+      /* mevcut etkinliği yerel planda güncelle */
+      planGuncelle: function (id, rec) {
+        var i, hedef = null;
+        for (i = 0; i < EV.length; i++) { if (String(EV[i].id) === String(id)) { hedef = EV[i]; break; } }
+        if (!hedef) { var y = EV.filter(function (e) { return e.title === (rec.title || ''); })[0]; if (y) hedef = y; }
+        if (!hedef) return false;
+        hedef.date = rec.date || hedef.date;
+        hedef.title = rec.title || hedef.title;
+        hedef.desc = rec.desc != null ? rec.desc : hedef.desc;
+        hedef.tag = rec.tag || null;
+        hedef.sem = rec.sem || hedef.sem;
+        hedef.exact = !!rec.exact;
+        if (CUSTOM.indexOf(hedef) < 0) CUSTOM.push(hedef);
+        saveCustom();
+        merge(); render();
+        return true;
+      },
       goTo: goTo, goToday: goToday, search: search, dna: DNA3D.info,
       expand: function (i) {
         if (i == null) return DNA3D.isExpanded();
@@ -6471,10 +7740,34 @@ var ETK = (function () {
       /* --- uyelik / yonetim yardimcilari (member.js bunlari kullanir) --- */
       applyPlan: applyPlan,
       importExcel: function (f) {
+        toast('📄 ' + (f && f.name ? f.name : 'Excel dosyası') + ' okunuyor…', 3200);
         return importExcel(f).then(function (ev) {
-          if (!confirm(ev.length + ' etkinlik sunucuya aktarılacak. Devam edilsin mi?'))
-            return Promise.reject(new Error('iptal'));
-          return MBGFB.replaceEvents(ev).then(function () { return ev.length; });
+          return MBGO.sor({
+            baslik: 'Planı sunucuya aktar',
+            ikon: '☁',
+            mesaj: '<b>' + ev.length + ' etkinlik</b> okundu ve sunucuya yüklenecek.',
+            not: 'Sunucudaki mevcut kayıtların yerine geçer. İptal edersen hiçbir şey değişmez.',
+            onayMetni: 'Evet, yükle',
+            geri: function () { if (window.MBGM && MBGM.adminPanel) MBGM.adminPanel(); }
+          }).then(function (ok) {
+            if (!ok) return { iptal: true, adet: ev.length };
+            return MBGO.islem({
+              baslat: ev.length + ' etkinlik sunucuya yükleniyor…',
+              bekleme: 10000,
+              islem: function () {
+                return MBGFB.replaceEvents(ev).then(function () {
+                  applyPlan(ev, (f && f.name) || 'excel');   /* yerel plan da güncellenir */
+                  return ev.length;
+                });
+              },
+              basarili: '✓ ' + ev.length + ' etkinlik sunucuya yüklendi ve takvim yenilendi.',
+              sure: 5200
+            }).then(function () { return { iptal: false, adet: ev.length }; });
+          });
+        }).catch(function (x) {
+          var msg = String((x && x.message) || x);
+          toast('Excel aktarılamadı: ' + msg, 7000);
+          throw x;
         });
       },
       toast: toast, closeModal: closeModal, fmtDate: fmtDate, esc: esc,
@@ -6482,6 +7775,38 @@ var ETK = (function () {
       mergeNote: mergeNote, mergeTodos: mergeTodos, todosDump: todosDump,
       notesDump: function () { return NOTES; },
       openNote: openNote, temizleKisisel: clearPersonal,
+      /* gün paneline geri dön (etkinlik sayfasından "← Geri") */
+      gunPaneliAc: function () {
+        if (sonGunPanel) gunPaneli(sonGunPanel.ds, sonGunPanel.idx);
+        else closeModal();
+      },
+      /* yerel plandan bir etkinliği kaldır (sunucudan silindikten sonra) */
+      planSil: function (i) {
+        var e = EV[i];
+        if (!e) return false;
+        var kaynak = (EMBEDDED && EMBEDDED.events) ? EMBEDDED.events : null;
+        if (kaynak) {
+          var k = kaynak.indexOf(e);
+          if (k >= 0) kaynak.splice(k, 1);
+        }
+        var c = CUSTOM.indexOf(e);
+        if (c >= 0) CUSTOM.splice(c, 1);
+        merge(); render();
+        return true;
+      },
+      /* yerel plana yeni etkinlik ekle (sunucuya yazıldıktan sonra) */
+      planEkle: function (rec) {
+        if (!rec || !rec.date || !rec.title) return false;
+        CUSTOM.push({
+          sem: rec.sem || 'guz', month: rec.month || '', mi: rec.mi || 0,
+          week: rec.week || 0, weekLabel: rec.weekLabel || '', date: rec.date,
+          exact: !!rec.exact, title: rec.title, desc: rec.desc || '',
+          tag: rec.tag || null, custom: true
+        });
+        saveCustom();
+        merge(); render();
+        return true;
+      },
       planSrc: function () { return PLAN_SRC; },
       offset: function (d) { progT = clampP(progT + (+d || 0)); return progT; }
     };
