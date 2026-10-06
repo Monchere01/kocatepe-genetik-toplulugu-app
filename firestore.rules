@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.24.1)
+   Firestore güvenlik kuralları  (v3.25.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -115,11 +115,14 @@ service cloud.firestore {
        Takvimde gösterilmez; yalnızca "Üyeler ve katılım" sayfasında listelenir. */
     match /public/{uid} {
       allow read: if true;
-      allow create: if girisYapildi()
-        && request.auth.uid == uid
-        && dogrulandiMi()
-        && request.resource.data.keys()
-             .hasOnly(['ad', 'soyad', 'katildi', 'gorevli', 'guncelleAt']);
+      /* Yönetici herkesin satırını oluşturabilir/gunceller;
+         üye yalnizca kendi satırını (yalnızca bu alanlarla) yazabilir. */
+      allow create: if adminMi()
+        || (girisYapildi()
+            && request.auth.uid == uid
+            && dogrulandiMi()
+            && request.resource.data.keys()
+                 .hasOnly(['ad', 'soyad', 'katildi', 'gorevli', 'guncelleAt']));
       allow update: if adminMi()
         || (girisYapildi()
             && request.auth.uid == uid

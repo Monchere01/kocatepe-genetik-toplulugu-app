@@ -387,6 +387,8 @@
     background:rgba(148,178,220,.1);border:1px solid rgba(148,178,220,.2);color:#9fb3cd}
   .etp-liste .lrozet.hazir{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.34);color:#6ee7b7}
   .cal-stats{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+  /* istatistik katlama düğmesi yalnız telefonda (masaüstünde hep açık) */
+  .ist-ac{display:none}
   .stat-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .pbar{display:block;height:5px;border-radius:5px;background:rgba(148,178,220,.16);
     margin:8px 0 1px;overflow:hidden}
@@ -820,7 +822,7 @@
     /* istatistikler: telefonda ilk 2 kart g\u00f6sterilir, gerisi a\u00e7\u0131l\u0131r */
     #calStats .stat-pair:nth-child(n+3){display:none}
     #calStats.acik .stat-pair{display:grid}
-    .ist-ac{width:100%;margin-top:8px;justify-content:center;background:rgba(148,178,220,.07);
+    .ist-ac{display:block;width:100%;margin-top:8px;justify-content:center;background:rgba(148,178,220,.07);
       border:1px dashed rgba(148,178,220,.24);color:#9fb3cd;font-size:.72rem;min-height:34px}
     .todos{padding:10px 11px;border-radius:14px;margin-bottom:15px}
     .todos h3{font-size:.82rem;margin-bottom:7px}
@@ -985,7 +987,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.24.1 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.25.0 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -3102,6 +3104,26 @@ var MBGFB = (function () {
       });
     }).catch(function () { return null; });
   }
+  /* yönetici: bağka bir üyenin katılım/görev kaydını okur */
+  function katilimUidOku(uid) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem yöneticiye özel.'));
+    return ready().then(function () {
+      return db.collection('ud').doc(String(uid)).collection('katilim').get().then(function (snap) {
+        var out = {};
+        snap.forEach(function (d) { out[d.id] = d.data() || {}; });
+        return out;
+      });
+    }).catch(function () { return {}; });
+  }
+  /* yönetici: bağka bir üyenin katılım/görev kaydını yazar */
+  function katilimUidYaz(uid, evId, rec) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem yöneticiye özel.'));
+    return ready().then(function () {
+      var ref = db.collection('ud').doc(String(uid)).collection('katilim').doc(String(evId));
+      if (!rec || (!rec.durum && !rec.gorev)) return ref.delete();
+      return ref.set({ durum: rec.durum || '', gorev: rec.gorev || '', at: ts() });
+    });
+  }
   function saveKatilim(evId, rec) {
     if (!state.user) return Promise.resolve();
     return ready().then(function () {
@@ -3492,6 +3514,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     deleteEvent: deleteEvent, eventIds: eventIds, planMeta: planMeta,
     saveTodos: saveTodos, loadTodos: loadTodos, saveNote: saveNote, loadNotes: loadNotes,
     loadKatilim: loadKatilim, saveKatilim: saveKatilim,
+    katilimUidOku: katilimUidOku, katilimUidYaz: katilimUidYaz,
     watchNews: watchNews, addNews: addNews, addReport: addReport, listReports: listReports,
     adBicimlendir: adBicimlendir,
     publicOku: publicOku, benimIstatligimYaz: benimIstatligimYaz,
@@ -4060,6 +4083,18 @@ var MBGM = (function () {
     });
   }
 
+  /* Firestore "izin yok" hatasını anlaşılır hale getirir:
+     public koleksiyonunun kuralları yayınlanmamışa çözülmü çıkarılır. */
+  function izinMetni(x) {
+    var kod = (x && (x.code || x.name)) || '';
+    var msj = (x && x.message) || String(x || '');
+    if (String(kod).indexOf('permission') >= 0 || /izin yok|permission/i.test(msj)) {
+      return new Error('Firestore kuralları yayınlanmamış. Firebase konsolundan ' +
+        '(Firestore → Rules) kuralları göncellenmeli; “public” koleksiyonu eklenmiş olmalı.');
+    }
+    return x;
+  }
+
   /* yönetici: herkesin katılım istatistiğini yeniden hesapla */
   function istatistikTazele() {
     if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
@@ -4069,7 +4104,7 @@ var MBGM = (function () {
       islem: function () {
         return MBGFB.listMembers().then(function (ls) {
           return MBGFB.istatistikYenile(evIdleri(), ls).then(function (sayi) { return { sayi: sayi }; });
-        });
+        }).catch(function (x) { throw izinMetni(x); });
       },
       basarili: '✓ İstatistikler güncellendi.',
       sure: 4500,
@@ -4297,7 +4332,7 @@ var MBGM = (function () {
       else if (a === 'aktar') q('#admXlsx').click();
       else if (a === 'tosum') { close(); tosumYukle(); }
       else if (a === 'istat') { close(); istatistikTazele(); }
-      else if (a === 'uyeliste') { close(); uyeSayfasi(); }
+      else if (a === 'uyeliste') { close(); uyeSayfasi(true); }
       else if (a === 'duyuru') newsForm();
       else if (a === 'uyeler') uyeler();
       else if (a === 'rapor') reports();
@@ -4371,13 +4406,24 @@ var MBGM = (function () {
               return '<div class="todo"><span><b>' + esc(u.name || u.email || '(isim yok)') + '</b>' +
                 (yonetici ? ' <em>(yönetici)</em>' : '') +
                 (bilgi ? '<br><small>' + esc(bilgi) + '</small>' : '') + '</span>' +
+                '<button type="button" class="td" data-e="' + esc(u.uid) + '">Katılım</button>' +
                 (u.uid === benimUid || yonetici ? '' :
-                  '<button type="button" class="td" data-u="' + esc(u.uid) + '">Sil</button>') +
+                  '<button type="button" class="td td-sil" data-u="' + esc(u.uid) + '">Sil</button>') +
                 '</div>';
             }).join('');
           }
         });
         box.onclick = function (ev) {
+          /* KATILIM: yönetici, seçtiği üyenin kayıtlarını düzenler */
+          var be = ev.target && ev.target.closest ? ev.target.closest('[data-e]') : null;
+          if (be) {
+            var euid = be.getAttribute('data-e');
+            var eu = (ls || []).filter(function (x) { return x.uid === euid; })[0];
+            if (eu && window.MBGP && MBGP.katilimForm) {
+              MBGP.katilimForm(euid, eu.name || eu.email || euid);
+            }
+            return;
+          }
           var b = ev.target && ev.target.closest ? ev.target.closest('[data-u]') : null;
           if (!b) return;
           var uid = b.getAttribute('data-u');
@@ -4554,7 +4600,8 @@ var MBGM = (function () {
      public/{uid} koleksiyonundan okunur. İletişim bilgisi YOK.
      Sayılar güncel takvime göre hesaplanır.
      =================================================================== */
-  function uyeSayfasi() {
+  /* yoneticiMi = true → yönetici panelinden açıldı (yeniden hesapla düğmesi olur) */
+  function uyeSayfasi(yoneticiMi) {
     var m = q('#modal');
     if (!m) return;
     var evList = (A && A.events) ? A.events() : [];
@@ -4565,7 +4612,7 @@ var MBGM = (function () {
       '<div class="sub">Yalnızca ad soyad ve katılım sayıları görünür; ' +
         'e-posta, telefon ve öğrenci numarası gizlidir. Sayılar güncel takvime göredir (' +
         toplam + ' etkinlik).</div>' +
-      (MBGFB.isAdmin()
+      (yoneticiMi && MBGFB.isAdmin()
         ? '<div class="acts" style="justify-content:flex-start;flex-wrap:wrap">' +
             '<button type="button" class="pri" data-a="yenile">🔄 İstatistikleri yeniden hesapla</button></div>'
         : '') +
@@ -4680,7 +4727,7 @@ var MBGM = (function () {
     }
     if (a6) a6.onclick = function () { geriBildirimFormu('oneri'); };
     var a8 = q('#mUyeler');
-    if (a8) a8.onclick = function () { uyeSayfasi(); };
+    if (a8) a8.onclick = function () { uyeSayfasi(false); };
     if (a7) a7.onclick = function () { geriBildirimFormu('hata'); };
   }
 
@@ -4738,7 +4785,7 @@ var MBGP = (function () {
      1) QR ile kaydedilen gerçek katılım  (events/{id}/katilan/{uid})
      2) yöneticinin atadığı görevler (events/{id}/gorevli/{uid})
      3) eski kayıtlar                       (ud/{uid}/katilim)
-     4) güncel takvime göre "gidecek / gidemedi" (kayıt yoksa)
+     4) eski yönetim kayıtları
      Böylece istatistikler her zaman güncel takvime göre hesaplanır. */
   function katilimYukle() {
     if (!MBGFB.user()) { KAT = {}; return Promise.resolve({}); }
@@ -4761,13 +4808,6 @@ var MBGP = (function () {
         yeni[id] = yeni[id] || {};
         yeni[id].gorev = x.gorev || '';
         if (!yeni[id].durum) yeni[id].durum = (bugun && x.tarih && x.tarih < bugun) ? 'katildi' : 'gidecek';
-      });
-      /* güncel takvim: geçmiş ama katılımı olmayanlar */
-      ev.forEach(function (e2) {
-        var eid = String(e2.id), kayit = yeni[eid];
-        if (kayit && kayit.durum) return;
-        if (!kayit) { yeni[eid] = { durum: (bugun && e2.date < bugun) ? 'gidemedi' : 'gidecek' }; }
-        else kayit.durum = (bugun && e2.date < bugun) ? 'gidemedi' : 'gidecek';
       });
       KAT = yeni;
       return KAT;
@@ -4813,13 +4853,10 @@ var MBGP = (function () {
     for (d in nt) if (nt[d]) notSay++;
     var gt = gorevler(), bitti = 0, b;
     for (k = 0; k < gt.length; k++) if (gt[k].done) bitti++;
-    var gidemedi = kayitlar('gidemedi');
     var top = evler().length;
     return {
       toplamEtkinlik: top,
       katildi: katildi.length,
-      gidecek: gidecek.length,
-      gidemedi: gidemedi.length,
       yuzde: top ? Math.round(katildi.length / top * 100) : 0,
       gorevli: gorevli,
       bekleyen: bekleyen,
@@ -4834,7 +4871,7 @@ var MBGP = (function () {
      ------------------------------------------------------------------ */
   function tablo(baslik, sayi, satirlar, bosMetin) {
     var govde = satirlar.length
-      ? satirlar
+      ? satirlar.join('')
       : '<tr><td colspan="3" class="pf-bos">' + esc(bosMetin) + '</td></tr>';
     return '<section class="pf-blok">' +
       '<h3>' + esc(baslik) + ' <em>' + sayi + '</em></h3>' +
@@ -4844,7 +4881,7 @@ var MBGP = (function () {
     return '<tr class="pf-ac" data-ev-sayfa="' + esc(k.id) + '"><td class="pf-t">' + esc(fmt(k.ev.date)) + '</td>' +
       '<td>' + esc(k.ev.title) +
       (k.gorev ? ' <span class="pf-et">' + esc(k.gorev) + '</span>' : '') + '</td>' +
-      '<td class="pf-s"><button type="button" data-k="sil" data-e="' + esc(k.id) + '">✕</button></td></tr>';
+      '<td class="pf-s"></td></tr>';
   }
 
   /* ------------------------------------------------------------------
@@ -4890,9 +4927,7 @@ var MBGP = (function () {
         '<div class="pf-ist">' +
           ist('Katılım yüzdesi', '%' + s.yuzde, s.yuzde >= 50 ? 'iyi' : '') +
           ist('Katıldığım', s.katildi + ' / ' + s.toplamEtkinlik) +
-          ist('Katılacağım', s.gidecek) +
           ist('Görevim olan', s.gorevli) +
-          ist('Görev bekleyen', s.bekleyen, s.beklayan ? 'uyari' : '') +
           ist('Not sayım', s.notSay) +
           ist('Bitirdiğim görev', s.gorevBitti + ' / ' + s.gorevToplam) +
         '</div>' +
@@ -4900,8 +4935,7 @@ var MBGP = (function () {
         '<div class="acts pf-acts">' +
           '<button type="button" class="pri" data-k="kisisel">Kişisel bilgilerim</button>' +
           '<button type="button" class="pri" data-k="hesap">Hesap bilgilerim</button>' +
-          (MBGFB.isAdmin() ? '<button type="button" data-k="duzenle">Katılımı düzenle</button>' : '') +
-          '<button type="button" data-k="yenile">Yenile</button>' +
+              '<button type="button" data-k="yenile">Yenile</button>' +
         '</div>' +
 
         tablo('Katıldığım etkinlikler', katildi.length,
@@ -4910,8 +4944,6 @@ var MBGP = (function () {
         tablo('Görev aldığım etkinlikler', gorevli.length,
           gorevli.map(trEtkinlik), 'Henüz görevli olduğun etkinlik yok.') +
 
-        tablo('Katılacağım etkinlikler', gidecek.length,
-          gidecek.map(trEtkinlik), 'Henüz katılacağın etkinlik seçmedin.') +
 
         tablo('Notlarım', notList.length,
           notList.map(function (n) {
@@ -4972,18 +5004,12 @@ var MBGP = (function () {
         var a = b.getAttribute('data-k');
         if (a === 'kapat') { close(); return; }
         if (a === 'yenile') { katilimYukle().then(ciz); return; }
-        if (a === 'duzenle') { katilimForm(); return; }
-        if (a === 'kisisel') { kisiselForm(); return; }
+          if (a === 'kisisel') { kisiselForm(); return; }
         if (a === 'hesap') { hesapBilgileri(); return; }
         if (a === 'not') { close(); if (A && A.openNote) A.openNote(b.getAttribute('data-e')); return; }
         var es = ev.target && ev.target.closest ? ev.target.closest('[data-ev-sayfa]') : null;
         if (es && window.ETK) { ETK.etkinlikGoruntule(es.getAttribute('data-ev-sayfa')); return; }
-        if (a === 'sil') {
-          katilimKaydet(b.getAttribute('data-e'), null);
-          toast('Kayıt kaldırıldı.', 2500);
-          ciz();
-        }
-      };
+        };
     }
     q('#backdrop').classList.add('open');
   }
@@ -5190,18 +5216,24 @@ var MBGP = (function () {
   /* ------------------------------------------------------------------
      KATILIM DÜZENLEME
      ------------------------------------------------------------------ */
-  function katilimForm() {
+  /* ------------------------------------------------------------------
+     KATILIM DÜZENLEME — yalnızca yönetici panelinden açılır.
+     Profilde herkese açık bir "Katılımı düzenle" düğmesi YOKTUR;
+     üyeler kendi katılımını yalnızca QR kod okutarak kaydeder.
+     ------------------------------------------------------------------ */
+  function katilimForm(uid, ad) {
+    if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
+    if (!uid) return;
     var m = q('#modal');
     if (!m) return;
     var l = evler();
     var bugun = (A && A.today) ? A.today() : '';
-    m.innerHTML =
-      '<h2>Katılım ve görevlerim</h2>' +
-      '<div class="sub">Katılacağın etkinliği ve o etkinlikdeki görevini seç. ' +
-      'Değişiklikler yalnızca senin hesabında saklanır.</div>' +
-      '<div class="pf-tab pf-form"><table>' +
-      l.map(function (e) {
-        var r = KAT[String(e.id)] || {};
+    var kim = ad || uid;
+    var hedef = {};
+
+    function ciz() {
+      var satirlar = l.map(function (e) {
+        var r = hedef[String(e.id)] || {};
         var g = ['<option value="">— görev yok —</option>'].concat(
           GOREV.map(function (x) {
             return '<option value="' + esc(x) + '"' + (r.gorev === x ? ' selected' : '') + '>' + esc(x) + '</option>';
@@ -5212,34 +5244,55 @@ var MBGP = (function () {
           '<td class="pf-sel">' +
             '<select data-s="d" data-e="' + esc(e.id) + '">' +
               '<option value="">—</option>' +
-              '<option value="gidecek"' + (r.durum === 'gidecek' ? ' selected' : '') + '>Katılacağım</option>' +
-              '<option value="katildi"' + (r.durum === 'katildi' ? ' selected' : '') + '>Katıldım</option>' +
+              '<option value="gidecek"' + (r.durum === 'gidecek' ? ' selected' : '') + '>Katılacak</option>' +
+              '<option value="katildi"' + (r.durum === 'katildi' ? ' selected' : '') + '>Katıldı</option>' +
             '</select>' +
             '<select data-s="g" data-e="' + esc(e.id) + '">' + g + '</select>' +
           '</td></tr>';
-      }).join('') +
-      '</table></div>' +
-      '<div class="acts">' +
-        '<button type="button" data-k="vaz">Vazgeç</button>' +
-        '<button type="button" class="pri" data-k="kay">Kaydet</button></div>';
-    m.onclick = function (ev) {
-      var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
+      }).join('');
+      m.innerHTML =
+        '<h2>Katılım ve görevler — ' + esc(kim) + '</h2>' +
+        '<div class="sub">Bu kayıt yalnızca <b>' + esc(kim) + '</b> içindir; başka üyeler göremez. ' +
+          'Üye kendi katılımını QR kod okutarak kaydeder; buradaki işaretler yönetici içindir.</div>' +
+        (l.length
+          ? '<div class="pf-tab pf-form"><table>' + satirlar + '</table></div>'
+          : '<div class="pf-bos">Takvimde etkinlik yok.</div>') +
+        '<div class="acts">' +
+          '<button type="button" data-k="vaz">← Geri</button>' +
+          '<button type="button" class="pri" data-k="kay">Kaydet</button></div>';
+    }
+
+    m.onclick = function (olay) {
+      var b = olay.target && olay.target.closest ? olay.target.closest('[data-k]') : null;
       if (!b) return;
-      var a = b.getAttribute('data-k');
-      if (a === 'vaz') { profil(); return; }
-      if (a !== 'kay') return;
+      var t = b.getAttribute('data-k');
+      if (t === 'vaz') { close(); geri(); return; }
+      if (t !== 'kay') return;
       var ds = m.querySelectorAll('[data-s="d"]'), gs = m.querySelectorAll('[data-s="g"]');
-      var yaz = 0, i, id, rec;
+      var isler = [], yaz = 0, i, eid, rec;
       for (i = 0; i < ds.length; i++) {
-        id = ds[i].getAttribute('data-e');
+        eid = ds[i].getAttribute('data-e');
         rec = { durum: ds[i].value, gorev: gs[i] ? gs[i].value : '' };
-        katilimKaydet(id, rec);
+        isler.push(MBGFB.katilimUidYaz(uid, eid, rec));
         if (rec.durum || rec.gorev) yaz++;
       }
-      toast(yaz ? yaz + ' etkinlik kaydedildi.' : 'Tüm kayıtlar temizlendi.', 4000);
-      profil();
+      toast(yaz ? yaz + ' kayıt yazılıyor…' : 'Kayıtlar temizleniyor…', 2600);
+      Promise.all(isler).then(function () {
+        toast('✓ ' + (yaz ? yaz + ' etkinlik için kayıt yazıldı.' : 'Tüm kayıtlar temizlendi.'), 4200);
+        close();
+        geri();
+      }).catch(function (x) {
+        toast('Kaydedilemedi: ' + ((x && x.message) || x), 6500);
+      });
     };
+    m.innerHTML = '<div class="pf-bos" style="padding:18px">Kayıtlar okunuyor…</div>';
     q('#backdrop').classList.add('open');
+    MBGFB.katilimUidOku(uid).then(function (k) { hedef = k || {}; ciz(); });
+
+    function geri() {
+      if (window.MBGM && MBGM.uyeler) MBGM.uyeler();
+      else close();
+    }
   }
 
   /* ------------------------------------------------------------------
