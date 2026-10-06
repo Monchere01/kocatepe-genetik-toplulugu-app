@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.21.0)
+   Firestore güvenlik kuralları  (v3.24.1)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -32,6 +32,8 @@ rules_version = '2';
    • GÖREVLİLER        : events/{id}/gorevli — herkes okur, yönetici atar
    • KİŞİSEL VERİLER    : not/görev yalnızca sahibine; katılım artık üye
                         tarafından seçilemez
+   • HERKESE AÇIK ÜYE SAYISI: public/{uid} — yalnızca ad soyad ve
+                        katılım/görev sayıları (İletişim bilgisi YOK)
    • GERİ KALAN HER ŞEY: KAPALI
    ===================================================================== */
 service cloud.firestore {
@@ -104,6 +106,27 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
       allow update, delete: if adminMi()
         || (girisYapildi() && resource.data.uid == request.auth.uid);
+    }
+
+    /* --- HERKESE AÇIK ÜYE İSTATİSTİĞİ (public) ---
+       Yalnızca ad, soyad, katıldığı ve görev sayısı tutulur.
+       İletişim bilgisi (e-posta, telefon, öğrenci no) BURAYA YAZILMAZ.
+       Herkes okuyabilir. Üye kendi satırını günceller, yönetici herkesininkini.
+       Takvimde gösterilmez; yalnızca "Üyeler ve katılım" sayfasında listelenir. */
+    match /public/{uid} {
+      allow read: if true;
+      allow create: if girisYapildi()
+        && request.auth.uid == uid
+        && dogrulandiMi()
+        && request.resource.data.keys()
+             .hasOnly(['ad', 'soyad', 'katildi', 'gorevli', 'guncelleAt']);
+      allow update: if adminMi()
+        || (girisYapildi()
+            && request.auth.uid == uid
+            && dogrulandiMi()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['ad', 'soyad', 'katildi', 'gorevli', 'guncelleAt']));
+      allow delete: if adminMi();
     }
 
     /* --- DUYURULAR --- */
