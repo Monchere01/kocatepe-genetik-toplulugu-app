@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.25.0)
+   Firestore güvenlik kuralları  (v3.32.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -150,6 +150,36 @@ service cloud.firestore {
       allow read: if adminMi();
       allow create: if true;
       allow update, delete: if adminMi();
+    }
+
+    /* --- KVKK: AÇIK RIZA KAYDI ---
+       Kullanıcı YALNIZCA kendi rıza kaydını yazar (silme = rıza geri çekme).
+       Kayıt yalnızca onay kutularının sonucunu ve metin sürümünü tutar;
+       e-posta/IP gibi ek kimlik veri içermez. --- */
+    match /kvkk/{uid} {
+      allow read: if adminMi() || (girisYapildi() && request.auth.uid == uid);
+      allow create, update: if girisYapildi()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly([
+             'surum', 'tarih', 'yetisk', 'aydinlatma', 'riza',
+             'bulten', 'kanal', 'guncelleAt'])
+        && request.resource.data.surum is string
+        && request.resource.data.riza is bool
+        && request.resource.data.aydinlatma is bool;
+      allow delete: if adminMi() || (girisYapildi() && request.auth.uid == uid);
+    }
+
+    /* --- KVKK: VERİ SİLME / ERİŞİM TALEPLERİ ---
+       Üye kendi talebini oluşturabilir; yalnızca yönetici okur ve sonuçlandırır. --- */
+    match /talebler/{talepId} {
+      allow read: if adminMi();
+      allow create: if girisYapildi()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.tur in ['silme', 'bilgi', 'erisim', 'düzeltme']
+        && request.resource.data.keys().hasOnly([
+             'uid', 'ad', 'eposta', 'tur', 'aciklama', 'durum', 'tarih']);
+      allow update: if adminMi();
+      allow delete: if adminMi();
     }
 
     /* --- ETKİNLİK SAYFASI İÇERİĞİ: herkes okur, yönetici yazar --- */
