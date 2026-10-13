@@ -32,12 +32,18 @@
     --gold:#fbbf24;
     --bA:#fb7185; --bT:#38bdf8; --bG:#34d399; --bC:#a78bfa;
     --r:18px;
+    /* güvenli alan (çentik / alt çubuk) — tek yerden */
+    --sa-top:env(safe-area-inset-top,0px);
+    --sa-bottom:env(safe-area-inset-bottom,0px);
+    --topbar-pad:11px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{
     font-family:"Segoe UI Variable","Segoe UI",system-ui,-apple-system,Inter,Roboto,Arial,sans-serif;
-    background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; min-height:100dvh;
+    overflow-x:hidden; overflow-x:clip;   /* clip: Safari'de sabit katman kaymasını önler */
     -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
   }
   /* arka plan: hucre cekirdegi ici - yumusak, bulanik, derinlikli */
@@ -271,7 +277,7 @@
   }
   /* ---------------- kaymaz sahne v1.4 ---------------- */
   html{scroll-behavior:auto}
-  body{overflow:hidden;height:100vh;position:fixed;width:100%}
+  body{overflow:hidden;height:100vh;height:100dvh;position:fixed;width:100%}
   .topbar{position:fixed;top:0;left:0;right:0}
   .toolbar{position:fixed;top:var(--tbh,77px);left:0;right:0}
   .legend{position:fixed;top:calc(var(--tbh,77px) + 57px);left:0;right:0;z-index:39;
@@ -401,7 +407,8 @@
   /* istatistik katlama düğmesi yalnız telefonda (masaüstünde hep açık) */
   .ist-ac{display:none}
   /* kurulum bannerı (telefonda altta görünür) */
-  .kur-banner{position:fixed;left:10px;right:10px;bottom:10px;z-index:70;
+  .kur-banner{position:fixed;left:10px;right:10px;
+    bottom:calc(10px + var(--sa-bottom,0px));z-index:70;
     display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:16px;
     background:rgba(11,17,30,.96);border:1px solid rgba(56,189,248,.3);
     box-shadow:0 18px 40px -18px rgba(0,0,0,.9);color:#dbe7f7;
@@ -572,18 +579,45 @@
      iOS'ta kurulu uygulamada üst barın cam (blur) efekti DNA sahnesini
      yansıtıp başlığı bulanıklaştırıyordu; kurulu modda bar opaklaştırılır
      ve tüm sabit katmanlar güvenli alan payını hesaba katar. */
+  /* PWA: tek başına (standalone) modda güvenli alan payı
+     iOS kurulu uygulamada çentik kadarı boş kalıp yalnızca bulanık arka plan
+     göründüğü için bar `top:0` bırakılır, içeriğe padding-top uygulanır.
+     --tbh zaten padding'i içerdiği için diğer katmanlarda env() TEKRAR EDİLMEZ. */
   @media (display-mode: standalone){
-    .topbar{top:env(safe-area-inset-top,0px);
-      background:rgba(6,10,18,.96)!important;
+    .topbar{top:0;
+      padding-top:calc(var(--topbar-pad,11px) + var(--sa-top));
+      padding-left:calc(clamp(12px,3vw,28px) + var(--sa-left));
+      background:rgba(6,10,18,.97)!important;
       -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-    .toolbar{top:calc(var(--tbh,77px) + env(safe-area-inset-top,0px));
-      background:rgba(8,12,24,.96)!important;
+    .toolbar{top:var(--tbh,77px);
+      background:rgba(8,12,24,.97)!important;
       -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-    .legend{top:calc(var(--tbh,77px) + 57px + env(safe-area-inset-top,0px))}
-    #rail{top:calc(var(--tbh,77px) + var(--tbb,48px) + 16px + env(safe-area-inset-top,0px))}
-    body.cal #normalView{top:calc(var(--tbh,77px) + var(--tbb,48px) + 12px + env(safe-area-inset-top,0px))}
-    body.sayfa #sayfaView{top:calc(var(--tbh,77px) + var(--tbb,48px) + 12px + env(safe-area-inset-top,0px))}
-    .sheet{top:calc(var(--tbh,77px) + var(--tbb,48px) - 6px + env(safe-area-inset-top,0px))}
+    .legend{top:calc(var(--tbh,77px) + 57px)}
+    /* üstteki katmanların top değeri DEĞİŞMEZ; alt pay içeriklere verilir */
+    #rail{top:calc(var(--tbh,77px) + var(--tbb,48px) + 16px)}
+    body.cal #normalView{top:calc(var(--tbh,77px) + var(--tbb,48px) + 12px);
+      padding-bottom:calc(18px + var(--sa-bottom))}
+    body.sayfa #sayfaView{top:calc(var(--tbh,77px) + var(--tbb,48px) + 12px);
+      padding-bottom:calc(18px + var(--sa-bottom))}
+    .sheet{top:calc(var(--tbh,77px) + var(--tbb,48px) - 6px)}
+  }
+
+  /* ---------------- iOS (Safari motoru): bulanık yüzey düzeltmesi ----------------
+     iOS'ta backdrop-filter, üst bar/panel gibi sabit katmanlarda arka planı
+     bulanıklaştırıp metni okunmaz hâle getirebiliyor. Cam efekti kapatılır,
+     yüzeyler opaklaştırılır. (Android Chrome bu sınıfı almaz → blur korunur.) */
+  .ios .glass{
+    background:linear-gradient(180deg,#0b1120,#080c16);
+    -webkit-backdrop-filter:none;backdrop-filter:none}
+  .ios .modal,.ios .sheet,.ios .onay-icerik,.ios .node .card{
+    -webkit-backdrop-filter:none;backdrop-filter:none}
+  .ios .modal{background:#0a1020}
+  .ios .sheet{background:#0b1120}
+  .ios .onay-icerik{background:rgba(10,16,32,.97)}
+  .ios .node .card{background:rgba(8,12,22,.97)}
+  /* iOS: dokunma hedefleri ve seçim koyulaştırması */
+  .ios button,.ios a{-webkit-tap-highlight-color:rgba(56,189,248,.18)}
+  .ios .glass,.ios .modal{box-shadow:none}
   }
   /* ince site scrollbarı */
   #normalView{scrollbar-width:thin;scrollbar-color:rgba(148,178,220,.3) transparent}
@@ -603,6 +637,7 @@
     background:linear-gradient(90deg,transparent,rgba(56,189,248,.9),transparent);
     box-shadow:0 0 12px rgba(56,189,248,.8);animation:tarCiz 1.8s ease-in-out infinite}
   @keyframes tarCiz{0%,100%{transform:translateY(-52px)}50%{transform:translateY(52px)}}
+  .tar-ipucu{margin-top:8px;font-size:.76rem;line-height:1.5;color:#a9bbd4;background:rgba(86,119,255,.09);border-left:3px solid rgba(86,119,255,.6);padding:8px 10px;border-radius:0 8px 8px 0}
   .tar-durum{position:absolute;left:0;right:0;bottom:0;padding:9px 12px;font-size:.76rem;
     text-align:center;color:#cfe0f5;background:linear-gradient(0deg,rgba(3,6,12,.9),transparent)}
   /* --- KVKK ve Gizlilik --- */
@@ -886,6 +921,9 @@
   .es-qr{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
   .es-qr canvas{border-radius:12px;background:#fff;padding:6px;box-shadow:0 8px 24px -10px #000}
   .es-qr > div{flex:1 1 190px;min-width:180px}
+  /* şifre değiştirme: durum kutusu ile alan arasında nefes payı */
+  .es-blok .pf-ok,.es-blok .pf-uyari{margin-bottom:18px}
+  .es-blok .pf-ok + .field,.es-blok .pf-uyari + .field{margin-top:2px}
   .es-kod{font-size:1.5rem;letter-spacing:.22em;font-weight:700;color:#7ef0c0;
     font-family:ui-monospace,Menlo,Consolas,monospace;margin-bottom:6px}
   .ev-sayfa{position:absolute;left:3px;top:50%;transform:translateY(-50%);
@@ -1066,6 +1104,19 @@
     .node,.card,.pip,.month,.semband{display:none}
   }
 </style>
+<script>
+/* iOS (Safari motoru) mu? Cam (blur) yüzeyleri bulanıklaştırdığı için
+   sınıf eklenir; .ios kuralları yüzeyleri opaklaştırır. İlk boyamadan
+   önce çalışmalı — bu yüzden <head> içinde. */
+(function () {
+  try {
+    var d = document.documentElement;
+    var ios = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
+    if (ios && d.className.indexOf('ios') < 0) d.className += ' ios';
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 
@@ -1120,7 +1171,6 @@
   <button id="mAdmin" type="button" hidden><b>⚙️</b><span>Admin Paneli</span></button>
   <button id="mUyeler" type="button"><b>👥</b><span>Üyeler ve katılım</span></button>
   <button id="mInstall" type="button"><b>⬇</b><span>Uygulamayı kur</span></button>
-  <button id="mClear" type="button"><b>🧹</b><span>Kişisel verileri temizle</span></button>
 <hr class="sheet-sep">
   <button id="mOneri" type="button"><b>💡</b><span>Öneri / görüş bildir</span></button>
   <button id="mBug" type="button"><b>🐞</b><span>Hata bildir</span></button>
@@ -1160,7 +1210,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.32.0 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.36.0 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2023,18 +2073,29 @@ var DNA3D = (function () {
   }
   /* günlük tarih rozeti: 256x96 */
   function chipCanvas(day) {
-    var CW = 256, CH = 96;
+    var bugun = (day === todayDay);
+    var CW = bugun ? 320 : 256, CH = bugun ? 132 : 96;
     var cv = document.createElement('canvas');
     cv.width = CW; cv.height = CH;
     var g = cv.getContext('2d');
-    g.fillStyle = 'rgba(6,10,19,0.82)';
-    rr(g, 3, 3, CW - 6, CH - 6, 30); g.fill();
-    g.strokeStyle = 'rgba(148,178,220,0.22)'; g.lineWidth = 4;
-    rr(g, 5, 5, CW - 10, CH - 10, 29); g.stroke();
-    g.fillStyle = '#a9bcd6';
-    g.font = '800 46px "Segoe UI", system-ui, sans-serif';
+    g.fillStyle = bugun ? 'rgba(28,18,4,0.94)' : 'rgba(6,10,19,0.82)';
+    rr(g, 3, 3, CW - 6, CH - 6, bugun ? 40 : 30); g.fill();
+    g.strokeStyle = bugun ? 'rgba(251,191,36,0.95)' : 'rgba(148,178,220,0.22)';
+    g.lineWidth = bugun ? 8 : 4;
+    rr(g, 5, 5, CW - 10, CH - 10, bugun ? 38 : 29); g.stroke();
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(fmtK(isoOf(day)), CW / 2, CH / 2 + 3);
+    if (bugun) {
+      g.fillStyle = '#fcd34d';
+      g.font = '800 30px "Segoe UI", system-ui, sans-serif';
+      g.fillText('BUGÜN', CW / 2, 34);
+      g.fillStyle = '#fff3d6';
+      g.font = '900 52px "Segoe UI", system-ui, sans-serif';
+      g.fillText(fmtK(isoOf(day)), CW / 2, 86);
+    } else {
+      g.fillStyle = '#a9bcd6';
+      g.font = '800 46px "Segoe UI", system-ui, sans-serif';
+      g.fillText(fmtK(isoOf(day)), CW / 2, CH / 2 + 3);
+    }
     return cv;
   }
   function ensureTmp() {
@@ -2063,6 +2124,19 @@ var DNA3D = (function () {
     if (narrow) need *= 1.15;       /* kenarda nefes payi: sarmal ekrana sigsin */
     return Math.max(CAMZ_MIN, Math.min(narrow ? CAMZ_MAX_N : CAMZ_MAX, need));
   }
+  /* bugün manyeti ölçümü (konsoldan test amaçlı) */
+  function magOlcum() {
+    var o = [], i, d1;
+    for (i = 0; i < cards.length; i++) {
+      var c2 = cards[i];
+      if (!c2 || !c2.grp) continue;
+      var kay = (c2.magY || 0);
+      if (Math.abs(kay) < 0.001) continue;
+      d1 = (c2.day - todayDay);
+      o.push({ gun: c2.day, bugundenGun: d1, cekme: +kay.toFixed(3) });
+    }
+    return { bugun: todayDay, cekilen: o };
+  }
   function relayoutCards() {
     if (!deck) return;
     var visW = 2 * Math.tan(FOV * Math.PI / 360) * CAMZ * Math.max(0.25, camera.aspect);
@@ -2070,17 +2144,23 @@ var DNA3D = (function () {
     var narrow = camera.aspect < 0.8;
     var wFac = narrow ? 0.72 : 0.82;
     /* telefon: kamera geri cekildigi icin dunya siniri 4.0 -> kart ~245px */
-    var cwPx = Math.min(narrow ? 296 : 356, visW * KPX * wFac, (narrow ? 3.7 : 3.05) * KPX);
+    var cwPx = Math.min(narrow ? 318 : 388, visW * KPX * wFac, (narrow ? 4.0 : 3.3) * KPX);
     var cw = cwPx / KPX;
     if (!isFinite(cw) || cw < 0.4) cw = 2.1;
-    var gw = Math.min(92 / KPX, visW * 0.24);
+    var gw = Math.min(62 / KPX, visW * 0.17);
     if (!isFinite(gw) || gw < 0.15) gw = 0.6;
     var i, ch1 = cw / CARD_ASP, ch2 = gw / CHIP_ASP;
     for (i = 0; i < cards.length; i++) if (cards[i]) { cards[i].w = cw; cards[i].h = ch1; }
     for (i = 0; i < cards.length; i++) if (cards[i] && cards[i].cvD) {
       var es2 = expSize(); cards[i].expW = es2[0]; cards[i].expH = es2[1];
     }
-    for (i = 0; i < chips.length; i++) if (chips[i]) { chips[i].w = gw; chips[i].h = ch2; }
+    for (i = 0; i < chips.length; i++) {
+      if (!chips[i]) continue;
+      /* bugünün rozeti belirgin olsun (etkinlik yoksa kart zaten yok) */
+      var bugunMu = (chips[i].day === todayDay) && !gununEtkinligiVar(chips[i].day);
+      chips[i].w = bugunMu ? gw * 1.55 : gw;
+      chips[i].h = bugunMu ? ch2 * 1.55 : ch2;
+    }
   }
   function clearGroup(gr) {
     while (gr.children.length) {
@@ -2305,7 +2385,18 @@ var DNA3D = (function () {
       o.mesh.instanceColor.needsUpdate = true;
     });
   }
-  /* BUGUN: altin-amber, sabit (nabiz/pulse YOK) */
+  /* BUGUN: altın-amber. Etkinlik yoksa daha da belirgin olsun diye
+     baz çifti büyür, tarih rozeti "BUGÜN" yazısıyla parlar. */
+  var MAG_DAYS = 9;      /* manyet yarıçapı (gün) */
+  var todayHaloAktif = false;
+  function kartForGun(day) {
+    var i;
+    for (i = 0; i < evInfo.length; i++) if (evInfo[i] && evInfo[i].day === day) return cards[i];
+    return null;
+  }
+  var MAG_PULL = 1.35;   /* manyet çekme gücü (dünya birimi) */
+  var TODAYCOL2 = [1.0, 0.72, 0.22];
+
   var TODAYCOL = [1.0, 0.30, 0.62];
   var todayDay = null, _todayTick = -1;
   function pairRGB(dn) {
@@ -2321,20 +2412,36 @@ var DNA3D = (function () {
     if (!n) return null;
     return [Math.round(r / n * 255), Math.round(g2 / n * 255), Math.round(b2 / n * 255)];
   }
+  function gununEtkinligiVar(dn) {
+    var i;
+    for (i = 0; i < evInfo.length; i++) if (evInfo[i] && evInfo[i].day === dn) return true;
+    return false;
+  }
   function paintToday(dn, on) {
     var refs = pairRef[dn];
     if (!refs) return;
     if (!on) { setPairScale(dn, 1); waveRestore(dn); return; }
-    setPairScale(dn, 1.08);
-    tintRefs(refs, TODAYCOL, 0.62, 1.34);
+    /* etkinlik yoksa tarih kartı yok; günü bulmak zorlaşır → daha belirgin */
+    var kartli = gununEtkinligiVar(dn);
+    setPairScale(dn, kartli ? 1.10 : 1.26);
+    tintRefs(refs, TODAYCOL, kartli ? 0.62 : 0.78, kartli ? 1.34 : 1.75);
+  }
+  function chipYenile(day) {
+    var i;
+    for (i = 0; i < chips.length; i++) {
+      if (!chips[i] || chips[i].day !== day) continue;
+      chips[i].tex.image = chipCanvas(day);
+      chips[i].tex.needsUpdate = true;
+    }
   }
   function setToday(dn) {
-    if (todayDay === dn) return;
     var old = todayDay;
+    if (old === dn) return;
     todayDay = (dn == null) ? null : dn;
-    if (old != null) { setPairScale(old, 1); waveRestore(old); }
-    if (todayDay != null) paintToday(todayDay, true);
+    if (old != null) { setPairScale(old, 1); waveRestore(old); chipYenile(old); }
+    if (todayDay != null) { paintToday(todayDay, true); chipYenile(todayDay); }
     if (halo) haloAt(todayDay, null);
+    todayHaloAktif = false;
   }
   function paintPair(idx, mode) {
     if (idx < 0 || !evInfo[idx] || !EVL[idx]) return;
@@ -2377,9 +2484,10 @@ var DNA3D = (function () {
     /* dikey kayma: odak noktasi (0,0,0) ekranin ortasindan TOPIN/2 kadar
        asagi iner -> gorunur alanin tam ortasina gelir. Olcek degismez
        (bu yuzden KPX, kart olculeri ve secim isabeti ayni kalir). */
-    var shift = TOPIN / 2;
-    if (shift > 1) camera.setViewOffset(W, H, 0, -shift, W, H);
-    else if (camera.clearViewOffset) camera.clearViewOffset();
+    /* kartlar her zaman CIHAZ EKRANININ tam ortasında durur. Üst bar/araç
+       çubuğu yüksekliği kadar aşağı kaydırma yapılmaz (telefonda kartlar
+       ekranın altına kayıyordu). TOPIN ölçümü manyetik hesaplar için korunur. */
+    if (camera.clearViewOffset) camera.clearViewOffset();
     camera.updateProjectionMatrix();
     relayoutCards();
     /* kart dokusu gereksinimi degistiyse yeniden ciz (donus/ornek degisimi) */
@@ -2476,6 +2584,69 @@ var DNA3D = (function () {
         var pr = Math.max(0, 1 - Math.abs(dyy) / (H * 0.35));
         var ssc = 1 + 0.6 * pr * pr + ((ei === ACT || ei === HOV) ? 0.05 * Math.sin(pulseT * 4.2) : 0);
         setPairScale(edy, ssc);
+      }
+
+      /* BUGÜN MANYETİ: bugünün güne yakın kartlar ona doğru çekilir.
+         Çekme miktarı bugüne olan mesafenin %42'sini aşmaz → kartlar
+         birbirinin üstüne binmez, seçim (tıklama) doğru kalır. */
+      /* gün aralığı dna3d içinde tutulmuyor; etkisi zaten görünürlük maskesiyle sınırlı */
+      var mi, magAktif = (todayDay != null);
+      for (mi = 0; mi < cards.length; mi++) {
+        var mc = cards[mi];
+        if (!mc || !mc.grp) continue;
+        var hedef = 0;
+        if (magAktif && mc.day !== todayDay) {
+          var gunFark = Math.abs(mc.day - todayDay);
+          if (gunFark < MAG_DAYS) {
+            var g1 = Math.max(0, 1 - gunFark / MAG_DAYS);
+            var agirlik = Math.pow(g1, 1.55);   /* yakın çok, uzak az */
+            var farkY = yAt(mc.day) - yAt(todayDay);
+            var cap = Math.abs(farkY) * 0.42 * agirlik;
+            hedef = -Math.sign(farkY) * Math.min(cap, MAG_PULL * agirlik);
+          }
+        }
+        if (mc.magY === undefined) mc.magY = 0;
+        mc.magY += (hedef - mc.magY) * Math.min(1, dt / 170);
+        if (Math.abs(mc.magY) < 0.0008) mc.magY = 0;
+        if (mc.baseY === undefined) mc.baseY = mc.grp.position.y;
+        mc.grp.position.y = mc.baseY + mc.magY;
+      }
+      for (mi = 0; mi < chips.length; mi++) {
+        var mp = chips[mi];
+        if (!mp || !mp.grp) continue;
+        var pHedef = 0;
+        var kart = kartForGun(mp.day);
+        if (kart && kart.magY !== undefined) pHedef = kart.magY;
+        else if (magAktif && mp.day !== todayDay) {
+          var gf2 = Math.abs(mp.day - todayDay);
+          if (gf2 < MAG_DAYS) {
+            var g2a = Math.max(0, 1 - gf2 / MAG_DAYS);
+            var ag2 = Math.pow(g2a, 1.55);
+            var fy2 = yAt(mp.day) - yAt(todayDay);
+            pHedef = -Math.sign(fy2) * Math.min(Math.abs(fy2) * 0.42 * ag2, MAG_PULL * ag2);
+          }
+        }
+        if (mp.magY === undefined) mp.magY = 0;
+        mp.magY += (pHedef - mp.magY) * Math.min(1, dt / 170);
+        if (Math.abs(mp.magY) < 0.0008) mp.magY = 0;
+        if (mp.baseY === undefined) mp.baseY = mp.grp.position.y;
+        mp.grp.position.y = mp.baseY + mp.magY;
+      }
+
+      /* bugün günü etkinlik değilse: yavaş nabız halesi (nerede olduğumuzu
+         uzaktan göstermek için) */
+      if (halo && todayDay != null) {
+        var tY = (yAt(todayDay) - yAt(P)) * KPX;
+        var tYak = Math.abs(tY) < H * 0.62;
+        var bugunKartli = gununEtkinligiVar(todayDay);
+        var ister = tYak && !bugunKartli && Math.abs(tY - actY) > 40 ? 1 : 0;
+        todayHaloAktif = ister;
+        if (ister) {
+          haloAt(todayDay, TODAYCOL);
+          var ht = 0.22 + 0.09 * Math.sin(pulseT * 2.2);
+          var hc = halo.material.opacity;
+          halo.material.opacity = hc + (ht - hc) * Math.min(1, dt / 160);
+        }
       }
 
       if (HOV >= 0 && HOV !== ACT && evInfo[HOV]) setPairScale(evInfo[HOV].day, 1 + 0.04 * Math.sin(pulseT * 4.2 + 1));
@@ -2665,6 +2836,7 @@ return {
     baseFor: baseFor,
     resize: resize,
     setTopInset: setTopInset,
+    magOlcum: magOlcum,
     setToday: setToday,
     isOn: function () { return on; },
     toggle: function (v) {
@@ -4540,7 +4712,7 @@ var MBGM = (function () {
     var giris = !!MBGFB.user();
     var uy = q('#mUyeler'), tem = q('#mClear');
     if (uy) uy.hidden = !giris;
-    if (tem) tem.hidden = !giris;
+    /* temizleme düğmesi profilde; menüden kaldırıldı */
   }
 
   function syncUI() {
@@ -4551,7 +4723,7 @@ var MBGM = (function () {
     if (gir) {
       gir.hidden = false;
       var gb = gir.querySelector('b'), gs = gir.querySelector('span');
-      if (gb) gb.textContent = u ? '\u{1F44D}' : '\u{1F464}';
+      if (gb) gb.textContent = '\u{1F464}';   /* her durumda profil simgesi */
       if (gs) gs.textContent = u ? 'Profil' : 'Giri\u015f yap / \u00dcye ol';
     }
     if (cik) {
@@ -4574,8 +4746,6 @@ var MBGM = (function () {
     }
     if (sil) sil.hidden = !u;
     /* temizleme düğmesi artık profilin altında; panelde sadece misafire */
-    var tem = q('#mClear');
-    if (tem) tem.hidden = !!u;
     misafirGizle();
     /* e-postadaki kurtarma bağlantısıyla gelindiyse paneli aç */
     try {
@@ -7162,7 +7332,12 @@ var QR = (function () {
      olunca akış durur ve geri çağrılır (katılım kaydı yazılır).
      Öncelik: jsQR (gömülü) → BarcodeDetector (destekliyorsa) → elle gir.
      ================================================================== */
-  function kodCoz(metin) {
+  /* Girilen metni {evId, anahtar} biçimine çevirir.
+     Kabul edilenler:
+       1) tam adres  : takvim adresi + ?e=<no>&k=<kod>
+       2) yalnız kod : A7B9C2  (yönetimin ekranındaki 6 karakterlik katılım kodu)
+     Düz kodda etkinlik, panelin açıldığı etkinlik olarak varsayılır. */
+  function kodCoz(metin, evIdVarsayilan) {
     var s = String(metin || '').trim();
     if (!s) return null;
     var evId = '', anahtar = '';
@@ -7170,7 +7345,13 @@ var QR = (function () {
     var km = s.match(/[?&]k=([^&]+)/);
     if (qm) evId = decodeURIComponent(qm[1]);
     if (km) anahtar = decodeURIComponent(km[1]);
+    var duzKod = s.replace(/\s+/g, '').toUpperCase();
+    if (!evId && !anahtar && evIdVarsayilan && /^[A-Z0-9]{6}$/.test(duzKod)) {
+      return { evId: String(evIdVarsayilan), anahtar: duzKod, metin: s };
+    }
     if (!evId && !anahtar) return null;
+    if (!anahtar && evIdVarsayilan && /^[A-Z0-9]{6}$/.test(duzKod)) anahtar = duzKod;
+    if (!anahtar && /^[A-Z0-9]{6}$/.test(duzKod)) anahtar = duzKod;
     return { evId: evId, anahtar: anahtar, metin: s };
   }
 
@@ -7194,8 +7375,17 @@ var QR = (function () {
       '<div class="tarama"><video id="tarVideo" playsinline muted autoplay></video>' +
         '<div class="tar-cerceve"></div>' +
         '<div class="tar-durum" id="tarDurum">Kamera başlatılıyor…</div></div>' +
-      '<div class="field" id="tarElleAlan" hidden><label>Kodu elle yapıştır</label>' +
-        '<input id="tarElle" placeholder="takvim adresi?e=…&k=…"></div>' +
+      '<div class="field" id="tarElleAlan" hidden>' +
+        '<label>Katılım kodunu yaz</label>' +
+        '<input id="tarElle" placeholder="A7B9C2" maxlength="6" inputmode="text"' +
+          'autocapitalize="characters" autocomplete="off" spellcheck="false">' +
+        '<div class="tar-ipucu"><b>Ne yazacaksın?</b> Yönetiminin ekranında <b>Katılım QR kodu</b> başlığının altında, QR kodunun sağında yazan ' +
+          '<b>6 karakterlik kodu</b> yaz (harfler/rakamlar, örn. <b>A7B9C2</b>). ' +
+          '<br>• Bu ekrandaki etkinlik için geçerli olan koddur; başka etkinliğinki olmaz.<br>' +
+          '• Kod <b>10 saniyede bir yenilenir</b> — ekranda yazan güncel kodu yaz.<br>' +
+          '• İstersen yönetimin paylaştığı <b>bağlantının tamamını</b> da yapıştırabilirsin.' +
+        '</div>' +
+      '</div>' +
       '<div class="acts"><button type="button" data-t="vaz">Vazgeç</button>' +
         '<button type="button" class="pri" data-t="elle" hidden>Elle gir</button></div>';
 
@@ -7245,9 +7435,11 @@ var QR = (function () {
       }
       if (t === 'elle') {
         var gir = (document.getElementById('tarElle') || {}).value || '';
-        var coz = kodCoz(gir);
+        var coz = kodCoz(gir, opt.evId);
         if (!coz) {
-          if (typeof opt.hata === 'function') opt.hata('Kod okunamadı. Adresi eksiksiz yapıştır.');
+          if (typeof opt.hata === 'function')
+            opt.hata('Kod okunamadı. Yönetimin ekranındaki 6 karakterlik kodu ' +
+              '(örn. A7B9C2) yaz ya da paylaştığı bağlantının tamamını yapıştır.');
           return;
         }
         bitti(coz);
@@ -7267,26 +7459,64 @@ var QR = (function () {
     }
 
     var video = document.getElementById('tarVideo');
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
+
+    /* iOS/Android: arka kamera "exact" ile başarısız olabiliyor; sırayla deneriz. */
+    var istekArka = { video: { facingMode: { ideal: 'environment' } }, audio: false };
+    var istekExact = { video: { facingMode: { exact: 'environment' } }, audio: false };
+    var istekSade = { video: true, audio: false };
+    function akisAl(kosul) { return navigator.mediaDevices.getUserMedia(kosul); }
+
+    akisAl(istekArka).catch(function () { return akisAl(istekExact); })
+      .catch(function () { return akisAl(istekSade); })
       .then(function (st) {
         stream = st;
         video.srcObject = st;
-        if (video.play) video.play().catch(function () {});
-        durumYaz('Kodu çerçeveye getir…');
+        if (video.muted !== undefined) video.muted = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('muted', '');
+        var tr = st.getVideoTracks ? st.getVideoTracks()[0] : null;
+        var ayar = (tr && tr.getSettings) ? tr.getSettings() : {};
+        var etiket = (tr && tr.label) ? tr.label : '';
+        var olcu = ayar.width ? (' (' + ayar.width + '×' + ayar.height + ')') : '';
+        var ad = etiket ? (' · ' + etiket.slice(0, 26)) : '';
+        durumYaz('Kamera açık' + olcu + ad + ' — kodu çerçeveye getir…');
+        /* iOS: play() sessizce reddedilirse dokunuşla yeniden denenir */
+        var oynatildi = false;
+        function oynat() {
+          if (!video || !stream) return;
+          var p2 = video.play();
+          if (p2 && p2.then) {
+            p2.then(function () { oynatildi = true; })
+              .catch(function () { durumYaz('Kamerayı başlatmak için ekrana bir kez dokun.', 5200); });
+          } else oynatildi = true;
+        }
+        oynat();
+        if (!oynatildi) {
+          ['touchend', 'click', 'pointerup'].forEach(function (evAd) {
+            document.addEventListener(evAd, function () { oynat(); }, { once: true, passive: true });
+          });
+          video.addEventListener('loadedmetadata', oynat, { once: true });
+        }
         tara();
+        /* görüntü hiç gelmezse kullanıcıyı bilgilendir */
+        setTimeout(function () {
+          if (!video || !stream || !durumEl) return;
+          if (!video.videoWidth) durumYaz('Kamera görüntüsü gelmiyor — elle gir veya sayfayı yenile.', 6500);
+        }, 2800);
       })
       .catch(function (h) {
         var n = (h && h.name) || '';
-        if (n === 'NotAllowedError' || n === 'SecurityError') {
-          durumYaz('Kamera izni verilmedi. Tarayıcı ayarlarından izin ver veya elle gir.');
-        } else if (n === 'NotFoundError' || n === 'OverconstrainedError') {
-          durumYaz('Bu cihazda kamera bulunamadı.');
+        if (n === 'NotAllowedError' || n === 'PermissionDeniedError' || n === 'SecurityError') {
+          durumYaz('Kamera izni verilmedi (' + n + '). Tarayıcı ayarlarından izin ver ya da elle gir.', 7500);
+        } else if (n === 'NotFoundError' || n === 'DevicesNotFoundError' || n === 'OverconstrainedError') {
+          durumYaz('Bu cihazda kullanılabilir kamera bulunamadı (' + n + '). Elle gir.', 7500);
+        } else if (n === 'NotReadableError' || n === 'TrackStartError') {
+          durumYaz('Kamera başka bir uygulama tarafından kullanılıyor (' + n + '). Elle gir.', 7500);
         } else {
-          durumYaz('Kamera açılamadı: ' + (n || 'bilinmeyen hata'));
+          durumYaz('Kamera açılamadı: ' + (n || 'bilinmeyen hata') + '. Elle gir.', 7500);
         }
         elleGoster();
       });
-
     var sonZaman = 0;
     function tara(zaman) {
       if (durdu) return;
@@ -7918,6 +8148,7 @@ var ETK = (function () {
         if (!MBGFB.user()) { toast('Katılım için önce giriş yapmalısın.', 4200); return; }
         if (!MBGFB.verified()) { toast('E-posta adresini doğrulamadan katılım kaydedilemez.', 5000); return; }
         QR.taraAc({
+          evId: evId,
           basari: function (okEvId, anahtar) {
             if (!anahtar) { toast('Kod okundu ama içinde katılım anahtarı yok.', 4500); return; }
             if (okEvId && String(okEvId) !== String(evId)) {
@@ -8463,6 +8694,9 @@ var MBGO = (function () {
      4) Sahne ilerlemesi (P: olay endeksi uzayında kayan konum)
      ------------------------------------------------------------------ */
   var prog = 0, progT = 0, activeIdx = -1;
+  /* açılış animasyonu: dönemin ilk günü → bugün (hızlanarak) */
+  var intro = { aktif: false, t0: 0, a: 0, b: 0, ms: 0 };
+  var introYapildi = false;
   var hitList = null;          /* arama sonucu (true = eslesen) */
   var hovI = -1, mvX = -1, mvY = -1, mvNeed = false;
   var lastInput = -1e9;      /* son kullanici girdisi (manyet icin) */
@@ -9212,6 +9446,8 @@ var MBGO = (function () {
       }
     }
     if (!EV.length) return;
+    /* açılış animasyonu önceliklidir; kullanıcı dokunursa kesilir */
+    if (intro.aktif && (t - lastInput > 260)) { if (introIsle(t)) return; }
     progT = clampP(progT);
     /* --- manyet: kaydirma durunca en yakin etkinlige yavasca otur ---
        yakinlastikca hizlanir: klavye/ray gibi hedefi olan girdiler zaten tam gunde */
@@ -9293,6 +9529,41 @@ var MBGO = (function () {
   }
   /* BUGÜN: en yakın etkinliğe değil, takvimdeki gerçek güne gidilir.
      O günde etkinlik yoksa bile manyetik o güne kilitlenir. */
+  /* Sayfa açılışında: planın ilk gününden bugüne yumuşak ve HIZLANAN bir
+     kayış. Bugün çok aşağıdaysa süre mesafeyle orantılı uzar. */
+  function introBaslat() {
+    if (introYapildi || REDUCED || !EV.length) return;
+    introYapildi = true;
+    var bugun = DNA3D.dayOf(todayISO());
+    if (bugun == null) return;
+    var hedef = clampP(bugun);
+    var mesafe = Math.abs(hedef - D0);
+    if (mesafe < 2.5) return;                 /* zaten başındayız */
+    intro = { aktif: true, t0: 0, a: D0, b: hedef,
+      ms: Math.min(4600, 900 + mesafe * 30) };
+  }
+  function introIsle(ts) {
+    if (!intro.aktif) return false;
+    if (!intro.t0) intro.t0 = ts;
+    var k = Math.max(0, Math.min(1, (ts - intro.t0) / intro.ms));
+    /* k*k: yavaş başlar, gittikçe hızlanır. Son %12 yumuşak duruş. */
+    var e;
+    if (k < 0.88) e = 0.88 * (k / 0.88) * (k / 0.88);
+    else e = 0.7744 + 0.2256 * Math.sin((k - 0.88) / 0.12 * Math.PI / 2);
+    prog = intro.a + (intro.b - intro.a) * e;
+    progT = prog;
+    try { rail.draw(D1 > D0 ? (prog - D0) / (D1 - D0) : 0, prog); } catch (e1) {}
+    var ai2 = nearestIdx(prog);
+    if (ai2 !== activeIdx) setActive(ai2);
+    try { if (typeof DNA3D !== 'undefined') DNA3D.setProgress(prog); } catch (e2) {}
+    if (k >= 1) {
+      intro.aktif = false;
+      progT = intro.b;
+      snapDay = intro.b;
+      try { DNA3D.setExpanded(-1); } catch (e3) {}
+    }
+    return true;
+  }
   function goToday() {
     if (!EV.length) { toast('Takvim boş.'); return; }
     var now = new Date();
@@ -9466,6 +9737,8 @@ var MBGO = (function () {
     }, { passive: true });
     tbh();
     render();
+    /* dönemin ilk gününden bugüne kayış */
+    try { introBaslat(); } catch (e12) {}
     requestAnimationFrame(loop);
 
     /* --tbh (ust bar) ve --tbb (arac cubugu) olculur; degisince yalniz
@@ -9701,6 +9974,9 @@ var MBGO = (function () {
           kurulumaCagır();
         };
         document.body.appendChild(d);
+        /* en geç 20 saniyede kendiliğinden söner (ekranı meşgul etmesin) */
+        var KUR_BANNER_SN = setTimeout(function () { d.remove(); }, 20000);
+        d.addEventListener('click', function () { clearTimeout(KUR_BANNER_SN); }, true);
       }, 3500);
     }
     window.kurulumaCagir = kurulumaCagır;

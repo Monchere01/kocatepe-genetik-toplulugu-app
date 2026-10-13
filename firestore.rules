@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.32.0)
+   Firestore güvenlik kuralları  (v3.36.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
