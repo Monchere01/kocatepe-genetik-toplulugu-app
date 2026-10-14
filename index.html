@@ -246,7 +246,7 @@
   .kaydirma::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:9px}
   .kaydirma::-webkit-scrollbar-thumb{background:rgba(148,178,220,.24);border-radius:9px;border:2px solid transparent;background-clip:content-box}
   .kaydirma::-webkit-scrollbar-thumb:hover{background:rgba(148,178,220,.45);background-clip:content-box}
-  .modal h2{font-size:1.18rem;line-height:1.32;margin:10px 0 6px;letter-spacing:-.01em}
+  .modal h2{font-size:1.18rem;line-height:1.32;margin:2px 0 22px;letter-spacing:-.01em}
   .modal .sub{font-size:.75rem;color:var(--muted);margin-bottom:14px}
   .modal p.body{font-size:.92rem;line-height:1.65;color:#b7c6da;margin-bottom:18px}
   .mrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:2px}
@@ -466,7 +466,6 @@
   .dp-hafta-btn{padding:8px 12px;border-radius:11px;border:1px solid rgba(148,178,220,.22);
     background:rgba(20,30,50,.7);color:#cfe0f5;font:inherit;font-size:.8rem;cursor:pointer}
   .dp-hafta-btn.on{border-color:rgba(148,178,220,.45);color:#fff}
-  .etp-not-gidecek{margin-top:10px;border:1px solid rgba(148,178,220,.16)}
   .etp-gidecek{padding:10px 16px;border-radius:11px;border:1px solid rgba(148,178,220,.28);
     background:rgba(20,30,50,.75);color:#dbe7f7;font:inherit;font-size:.86rem;cursor:pointer;
     white-space:nowrap;align-self:flex-start}
@@ -484,16 +483,77 @@
   .gz-sec b{font-size:.94rem;color:#eaf2ff;display:flex;align-items:center;gap:8px}
   .gz-sec span{font-size:.79rem;color:#9fb4d0;line-height:1.4}
   .gz-sec input{accent-color:#4ea3ff;width:16px;height:16px;flex:0 0 auto}
-  .gz-ana{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-bottom:6px;
-    border:1px solid rgba(148,178,220,.16);border-radius:10px;cursor:pointer;
-    background:rgba(14,22,38,.4);font-size:.87rem;color:#dce8f8}
-  .gz-ana:hover{border-color:rgba(120,170,255,.4)}
-  .gz-ana input{accent-color:#34d399;width:16px;height:16px}
-  .gz-ana.pasif{opacity:.42;cursor:not-allowed;filter:grayscale(.6)}
+  /* --- gizlilik alan anahtarı (sağa kayan topçuk) --- */
+  .gz-ana{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    font:inherit;font-size:.88rem;color:#dce8f8;padding:12px 14px;margin-bottom:9px;
+    border:1px solid rgba(148,178,220,.16);border-radius:13px;
+    background:rgba(14,22,38,.42);cursor:pointer;
+    transition:border-color .16s,background .16s,box-shadow .16s}
+  .gz-ana:hover{border-color:rgba(120,170,255,.45);background:rgba(78,163,255,.07)}
+  .gz-ana-et{flex:1 1 auto;line-height:1.35}
+  .gz-ana-sw{position:relative;flex:0 0 auto;width:48px;height:28px;border-radius:999px;
+    background:#24334c;border:1px solid rgba(148,178,220,.22);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.35);transition:background .2s,border-color .2s}
+  .gz-ana-sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+    background:#7d8fa8;box-shadow:0 1px 3px rgba(0,0,0,.45);
+    transition:transform .2s cubic-bezier(.3,1.4,.5,1),background .2s}
+  .gz-ana.on{border-color:rgba(52,211,153,.34);background:rgba(52,211,153,.07)}
+  .gz-ana.on .gz-ana-sw{background:rgba(52,211,153,.3);border-color:rgba(52,211,153,.65)}
+  .gz-ana.on .gz-ana-sw i{transform:translateX(20px);background:#34d399}
+  .gz-ana:active .gz-ana-sw i{width:24px}
+  .gz-ana.on:active .gz-ana-sw i{transform:translateX(16px)}
+  .gz-ana.pasif{opacity:.4;cursor:not-allowed;filter:grayscale(.7)}
+  .gz-ana[disabled]{pointer-events:none}
   .gizli-kapali{border-color:rgba(251,191,36,.22);background:rgba(251,191,36,.04)}
   button.uy-satir{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;
     border:1px solid transparent;background:none}
   button.uy-satir:hover{border-color:rgba(120,170,255,.35);background:rgba(78,163,255,.07)}
+  /* --- etkinlik başlık kartı: düğme sağda, dikey ortada --- */
+  .etp-kapak{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .etp-kapak-ana{flex:1 1 240px;min-width:0}
+  .etp-kapak-sag{flex:0 0 auto;display:flex;align-items:center}
+  .etp-kapak .etp-durum{flex:1 1 100%}
+  .etp-kapak-sag .etp-gidecek{white-space:nowrap;padding:13px 20px;font-size:.88rem;
+    border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.28)}
+  .etp-kapak-sag .etp-gidecek.on{box-shadow:0 0 0 1px rgba(52,211,153,.4),0 2px 12px rgba(0,0,0,.3)}
+  @media (max-width:560px){
+    .etp-kapak-sag{flex:1 1 100%;justify-content:flex-end}
+  }
+  /* --- onay kutusu --- */
+  /* NOT: .modal h2'ye kapatma düğmesi için 38px sağ boşluk ekleniyor;
+     başlık ortalanabilsin diye bu boşluk burada sıfırlanır. */
+  .modal h2.onay-baslik{margin:4px 0 18px;padding:0;text-align:center;
+    font-size:1.2rem;line-height:1.4;color:#eaf2ff;letter-spacing:0}
+  .onay-etkinlik{margin:0 0 16px;padding:9px 13px;border-radius:10px;
+    background:rgba(78,163,255,.1);border:1px solid rgba(78,163,255,.28);
+    font-size:.86rem;color:#cfe2ff}
+  .onay-madde{margin:0 0 6px;padding-left:20px}
+  .onay-madde li{font-size:.9rem;line-height:1.55;color:#d7e4f5;margin-bottom:10px}
+  /* Onay kutusu düğmeleri: daha büyük ve okunaklı */
+  .acts.onay-acts{gap:11px;margin-top:18px;justify-content:stretch}
+  .acts.onay-acts button{flex:1 1 auto;min-height:48px;padding:13px 18px;
+    font-size:1rem;font-weight:600;border-radius:13px;white-space:nowrap;
+    display:inline-flex;align-items:center;justify-content:center}
+  .acts.onay-acts button[data-k="hayir"]{background:rgba(20,30,48,.85);
+    border-color:rgba(148,178,220,.3);color:#cfdcef}
+  @media (max-width:480px){
+    .acts.onay-acts{flex-direction:column}
+    .acts.onay-acts button{width:100%;min-height:50px;font-size:1rem}
+    /* Maddeler kaydırıldığında düğmeler kaybolmasın: altta sabit durur */
+    .acts.onay-acts{position:sticky;bottom:-1px;z-index:3;margin-top:16px;
+      padding:12px 0 2px;background:linear-gradient(180deg,rgba(11,17,32,.72),#0b1120 38%)}
+  }
+  .onay-madde li:last-child{margin-bottom:2px}
+  /* --- yönetici: katılacak listesi --- */
+  .etp-katilacak-liste{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+  .etp-kuluper{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 13px;border-radius:11px;background:rgba(14,22,38,.45);
+    border:1px solid rgba(148,178,220,.14)}
+  .etp-kuluper b{font-size:.88rem;color:#e6f0fd;font-weight:600}
+  .etp-kuluper span{font-size:.78rem;color:#93a9c6;white-space:nowrap}
+  @media (max-width:420px){
+    .etp-kuluper{flex-direction:column;align-items:flex-start;gap:2px}
+  }
   .dp-bos{margin-top:16px;padding:18px;text-align:center;color:#9db1cd;font-size:.88rem;
     border:1px dashed rgba(148,178,220,.22);border-radius:12px}
   .dp-palet{display:flex;gap:8px;flex-wrap:wrap}
@@ -851,6 +911,24 @@
     font-size:.78rem;line-height:1.5}
   .kvkk-satir-alt:hover{background:rgba(52,211,153,.14)}
   .kvkk-satir-alt b{color:#6ee7b7}
+  /* --- sadeleştirilmiş ilk giriş ekranı --- */
+  .kvkk-yonlendir{background:rgba(78,163,255,.09);border:1px solid rgba(78,163,255,.26);
+    border-radius:13px;padding:13px 15px;margin:0 0 16px}
+  .kvkk-yonlendir>b{display:block;font-size:.72rem;letter-spacing:.07em;
+    text-transform:uppercase;color:#8fc0f5;margin-bottom:6px}
+  .kvkk-yonlendir p{margin:0;font-size:.9rem;line-height:1.6;color:#dce8f8}
+  .kvkk-ayrac{display:flex;align-items:center;gap:10px;margin:16px 0 6px;
+    font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#7f94b3}
+  .kvkk-ayrac:before,.kvkk-ayrac:after{content:"";flex:1;height:1px;
+    background:rgba(148,178,220,.16)}
+  .kvkk-ayrac i{font-style:normal}
+  .kvkk-kutu{padding:12px 14px;margin:10px 0;border-radius:12px;
+    border:1px solid rgba(148,178,220,.16);background:rgba(14,22,38,.42);
+    transition:border-color .16s,background .16s}
+  .kvkk-kutu:hover{border-color:rgba(120,170,255,.4)}
+  .kvkk-kutu span{font-size:.92rem;line-height:1.5}
+  .kvkk-satir-alt{cursor:pointer;text-align:center;font-size:.8rem;line-height:1.5}
+  @media (max-width:420px){ .kvkk-kutu span{font-size:.88rem} }
   .kvkk-kuny{font-size:.78rem;line-height:1.6;color:#a9bbd4;background:rgba(148,178,220,.06);
     border:1px solid rgba(148,178,220,.14);border-radius:12px;padding:10px 12px;margin-top:10px}
   .kvkk-kuny b{color:#cfe0f5}
@@ -1025,7 +1103,6 @@
   .onay-icerik{font-size:.86rem;line-height:1.55;color:#e6edf7;margin:6px 0 4px}
   .onay-uyari{background:rgba(255,90,90,.1);border:1px solid rgba(255,120,120,.4);
     border-radius:12px;padding:11px 13px;color:#ffd0d0}
-  .onay-acts{justify-content:flex-end}
   .onay-acts .onay-tehlike{background:linear-gradient(180deg,#ef4444,#dc2626);
     border-color:#ef4444;color:#fff;font-weight:600}
   .onay-acts .onay-tehlike:hover{filter:brightness(1.08)}
@@ -1373,7 +1450,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.50.0 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.50.1 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -3908,43 +3985,73 @@ var MBGFB = (function () {
      yalnızca sahibi yazabilir/silebilir. */
   function katilacakOku(evId) {
     if (!state.user) return Promise.resolve(null);
-    /* Belgeler 3. seviyede: katilacak/{evId}/{uid}
-       (4. seviyede sayaç YAPILAMAZ — alt koleksiyonlar sayılamaz).
-       collectionGroup tüm niyet kayıtlarını getirir, filtre istemcide. */
-    /* DİKKAT: d.id BELGE KİMLİĞİDİR (sadece uid), yol DEĞİLDİR.
-       Filtre mutlaka d.ref.path üzerinden yapılır, yoksa sayaç hep 0
-       döner ve "Katılacağım" düğmesi geri alınamaz. */
-    var kok = 'katilacak/' + String(evId) + '/';
+    /* Belgeler: katilacak/{evId}_{uid} (belge yolu çift segmentli olmalıdır).
+       Basit koleksiyon sorgusu → sayaç her zaman doğru çalışır. */
+    var ev = String(evId);
+    var benimId = ev + '_' + state.user.uid;
     return ready().then(function () {
-      return db.collectionGroup('katilacak').get().then(function (snap) {
+      return db.collection('katilacak').get().then(function (snap) {
         var benim = false, adet = 0;
         snap.forEach(function (belge) {
-          var yol = String(belge.ref && belge.ref.path || '');
-          if (yol.indexOf(kok) !== 0) return;
+          var o = belge.data() || {};
+          if (String(o.ev) !== ev) return;
           adet++;
-          if (belge.id === state.user.uid) benim = true;
+          if (belge.id === benimId || String(o.uid) === state.user.uid) benim = true;
         });
         return { adet: adet, benim: benim };
       });
     }).catch(function () { return null; });
   }
+  /* YÖNETİCİ: "Katılacağım" diyen üyelerin tam listesi (ad + öğrenci no).
+     katilacak/{evId}/{uid} belgelerinde ad YOKTUR (gizlilik); isim ve numara
+     members/{uid} kaydından alınır (yalnızca yönetici okuyabilir). */
+  function katilacakListe(evId) {
+    if (!isAdmin()) return Promise.resolve([]);
+    var ev = String(evId);
+    return ready().then(function () {
+      return Promise.all([
+        db.collection('katilacak').get().catch(function () { return null; }),
+        listMembers().catch(function () { return []; })
+      ]).then(function (r) {
+        var uyeler = {};
+        (r[1] || []).forEach(function (u) { if (u && u.uid) uyeler[u.uid] = u; });
+        var out = [];
+        var snap = r[0];
+        if (snap && snap.forEach) {
+          snap.forEach(function (d2) {
+            var o = d2.data() || {};
+            var uid = String(o.uid || '');
+            if (String(o.ev) !== ev) return;
+            var u = uyeler[uid] || {};
+            out.push({
+              uid: uid || d2.id,
+              ad: u.name || '(isim yok)',
+              no: u.no || '',
+              eposta: u.email || ''
+            });
+          });
+        }
+        out.sort(function (a, b) { return a.ad < b.ad ? -1 : (a.ad > b.ad ? 1 : 0); });
+        return out;
+      });
+    }).catch(function () { return []; });
+  }
   function katilacakYaz(evId, evet) {
     if (!state.user) return Promise.reject(new Error('Önce giriş yapmalısın.'));
     var ref = null;
+    var ev = String(evId);
+    /* Belge: katilacak/{evId}_{uid}
+       (Firestore belge yolu ÇİFT segmentli olmalıdır; üç segmentli yol
+        bir koleksiyondur, belge olamaz.)
+       İçine AD yazılmaz: yalnızca zaman damgası ve kimlik alanları. */
     return ready().then(function () {
-      /* Belge kimliği etkinlik+kişi → sayaç collectionGroup ile okunur.
-         İçine AD yazılmaz (yalnızca zaman damgası): kimlerin katılacağı
-         değil KAÇ KİŞİ görünür. */
-      /* Belge yolu: katilacak/{evId}/{uid}
-         DİKKAT: belge kimliğinde '/' KULLANILAMAZ (yol ayırıcıdır) →
-         collection(evId).doc(uid) kullanılır (3. seviye belge). */
-      ref = db.collection('katilacak').collection(String(evId)).doc(state.user.uid);
+      ref = db.collection('katilacak').doc(ev + '_' + state.user.uid);
       if (!evet) return ref.delete();
-      return ref.set({ at: ts() });
+      return ref.set({ at: ts(), ev: ev, uid: state.user.uid });
     }).catch(function (h) {
       if (!ref) throw h;
       return jetonTazeleVeTekrar(h, function () {
-        return evet ? ref.set({ at: ts() }) : ref.delete();
+        return evet ? ref.set({ at: ts(), ev: ev, uid: state.user.uid }) : ref.delete();
       });
     });
   }
@@ -4094,23 +4201,75 @@ var MBGFB = (function () {
     }).catch(function () { return null; });
   }
   /* yönetici: bağka bir üyenin katılım/görev kaydını okur */
+  /* YÖNETİCİ: bir üyenin katılım/görev kayıtlarını OKUR.
+     Eski yol (ud/{uid}/katilim) kullanılmıyor: istatistik ve profil resmi
+     kayıtları okuyor (events/{id}/katilan, gorevli, katilacak). İki kaynak
+     birbirinden ayrılıyordu → yönetici işaretlediği kişi 0 görünüyordu. */
   function katilimUidOku(uid) {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem yöneticiye özel.'));
     return ready().then(function () {
-      return db.collection('ud').doc(String(uid)).collection('katilim').get().then(function (snap) {
-        var out = {};
-        snap.forEach(function (d) { out[d.id] = d.data() || {}; });
-        return out;
+      var ids = [];
+      var g = window.MBG;
+      if (g && g.events) {
+        (g.events() || []).forEach(function (e) { if (e.id) ids.push(String(e.id)); });
+      }
+      if (ids.length) return tara(uid, ids);
+      return db.collection('events').get().then(function (sn) {
+        sn.forEach(function (d) { ids.push(d.id); });
+        return tara(uid, ids);
       });
     }).catch(function () { return {}; });
+
+    function tara(uid, ids) {
+      var out = {};
+      function grup(ci) {
+        if (ci >= ids.length) return Promise.resolve();
+        var parca = ids.slice(ci, ci + 6);
+        return Promise.all(parca.map(function (evId) {
+          return Promise.all([
+            db.collection('events').doc(evId).collection('katilan').doc(uid).get().catch(function () { return null; }),
+            db.collection('events').doc(evId).collection('gorevli').doc(uid).get().catch(function () { return null; }),
+            db.collection('katilacak').doc(evId + '_' + uid).get().catch(function () { return null; })
+          ]).then(function (c) {
+            var dk = c[0] && c[0].exists ? (c[0].data() || {}) : null;
+            var gv = c[1] && c[1].exists ? (c[1].data() || {}) : null;
+            var kl = c[2] && c[2].exists ? (c[2].data() || {}) : null;
+            var r = {};
+            if (dk) r.durum = 'katildi';
+            if (kl && !dk) r.durum = 'gidecek';
+            if (gv) r.gorev = gv.gorev || '';
+            if (r.durum || r.gorev) out[evId] = r;
+          });
+        })).then(function () { return grup(ci + 6); });
+      }
+      return grup(0).then(function () { return out; });
+    }
   }
-  /* yönetici: bağka bir üyenin katılım/görev kaydını yazar */
-  function katilimUidYaz(uid, evId, rec) {
+  /* YÖNETİCİ: bir üyenin katılım/görev kaydını YAZAR (resmi kayıtlar).
+     ad: o üyenin adı — görevli listesi herkese açıktır, e-posta yazılmaz. */
+  function katilimUidYaz(uid, evId, rec, ad) {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem yöneticiye özel.'));
     return ready().then(function () {
-      var ref = db.collection('ud').doc(String(uid)).collection('katilim').doc(String(evId));
-      if (!rec || (!rec.durum && !rec.gorev)) return ref.delete();
-      return ref.set({ durum: rec.durum || '', gorev: rec.gorev || '', at: ts() });
+      var u = String(uid), ev = String(evId);
+      var katRef = db.collection('events').doc(ev).collection('katilan').doc(u);
+      var gorRef = db.collection('events').doc(ev).collection('gorevli').doc(u);
+      var gelRef = db.collection('katilacak').doc(ev + '_' + u);
+      var isim = String(ad || '');
+      var isler = [];
+      if (rec && rec.durum === 'katildi') {
+        isler.push(katRef.set({ uid: u, ad: isim, at: ts() }));
+        isler.push(gelRef.delete());
+      } else {
+        isler.push(katRef.delete());
+        isler.push((rec && rec.durum === 'gidecek')
+          ? gelRef.set({ at: ts(), ev: ev, uid: u }) : gelRef.delete());
+      }
+      if (rec && rec.gorev) {
+        isler.push(gorRef.set({ uid: u, ad: isim, gorev: rec.gorev, at: ts() }));
+      } else {
+        isler.push(gorRef.delete());
+      }
+      return Promise.all(isler);
     });
   }
   function saveKatilim(evId, rec) {
@@ -4342,38 +4501,66 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
   }
 
   /* profil için: benim katıldıklarım / görevlerim */
-  function benimKatildiklarim() {
-    if (!state.user) return Promise.resolve([]);
-    return ready().then(function () {
-      return db.collectionGroup('katilan').where('uid', '==', state.user.uid).get()
-        .then(function (snap) {
-          var out = [];
-          snap.forEach(function (d) {
-            var o = d.data() || {};
-            /* events/{id}/katilan/{uid} → id çıkar */
-            var parcalar = String(d.ref.path).split('/');
-            o.etkinlikId = parcalar[1];
-            out.push(o);
-          });
-          return out;
-        });
+  /* Kendi katılım/görev kayıtlarım.
+     collectionGroup yerine etkinlik etkinlik okunur (izinli yol):
+     kökteki eski "katilan"/"gorevli" koleksiyonları sorguyu bozuyordu. */
+  /* Etkinlik listesi verilmezse uygulamanın kendi takviminden alınır
+     (çağıranların çoğu parametre geçmiyor). */
+  function evIdleriCoz(evIdler) {
+    if (evIdler && evIdler.length) return Promise.resolve(evIdler.map(String));
+    var g = window.MBG;
+    if (g && g.events) {
+      try {
+        var l = g.events() || [], ids = [];
+        l.forEach(function (e) { if (e && e.id) ids.push(String(e.id)); });
+        if (ids.length) return Promise.resolve(ids);
+      } catch (e) {}
+    }
+    return db.collection('events').get().then(function (sn) {
+      var ids = [];
+      sn.forEach(function (d) { ids.push(d.id); });
+      return ids;
     }).catch(function () { return []; });
   }
-  function benimGorevlerim() {
+  function benimKendi(evIdler, ad) {
     if (!state.user) return Promise.resolve([]);
+    var uid = state.user.uid;
+    var liste = [];
+    var cift = { katilan: [], gorevli: [] };
+    function grup(ci) {
+      if (ci >= liste.length) return Promise.resolve();
+      var parca = liste.slice(ci, ci + 8);
+      return Promise.all(parca.map(function (id) {
+        return db.collection('events').doc(id).collection(ad).doc(uid).get()
+          .then(function (sn) {
+            if (sn.exists) {
+              var o = sn.data() || {};
+              o.etkinlikId = id;
+              cift[ad].push(o);
+            }
+          }).catch(function () {});
+      })).then(function () { return grup(ci + 8); });
+    }
+    return evIdleriCoz(evIdler).then(function (ids) {
+      liste = ids;
+      return grup(0);
+    }).then(function () { return cift[ad]; });
+  }
+  function benimKayitlarim(evIdler) {
+    if (!state.user) return Promise.resolve({ katildi: [], gorevli: [] });
     return ready().then(function () {
-      return db.collectionGroup('gorevli').where('uid', '==', state.user.uid).get()
-        .then(function (snap) {
-          var out = [];
-          snap.forEach(function (d) {
-            var o = d.data() || {};
-            var parcalar = String(d.ref.path).split('/');
-            o.etkinlikId = parcalar[1];
-            out.push(o);
-          });
-          return out;
+      return benimKendi(evIdler, 'katilan').then(function (k) {
+        return benimKendi(evIdler, 'gorevli').then(function (g) {
+          return { katildi: k, gorevli: g };
         });
-    }).catch(function () { return []; });
+      });
+    }).catch(function () { return { katildi: [], gorevli: [] }; });
+  }
+  function benimKatildiklarim(evIdler) {
+    return benimKayitlarim(evIdler).then(function (r) { return r.katildi; });
+  }
+  function benimGorevlerim(evIdler) {
+    return benimKayitlarim(evIdler).then(function (r) { return r.gorevli; });
   }
   function listOneriler(limit) {
     return ready().then(function () {
@@ -4417,9 +4604,10 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     }, { merge: true }).then(function () { return true; })
       .catch(function () { return false; });
   }
-  function rizaOku() {
-    if (!state.user) return Promise.resolve(null);
-    return db.collection('kvkk').doc(state.user.uid).get()
+  function rizaOku(uid) {
+    var kim = uid || (state.user && state.user.uid);
+    if (!kim) return Promise.resolve(null);
+    return db.collection('kvkk').doc(kim).get()
       .then(function (d) { return d.exists ? d.data() : null; })
       .catch(function () { return null; });
   }
@@ -4470,7 +4658,8 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     if (!state.user) return Promise.resolve({ katildi: 0, gorevli: 0 });
     var gecerli = {};
     (evIdler || []).forEach(function (id) { gecerli[String(id)] = true; });
-    return Promise.all([benimKatildiklarim(), benimGorevlerim()]).then(function (r) {
+    return Promise.all([benimKatildiklarim(evIdler), benimGorevlerim(evIdler)])
+      .then(function (r) {
       var k = 0, g = 0;
       (r[0] || []).forEach(function (o) { if (gecerli[String(o.etkinlikId)]) k++; });
       (r[1] || []).forEach(function (o) { if (gecerli[String(o.etkinlikId)]) g++; });
@@ -4493,23 +4682,41 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
      (collectionGroup ile iki sorgu: hızlı ve gövenilir) */
   function istatistikYenile(evIdler, uyeListesi) {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    /* DİKKAT: collectionGroup KULLANILMAZ.
+       Veritabanında kökte eski şemadan kalma, okunamayan "katilan" ve
+       "gorevli" koleksiyonları var; collectionGroup onları da kapsar ve
+       tek bir red tüm sorguyu düşürür (sayaçlar 0 yazılıyordu).
+       Bunun yerine her etkinliğin kendi alt koleksiyonu okunur. */
     var gecerli = {};
     (evIdler || []).forEach(function (id) { gecerli[String(id)] = true; });
-    return Promise.all([
-      db.collectionGroup('katilan').get().catch(function () { return null; }),
-      db.collectionGroup('gorevli').get().catch(function () { return null; })
-    ]).then(function (r) {
-      var say = {};
-      var ekle = function (uid) { if (!say[uid]) say[uid] = { katildi: 0, gorevli: 0 }; return say[uid]; };
-      [r[0], r[1]].forEach(function (snap, i) {
-        if (!snap || !snap.forEach) return;
-        snap.forEach(function (d) {
-          var parcalar = String(d.ref.path).split('/');
-          var evId = parcalar[1], uid = d.id;
-          if (!gecerli[evId] || !uid) return;
-          ekle(uid)[i === 0 ? 'katildi' : 'gorevli']++;
-        });
+    var ids = Object.keys(gecerli);
+    var say = {};
+    var ekle = function (uid) { if (!say[uid]) say[uid] = { katildi: 0, gorevli: 0 }; return say[uid]; };
+    /* gruplar hâlinde (rate limit'e takılmamak için 6'şılı) */
+    function grup(ci, kalan) {
+      if (!kalan.length) return Promise.resolve();
+      var parca = kalan.slice(ci, ci + 6);
+      var isler = parca.map(function (id) {
+        return Promise.all([
+          db.collection('events').doc(id).collection('katilan').get().catch(function () { return null; }),
+          db.collection('events').doc(id).collection('gorevli').get().catch(function () { return null; })
+        ]);
       });
+      return Promise.all(isler).then(function (hepsi) {
+        hepsi.forEach(function (cift) {
+          var snap = cift[0], uid;
+          if (snap && snap.forEach) {
+            snap.forEach(function (d) { uid = d.id; if (uid) ekle(uid).katildi++; });
+          }
+          var g = cift[1];
+          if (g && g.forEach) {
+            g.forEach(function (d) { uid = d.id; if (uid) ekle(uid).gorevli++; });
+          }
+        });
+        return grup(ci + 6, kalan);
+      });
+    }
+    return grup(0, ids).then(function () {
       var isim = {};
       (uyeListesi || []).forEach(function (u) {
         isim[u.uid] = adSoyadBol(u.name || '');
@@ -4517,12 +4724,14 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
       });
       var batch = db.batch();
       Object.keys(say).forEach(function (uid) {
-        var b = isim[uid] || { ad: '', soyad: '' };
-        batch.set(db.collection('public').doc(uid), {
-          ad: b.ad, soyad: b.soyad,
+        var veri = {
           katildi: say[uid].katildi, gorevli: say[uid].gorevli,
           guncelleAt: ts()
-        });
+        };
+        /* isim biliniyorsa yazılır; bilinmiyorsa MEVCUT AD SİLİNMEZ
+           (katılım güncellenince üyelerin adı bozuluyordu) */
+        if (isim[uid]) { veri.ad = isim[uid].ad; veri.soyad = isim[uid].soyad; }
+        batch.set(db.collection('public').doc(uid), veri, { merge: true });
       });
       return batch.commit().then(function () { return Object.keys(say).length; });
     });
@@ -4576,6 +4785,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     saveTodos: saveTodos, loadTodos: loadTodos, saveNote: saveNote, loadNotes: loadNotes,
     dersOku: dersOku, dersKaydet: dersKaydet,
     katilacakOku: katilacakOku, katilacakYaz: katilacakYaz,
+    katilacakListe: katilacakListe,
     gizlilikOku: gizlilikOku, gizlilikYaz: gizlilikYaz, uyeProfilOku: uyeProfilOku,
     paylasimTazele: paylasimTazele,
     GIZLILIK_VARSAYILAN: GIZLILIK_VARSAYILAN, PAYLAS_VARSAYILAN: PAYLAS_VARSAYILAN,
@@ -4760,7 +4970,6 @@ var MBGM = (function () {
       : '';
     m.innerHTML =
       '<h2>' + (kayit ? 'Üye kaydı' : 'Giriş yap') + '</h2>' +
-      '<div class="sub">Plan herkese açık; not ve yapılacaklar yalnızca kendi hesabında</div>' +
       '<div class="field"><label>E-posta *</label>' +
         '<input id="fMail" type="email" autocomplete="email" inputmode="email"' +
         ' value="' + esc(String(v0.mail || '')) + '"' +
@@ -4770,7 +4979,8 @@ var MBGM = (function () {
         (kayit ? 'new-password' : 'current-password') + '" minlength="6"' +
         ' value="' + esc(String(v0.pw || '')) + '"' +
         ' placeholder="' + (kayit ? 'En az 6 karakter (örn. aku2026)' : 'Şifren') + '"></div>' +
-      '<div class="sub">Kutuya uygun veriyi gir: öğrenci no ve sınıf yalnızca rakam kabul eder.</div>' +
+      (kayit ? '<div class="sub">Kutuya uygun veriyi gir: öğrenci no ve sınıf ' +
+        'yalnızca rakam kabul eder.</div>' : '') +
       (kayit ? '<div class="sub">Üye olmadan önce <a href="#" data-x="kvkk">KVKK ' +
         'Aydınlatma Metni</a> ile <a href="#" data-x="kvkk">Açık Rıza Metni</a> metinlerini okuyup ' +
         'rıza vermen gerekir (isteğe bağlı alanlar boş kalabilir).</div>' : '') +
@@ -4785,9 +4995,7 @@ var MBGM = (function () {
           : '<a href="#" data-x="kayit">Üye değilim, kayıt ol</a>') +
         (kayit ? '' : ' · <a href="#" data-x="sifre">Şifremi unuttum</a>') +
       '</div>';
-      '<div class="kvkk-satir-alt" data-x="kvkk">🔒 <b>KVKK metinleri:</b> ' +
-        'Aydınlatma · Açık Rıza · Gizlilik ve Çerez · Kullanım Koşulları · ' +
-        'Başvuru Formu</div>';
+
 
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-x]') : null;
@@ -4991,8 +5199,9 @@ var MBGM = (function () {
       syncUI();
       diziniBagla();
       kisiselCek();
-      /* eski üyeler için KVKK metinlerini onaylama hatırlatması */
-      setTimeout(function () { try { kvkkDuyurosu(); } catch (e) {} }, 1500);
+      /* Onay daha önce verildiyse HİÇBİR ekran açılmaz (yalnızca ilk kayıtta).
+         Sunucudaki kayıt da kontrol edilir: önbellek silinse bile sorulmaz. */
+      setTimeout(function () { try { kvkkDurumTazele(); } catch (e) {} }, 1500);
       /* eski üyeler için KVKK metinlerini onaylama hatırlatması */
       setTimeout(function () { try { kvkkDuyurusu(); } catch (e) {} }, 1500);
       if (kayit) {
@@ -5314,6 +5523,8 @@ var MBGM = (function () {
   }
 
   function syncUI() {
+    /* ⋮ menüsü erişime göre değişir (Ders Programı yalnızca üyeye) */
+    try { if (window.MBGM_ERISIM) MBGM_ERISIM.degisti(); } catch (e) {}
     var u = MBGFB.user();
     var gir = q('#mAuth'), cik = q('#mSignOut'), adm = q('#mAdmin');
     var dogr = q('#mVerify'), sil = q('#mDelete');
@@ -5775,7 +5986,8 @@ var MBGM = (function () {
    UYE YONETIMI (yalnizca yonetici)
    "Uye ve katilim" sayfasina gomulu blok: arama + Katilim + Sil.
    ------------------------------------------------------------------ */
-  function uyeYonetim(kutuSec, geriFn) {
+  function uyeYonetim(kutuSec, geriFn, ara) {
+    /* ara: açılışta arama kutusuna yazılacak metin (profilden gelir) */
     var kap = q(kutuSec);
     if (!kap) return;
     var ls = null;
@@ -5796,6 +6008,7 @@ var MBGM = (function () {
         if (!MBGO.uyeAra({
           kutu: kutuSec,
           liste: ls,
+          ilk: ara || '',
           ipucu: 'Üye ara: ad, e-posta, öğrenci no, bölüm',
           alan: function (u) {
             return [u.name, u.email, u.no, u.dept, u.girisYili].filter(function (x) { return x; }).join(' ');
@@ -6020,7 +6233,7 @@ var MBGM = (function () {
      Sayılar güncel takvime göre hesaplanır.
      =================================================================== */
   /* yoneticiMi = true → yönetici panelinden açıldı (yeniden hesapla düğmesi olur) */
-  function uyeSayfasi(yoneticiMi) {
+  function uyeSayfasi(yoneticiMi, ara) {
     var m = q('#modal');
     if (!m) return;
     var evList = (A && A.events) ? A.events() : [];
@@ -6062,7 +6275,9 @@ var MBGM = (function () {
       if (t === 'uyeye' && profilAcik) { uyeSayfasi(true); return; }
     };
     q('#backdrop').classList.add('open');
-    if (yoneticiMi && MBGFB.isAdmin()) uyeYonetim('#uyYonetim', function () { uyeSayfasi(true); });
+    if (yoneticiMi && MBGFB.isAdmin()) {
+      uyeYonetim('#uyYonetim', function () { uyeSayfasi(true); }, ara);
+    }
     yuke();
 
     function yuke() {
@@ -6114,6 +6329,20 @@ var MBGM = (function () {
   function planDegisti() { if (planYenileFn) { try { planYenileFn(); } catch (e) {} } }
 
   /* ---------------- KVKK: eski üyeler için tek seferlik onay ---------------- */
+  /* Giriş sonrası KVKK durumu:
+     1) Yerelde onay varsa HİÇBİR ekran açılmaz.
+     2) Yerelde yoksa sunucudaki kayda bakılır (önbellek silinmiş olabilir).
+     3) Sunucuda da yoksa eski üyeye tek seferlik hatırlatma gösterilir. */
+  function kvkkDurumTazele() {
+    if (!window.KVKK) return;
+    if (KVKK.onayliMi()) return;                      /* onaylı → dokunma */
+    if (!MBGFB.user() || !MBGFB.user().uid) return;   /* giriş yoksa bekle */
+    if (!MBGFB.rizaOku) { kvkkDuyurosu(); return; }
+    MBGFB.rizaOku(MBGFB.user().uid).then(function (d) {
+      if (d && KVKK.rizaGeriYaz && KVKK.rizaGeriYaz(d)) return;  /* sunucudan geldi */
+      kvkkDuyurosu();
+    }).catch(function () { kvkkDuyurosu(); });
+  }
   function kvkkDuyurosu() {
     if (!MBGFB.user() || !window.KVKK || !KVKK.duyuruVarMi()) return;
     KVKK.rizaAdimi(function () {
@@ -6210,16 +6439,8 @@ var MBGM = (function () {
         toast('✓ KVKK metinleri onaylandı. Teşekkürler!', 4500);
       }, function () { KVKK.duyuruKapat(); });
     },
+    /* Eski üyeler için tek seferlik hatırlatma (yinelenen tanım kaldırıldı) */
     kvkkDuyurosu: kvkkDuyurosu,
-    kvkkDuyurosu: function () {
-      if (!MBGFB.user() || !window.KVKK || !KVKK.duyuruVarMi()) return;
-      KVKK.rizaAdimi(function () {
-        KVKK.duyuruKapat();
-        var r = KVKK.rizaOku();
-        if (r && MBGFB.rizaYaz) { try { MBGFB.rizaYaz(r); } catch (e) {} }
-        toast('✓ KVKK metinleri onaylandı. Teşekkürler!', 4500);
-      }, function () { KVKK.duyuruKapat(); });
-    },
     err: err, dogrulaAlan: dogrulaAlan, ALAN: ALAN, kaydetCevrimdisi: function () {
       if (!MBGFB.user()) return;
       if (A && A.todosDump) MBGFB.saveTodos(A.todosDump());
@@ -6458,6 +6679,7 @@ var MBGP = (function () {
   function profil() {
     var m = q('#modal');
     if (!m) return;
+    gizAcik = false;   /* gizlilik panelinden dönüldü */
     /* Katılım verisi gelince yeniden çiz — AMA yalnızca hâlâ profil
        ekranı açıkken (alt panel açıldıysa onu ezme). */
     katilimYukle().then(function () {
@@ -6507,7 +6729,7 @@ var MBGP = (function () {
         '<div class="acts pf-acts pf-ustlu">' +
           '<button type="button" class="pri" data-k="kisisel">Kişisel bilgilerim</button>' +
           '<button type="button" class="pri" data-k="hesap">Hesap bilgilerim</button>' +
-          '<button type="button" class="pri" data-k="gizlilik">🔒 Profil gizliliği</button>' +
+          '<button type="button" class="pri" data-k="gizlilik">Profil gizliliği</button>' +
               '<button type="button" data-k="yenile">Yenile</button>' +
           '<button type="button" data-k="kvkk">KVKK ve Gizlilik</button>' +
         '</div>' +
@@ -6732,7 +6954,7 @@ var MBGP = (function () {
     { id: 'uyeler', ad: 'Tüm üyeler',
       ac: 'Profilim yalnızca giriş yapmış üyelere görünür. Dışarıdan girenler göremez.' },
     { id: 'ben', ad: 'Sadece ben',
-      ac: 'Profilim yalnızca bana görünür. Alttaki paylaşım ayarları pasifleşir.' }
+      ac: 'Profilim yalnızca bana görünür. Başka kimse göremez.' }
   ];
   var ALANLAR = [
     { k: 'no', ad: 'Öğrenci numaram' },
@@ -6745,18 +6967,23 @@ var MBGP = (function () {
     { k: 'gorev', ad: 'Görev aldığım etkinlikler' }
   ];
 
+  var gizAcik = false;
   function gizlilikForm() {
     var m = q('#modal');
     if (!m) return;
+    gizAcik = true;
     var durum = {
       gizlilik: (MBGFB.GIZLILIK_VARSAYILAN || 'uyeler'),
       paylas: Object.assign({}, MBGFB.PAYLAS_VARSAYILAN || {})
     };
+    /* Kayıt kuyruğu: iki hızlı tıklama son yazanın kaydını kazansın.
+       Kaydedilemezse seçim geri alınır (ekran ile sunucu ayrışmasın). */
+    var sonBasarili = null, sirada = null, kaydediliyor = false, kirli = false;
 
     function ciz() {
       var sadeceBen = durum.gizlilik === 'ben';
       m.innerHTML =
-        '<h2>🔒 Profil gizliliği</h2>' +
+        '<h2>Profil gizliliği</h2>' +
         '<div class="pf-blok"><p class="pf-ipucu">Profilinin görünürlüğünü ve ' +
         'paylaşabileceğin bilgileri <b>sen</b> belirlersin. Yönetici, kulüp işleri ' +
         '(VERBİS kaydı, etkinlik organizasyonu) için profil bilgilerine erişir; ' +
@@ -6772,17 +6999,21 @@ var MBGP = (function () {
 
         '<div class="pf-blok' + (sadeceBen ? ' gizli-kapali' : '') + '"><h3>' +
         (sadeceBen ? 'Bu ayarlar pasif (sadece sen görünüyorsun)' : 'Paylaşılacak bilgiler') +
-        '</h3><div class="sub" style="margin:-4px 0 8px">' +
+        '</h3><div class="sub" style="margin:-4px 0 10px">' +
         (sadeceBen
-          ? 'Profilin yalnızca sana göründüğü için hangi bilgiyi paylaştığın önemsiz. ' +
-            'Başka bir kademe seçersen bu ayarlar yeniden açılır.'
-          : 'İşaretli bilgiler profilinde görünür; işaretsizler gizli kalır.') +
+          ? 'Profilin yalnızca sana göründüğü için hangi bilgiyi paylaştığın önemsiz.'
+          : 'Açık olan bilgiler profilinde görünür, kapalı olanlar gizli kalır.') +
         '</div>' +
         ALANLAR.map(function (a) {
-          return '<label class="gz-ana' + (sadeceBen ? ' pasif' : '') + '">' +
-            '<input type="checkbox" data-alan="' + a.k + '"' +
-            (durum.paylas[a.k] ? ' checked' : '') + (sadeceBen ? ' disabled' : '') + '>' +
-            '<span>' + esc(a.ad) + '</span></label>';
+          var acik = !!durum.paylas[a.k];
+          /* Anahtar: solda değil SAĞDA, kayan topçuk. Yeşil = paylaşılıyor. */
+          return '<button type="button" class="gz-ana' + (acik ? ' on' : '') +
+            (sadeceBen ? ' pasif' : '') + '" data-alan="' + a.k + '"' +
+            ' role="switch" aria-checked="' + (acik ? 'true' : 'false') + '"' +
+            (sadeceBen ? ' disabled' : '') + '>' +
+            '<span class="gz-ana-et">' + esc(a.ad) + '</span>' +
+            '<span class="gz-ana-sw" aria-hidden="true"><i></i></span>' +
+            '</button>';
         }).join('') + '</div>' +
 
         '<div class="acts">' +
@@ -6791,11 +7022,6 @@ var MBGP = (function () {
         '</div>';
     }
 
-    /* Kayıt SIRAYA alınır: iki hızlı tıklama son yazanın kaydı
-       kazansın diye eşzamanlı istek atılmaz.
-       Kaydedilemezse seçim GERİ ALINIR: ekranda "Herkese açık" yazıp
-       sunucuda "Tüm üyeler" kalması yanıltıcı olurdu. */
-    var sonBasarili = null, sirada = null, kaydediliyor = false, kirli = false;
     function kaydet(mesaj) {
       kirli = true;
       sirada = {
@@ -6805,6 +7031,8 @@ var MBGP = (function () {
       };
       yaz();
     }
+    /* Kayıt arka planda olur; kullanıcı panelde kalır, kendi zamanında
+       "Profilime dön" der. (Önceden her kayıtta profil ekranına geçiliyordu.) */
     function yaz() {
       if (kaydediliyor || !sirada) return;
       var istek = sirada;
@@ -6812,17 +7040,18 @@ var MBGP = (function () {
       kaydediliyor = true;
       MBGFB.gizlilikYaz(istek.gizlilik, istek.paylas).then(function () {
         sonBasarili = { gizlilik: istek.gizlilik, paylas: istek.paylas };
-        toast(istek.mesaj, 3600);
+        durum = { gizlilik: istek.gizlilik, paylas: Object.assign({}, istek.paylas) };
+        toast(istek.mesaj, 3000);
       }).catch(function (x) {
         toast('Kaydedilemedi: ' + MBGM.err(x), 6000);
-        if (sonBasarili) { durum = sonBasarili; ciz(); }
+        if (sonBasarili) durum = sonBasarili;
         else {
-          MBGFB.gizlilikOku().then(function (g) { if (g) { durum = g; ciz(); } });
+          return MBGFB.gizlilikOku().then(function (g) { if (g) durum = g; });
         }
       }).then(function () {
         kaydediliyor = false;
-        if (sirada) { yaz(); return; }      /* sırada başka istek var */
-        profil();
+        if (sirada) { yaz(); return; }
+        if (gizAcik) ciz();          /* hâlâ bu ekrandaysak güncelle */
       });
     }
 
@@ -6830,8 +7059,8 @@ var MBGP = (function () {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
       if (b) {
         var t = b.getAttribute('data-k');
-        if (t === 'vaz') { close(); profil(); return; }
-        if (t === 'kapat') { profil(); return; }
+        if (t === 'vaz') { gizAcik = false; close(); return; }
+        if (t === 'kapat') { gizAcik = false; profil(); return; }
         return;
       }
       var kap = ev.target && ev.target.closest ? ev.target.closest('.gz-sec') : null;
@@ -6844,14 +7073,13 @@ var MBGP = (function () {
         kaydet('Profil gizliliği: ' + ad);
         return;
       }
-      var kutu = ev.target && ev.target.closest ? ev.target.closest('.gz-ana') : null;
-      if (kutu && !kutu.classList.contains('pasif')) {
-        var ch = kutu.querySelector('input');
-        if (!ch) return;
-        var ana = ch.getAttribute('data-alan');
-        durum.paylas[ana] = ch.checked;
-        var ad2 = ALANLAR.filter(function (a) { return a.k === ana; })[0].ad;
-        kaydet(ad2 + (ch.checked ? ' paylaşılıyor' : ' gizli'));
+      var ana = ev.target && ev.target.closest ? ev.target.closest('.gz-ana') : null;
+      if (ana && !ana.disabled && !ana.classList.contains('pasif')) {
+        var alan = ana.getAttribute('data-alan');
+        durum.paylas[alan] = !durum.paylas[alan];
+        ciz();
+        var ad2 = ALANLAR.filter(function (a) { return a.k === alan; })[0].ad;
+        kaydet(ad2 + (durum.paylas[alan] ? ' paylaşılıyor' : ' gizli'));
       }
     };
     ciz();
@@ -6897,10 +7125,16 @@ var MBGP = (function () {
     });
   }
 
+  /* Yönetici, başka üyenin profilinden üye yönetimine geçer.
+     Arama kutusu o üyenin adıyla doldurulur → "Katılım" düğmesi hazır. */
   function uyeYonetimPanel(uid, ad) {
+    if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
     close();
-    if (window.MBGM && MBGM.uyeler) MBGM.uyeler();
-    toast(ad ? (ad + ' — üye listesinden düzenle') : 'Üye listesinden düzenle', 3200);
+    var isim = (ad || '').trim();
+    toast(isim ? (isim + ' — üye yönetimi') : 'Üye yönetimi', 3200);
+    if (window.MBGM && MBGM.uyeSayfasi) { MBGM.uyeSayfasi(true, isim); return; }
+    if (window.MBGM && MBGM.uyeler) { MBGM.uyeler(); return; }
+    toast('Üye yönetimi açılamadı.', 4500);
   }
 
   function profilHtml(uid, ad, d, adminMi) {
@@ -7092,6 +7326,8 @@ var MBGP = (function () {
     var l = evler();
     var bugun = (A && A.today) ? A.today() : '';
     var kim = ad || uid;
+    /* görevli listesi herkese açık: e-posta değil, yalnızca ad yazılır */
+    var uidAd = (function () { var k = String(kim).split(' '); return ad ? ad : String(uid); })();
     var hedef = {};
 
     function ciz() {
@@ -7136,7 +7372,7 @@ var MBGP = (function () {
       for (i = 0; i < ds.length; i++) {
         eid = ds[i].getAttribute('data-e');
         rec = { durum: ds[i].value, gorev: gs[i] ? gs[i].value : '' };
-        isler.push(MBGFB.katilimUidYaz(uid, eid, rec));
+        isler.push(MBGFB.katilimUidYaz(uid, eid, rec, uidAd));
         if (rec.durum || rec.gorev) yaz++;
       }
       toast(yaz ? yaz + ' kayıt yazılıyor…' : 'Kayıtlar temizleniyor…', 2600);
@@ -7197,6 +7433,12 @@ var KVKK = (function () {
      1) VERİ SORUMLUSU KÜNYESİ
      Tek yerden düzenlenir; metinler bu değerlerden beslenir.
      ================================================================== */
+  /* Sicil numarası girilene kadar metinde "Kaydedilmemiştir" görünür;
+     « » içeren ham placeholder metne sızmasın. */
+  function sicilMetni() {
+    var v = String(KURUM && KURUM.sicil || '');
+    return (v.indexOf('«') >= 0 || !v) ? 'Kaydedilmemiştir' : v;
+  }
   var KURUM = {
     ad: 'Afyon Kocatepe Üniversitesi - Kocatepe Genetik Topluluğu',
     kisaAd: 'Topluluk',
@@ -7239,7 +7481,7 @@ var KVKK = (function () {
 '  <li><b>Veri sorumlusu yetkilisi:</b> ' + KURUM.yetkili + '</li>' +
 '  <li><b>E-posta:</b> ' + KURUM.eposta + '</li>' +
 '  <li><b>Telefon:</b> ' + KURUM.telefon + '</li>' +
-'  <li><b>Veri Sorumluları Sicili (VERBİS):</b> ' + KURUM.sicil + '</li>' +
+'  <li><b>Veri Sorumluları Sicili (VERBİS):</b> ' + sicilMetni() + '</li>' +
 '  <li><b>Uygulama adresi:</b> ' + KURUM.site + '</li>' +
 '</ul>' +
 '<p class="kvkk-not">Uygulamanın teknik altyapısı üçüncü taraf sağlayıcılara veri işleyen ' +
@@ -7250,7 +7492,7 @@ var KVKK = (function () {
 '<table class="kvkk-tablo"><tr><th>Veri</th><th>Zorunlu mu?</th><th>Neden toplanır?</th></tr>' +
 '<tr><td>Ad ve soyad</td><td>Evet</td><td>Üye kaydı, katılım ve görev listelerinde tanımlama</td></tr>' +
 '<tr><td>E-posta adresi</td><td>Evet</td><td>Hesap oluşturma, giriş ve doğrulama, toplulukla iletişim</td></tr>' +
-'<tr><td>Şifre (şifrelenmiş)</td><td>Evet</td><td>Hesabın güvenliği; Topluluk şifreyi göremez</td></tr>' +
+'<tr><td>Şifre (özetlenerek saklanır)</td><td>Evet</td><td>Hesabın güvenliği; sıfırlanabilir hâlde saklanır, Topluluk şifreyi göremez</td></tr>' +
 '<tr><td>Telefon numarası</td><td>Hayır</td><td>Etkinlik değişikliklerinde hızlı ulaşım (izin verirseniz)</td></tr>' +
 '<tr><td>Öğrenci numarası</td><td>Hayır (isteğe bağlı)</td><td>Yalnızca üyeliğin doğrulanması ve ' +
 'görev listelerinde ayırt etme; doldurmak zorunlu değildir</td></tr>' +
@@ -7273,21 +7515,24 @@ var KVKK = (function () {
 '<table class="kvkk-tablo"><tr><th>Amaç</th><th>Hukuki sebep (KVKK)</th></tr>' +
 '<tr><td>Hesap oluşturma, giriş ve profil yönetimi</td><td>md.5/1-b (sözleşmenin kurulması)</td></tr>' +
 '<tr><td>Topluluk üyeliğinin kurulması ve yönetilmesi, etkinlik katılım ve görev kayıtları</td>' +
-'<td>md.6/1-a (açık rıza) — üyelik verisi özel nitelikli kişisel veridir</td></tr>' +
+'<td>md.6/1-a (açık rıza)</td></tr>' +
 '<tr><td>Etkinlik planı, duyuru ve hatırlatma gönderimi</td><td>md.5/1-b ve md.6/1-a</td></tr>' +
 '<tr><td>Öneri, hata bildirimi ve yorumların değerlendirilmesi</td><td>md.5/2-a (meşru menfaat)</td></tr>' +
 '<tr><td>Hesap güvenliği, kötüye kullanımın engellenmesi, hata ayıklama</td><td>md.5/2-a (meşru menfaat)</td></tr>' +
 '<tr><td>Yasal yükümlülüklerin yerine getirilmesi</td><td>md.5/2-e (kanuni yükümlülük)</td></tr>' +
 '</table>' +
-'<p>Özel nitelikli kişisel veriler (topluluk/dernek üyeliği, sağlık, inanç, siyasi görüş gibi) ' +
-'yalnızca açık rıza veya kanunda sayılan diğer istisnalar kapsamında işlenir. Bu uygulamada ' +
-'üyelik verileri açık rıza ile işlenir; rıza dilediğiniz zaman geri çekilebilir.</p>' +
+'<p>Üyelik kayıtları <b>genel nitelikli</b> kişisel veridir; işleme dayanağı olarak ' +
+'Topluluk tarafından bilinçli biçimde <b>açık rıza (md.6/1-a)</b> seçilmiştir. ' +
+'Özel nitelikli kişisel veriler ise yalnızca sağlık, cinsel hayat, etnik köken, din, ' +
+'mezhep, siyasi görüş, deri rengi ile genetik ve biyometrik verilerdir; bu ' +
+'uygulamada böyle bir veri işlenmemektedir. Verdiğiniz rızayı dilediğiniz zaman geri ' +
+'çekebilirsiniz.</p>' +
 
 '<h3>4. Aktarım</h3>' +
 '<p>Kişisel verileriniz üçüncü kişilere <b>satılmaz, pazarlama amacıyla kullanılmaz</b>.</p>' +
 '<ul>' +
 '  <li><b>Teknik hizmet sağlayıcıları (veri işleyen):</b> ' + KURUM.altyapi + '. ' +
-'  Bu sağlayıcılarla veri işleme sözleşmeleri imzalanmıştır (KVKK md.9/2).</li>' +
+'  Bu sağlayıcılarla veri işleme sözleşmeleri kapsamında hizmet alınmaktadır (KVKK md.9/2).</li>' +
 '  <li><b>Yurt dışı aktarım:</b> Firebase sunucuları Avrupa Birliği (Hollanda), GitHub Pages ' +
 '  sunucuları Amerika Birleşik Devletleri\'nde bulunur. Bu aktarım uygun güvence (standart ' +
 '  sözleşme) kapsamında yapılır ve açık rızanızla desteklenir.</li>' +
@@ -7332,9 +7577,9 @@ var KVKK = (function () {
 'geri çekilir.</p>' +
 
 '<h3>8. Çocukların ve 18 yaş altının durumu</h3>' +
-'<p>Bu uygulamaya <b>18 yaşını doldurmuş</b> kişiler kaydolabilir. Kayıt ekranında yaş beyanı ' +
-'alınır. 18 yaş altındaki kişiler kaydolmamalıdır; kaydolmuşsa velilerinden onay alınana kadar ' +
-'üyelik işlemleri yapılmaz.</p>' +
+'<p>Bu uygulamaya <b>18 yaşını doldurmuş</b> kişiler kaydolabilir. Kayıt sırasında ' +
+'yaş beyanı alınır ve beyan onaylanmadan üyelik oluşturulmaz. 18 yaş altındaki kişiler ' +
+'kaydolamaz.</p>' +
 
 '<p class="kvkk-alt">Aydınlatma Metni sürümü <b>' + SURUM + '</b> · ' + TARIH + ' · ' +
 'Veri sorumlusu: ' + KURUM.ad + '</p>';
@@ -7350,16 +7595,15 @@ var KVKK = (function () {
 '<h3>2. Rıza hangi işlemeler için alınmaktadır?</h3>' +
 '<table class="kvkk-tablo"><tr><th>Konu</th><th>Neden özel rıza gerekir?</th></tr>' +
 '<tr><td>Topluluk üyeliğine ilişkin kayıtlar (üyelik, üye listesi)</td>' +
-'<td>Dernek/vakıf/meslek kuruluşu üyeliği KVKK kapsamında <b>özel nitelikli</b> kişisel veridir ' +
-'(md.6/1-a).</td></tr>' +
+'<td>Genel nitelikli kişisel veridir; üyeliğin kurulabilmesi için açık rıza ' +
+'(md.6/1-a) seçilmiştir.</td></tr>' +
 '<tr><td>Etkinlik katılım kayıtları ve görevlendirmeler</td>' +
-'<td>Üyelikle bağlantılı özel nitelikli kayıt; ayrıca görevlendirme kişinin deneyimini gösterir.</td></tr>' +
+'<td>Genel nitelikli kişisel veridir; üyelikle bağlantılıdır ve açık rıza (md.6/1-a) kapsamında işlenir.</td></tr>' +
 '<tr><td>E-posta ile düzenli bilgilendirme (bülten)</td>' +
 '<td>Doğrudan iletişim amacıyla iletişim bilgilerinin işlenmesi.</td></tr>' +
 '</table>' +
 '<p>Etkinlik sayfalarında yazdığınız yorumlar ve gönderdiğiniz öneriler ise açık rızaya ' +
-'bakılmaksızın <b>meşru menfaat</b> kapsamında değerlendirilir; bu alanlara sağlık, inanç, ' +
-'siyasi görüş gibi özel nitelikli bilgi yazmayınız.</p>' +
+'bakılmaksızın <b>meşru menfaat</b> kapsamında değerlendirilir.</p>' +
 
 '<h3>3. Rıza vermek zorunlu mudur?</h3>' +
 '<p><b>Hayır.</b> Rıza vermek zorunlu değildir ve rıza vermek için bir sebep yoktur. Rıza ' +
@@ -7371,8 +7615,8 @@ var KVKK = (function () {
 '<ul>' +
 '  <li>Rızanız, ilgili metnin sürümü <b>' + SURUM + '</b> ve onay tarihiniz ile birlikte ' +
 '  kaydedilir; üyelik süresince geçerlidir.</li>' +
-'  <li>Metinlerde değişiklik olursa uygulama sizi bilgilendirir ve güncel metni yeniden ' +
-'  onaylamanızı ister.</li>' +
+'  <li>Metinlerde değişiklik olması hâlinde bilgilendirilir ve değişiklikler bölümü ' +
+'  güncellenir; verdiğiniz rıza geçerli olmaya devam eder.</li>' +
 '  <li>Rızanız, verilerinizin işlenmesi için gerekli olmaktan çıktığında veya bu metinlerdeki ' +
 '  amaç kapsamı dışına çıktığında otomatik olarak sona erer.</li>' +
 '</ul>' +
@@ -7408,30 +7652,34 @@ var KVKK = (function () {
 '  uygulamanın çalışmasını engellemez.</li>' +
 '</ul>' +
 
-'<h3>3. Profil gizliliği ve bilgi paylaşımı (senin kontrolünde)</h3>' +
-'<p><b>Profilin görünürlüğünü sen belirlersin.</b> Profil panelindeki ' +
-'<b>Profil Gizliliği</b> ekranından üç kademeden birini seçebilirsin:</p>' +
+'<h3>3. Profil gizliliği ve bilgi paylaşımı</h3>' +
+'<p><b>Profilinizin görünürlüğünü siz belirlersiniz.</b> Profil panelindeki ' +
+'<b>Profil Gizliliği</b> ekranından üç kademeden birini seçebilirsiniz:</p>' +
 '<ul>' +
-'  <li><b>Herkese açık:</b> Profilin, siteye giriş yapmadan giren herkes tarafından ' +
-'  görülebilir.</li>' +
-'  <li><b>Tüm üyeler:</b> Profilin yalnızca giriş yapmış üyelere görünür ' +
-'  <b>(varsayılan seçenek)</b>.</li>' +
-'  <li><b>Sadece ben:</b> Profilin yalnızca sana görünür; başka kimse erişemez.</li>' +
+'  <li><b>Herkese açık:</b> Profiliniz, uygulamaya giriş yapmadan giren herkes ' +
+'  tarafından görülebilir.</li>' +
+'  <li><b>Tüm üyeler:</b> Profiliniz yalnızca giriş yapmış üyelere görünür ' +
+'  <b>(varsayılan seçenek).</b></li>' +
+'  <li><b>Sadece ben:</b> Profiliniz yalnızca size görünür; başka hiç kimse ' +
+'  erişemez.</li>' +
 '</ul>' +
-'<p>Ayrıca <b>bilgi bazında</b> hangi verilerini paylaşacağını da sen seçersin: ' +
-'öğrenci numarası, bölüm, üniversiteye giriş yılı, e-posta adresi, telefon, ' +
-'istatistikler, katıldığın ve görev aldığın etkinlikler. ' +
-'<b>Varsayılan olarak öğrenci numarası, bölüm, giriş yılı, istatistik ve etkinlik ' +
-'bilgileri üyelere açık; e-posta ve telefon yalnızca sana açıktır.</b></p>' +
-'<p>Bir üyenin profilini açtığında, o üye hangi bilgileri gizli tutmuşsa yalnızca ' +
-'"gizli tutuluyor" ibaresi görünür; içeriği gösterilmez.</p>' +
-'<p><b>Yönetici erişimi:</b> Kulüp yönetimi (VERBİS üyelik kaydı, etkinlik ' +
-'planlaması, görevlendirme ve katılım kaydı amacıyla) üye profillerinin tamamına ' +
-'erişebilir ve gerekli güncellemeleri yapabilir. Bu erişim KVKK aydınlatma ' +
-'metninde bildirilmiştir; itiraz için başvuru formunu kullanabilirsin.</p>' +
-'<p>Profil gizliliği tercihini istediğin an değiştirebilir veya profili tamamen ' +
-'gizleyebilirsin. <b>Bu ayar geri alınsa bile</b> daha önce paylaşılmış bilgiler ' +
-'silinmez; ancak artık kimse göremez.</p>' +
+'<p>Ayrıca <b>bilgi bazında</b> hangi bilgilerinizi paylaşacağınızı da siz ' +
+'belirlersiniz: öğrenci numarası, bölüm, üniversiteye giriş yılı, e-posta adresi, ' +
+'telefon, istatistikler, katıldığınız ve görev aldığınız etkinlikler. ' +
+'<b>Varsayılan olarak öğrenci numarası, bölüm, giriş yılı ile istatistik ve ' +
+'etkinlik bilgileri üyelere açıktır; e-posta adresi ve telefon numarası ise ' +
+'yalnızca size açıktır.</b></p>' +
+'<p>Bir üyenin profilini açtığınızda, o üye hangi bilgileri gizli tutmuşsa yalnızca ' +
+'"gizli tutuluyor" ibaresi görünür; bilginin içeriği gösterilmez.</p>' +
+'<p><b>Yönetici erişimi:</b> Kulüp yönetimi; üyelik kaydı, etkinlik planlaması, ' +
+'görevlendirme ve katılım kaydı amaçlarıyla üye profillerinin tamamına erişebilir ' +
+'ve gerekli güncellemeleri yapabilir. Bu erişim işbu Aydınlatma Metni\'nde ' +
+'bildirilmiştir. Bu erişime itiraz etmek veya erişimin kısıtlanmasını istemek ' +
+'istediğinizde <b>Başvuru Formu</b> bölümünü kullanabilirsiniz.</p>' +
+'<p>Profil gizliliği tercihinizi istediğiniz zaman değiştirebilir veya profilinizi ' +
+'tamamen gizleyebilirsiniz. <b>Tercihinizi geri çekmeniz hâlinde</b> daha önce ' +
+'paylaşılmış bilgiler geri alınmaz ve silinmez; ancak artık hiç kimse tarafından ' +
+'görüntülenemez.</p>' +
 
 '<h3>4. Kamera izni</h3>' +
 '<p>Kamera yalnızca etkinlik sayfasındaki <b>QR Kodu Okut</b> işlemi için istenir. Görüntü ' +
@@ -7572,9 +7820,26 @@ var KVKK = (function () {
       return (d && d.surum) ? d : null;
     } catch (e) { return null; }
   }
+  /* Onay BİR KEZ verilir: metin sürümü değişse bile yeniden sorulmaz
+     (üye isteği: onay yalnızca ilk giriş/kayıtta). */
   function onayliMi() {
     var d = rizaOku();
-    return !!(d && d.surum === SURUM && d.riza === true && d.aydinlatma === true && d.yetisk === true);
+    return !!(d && d.riza === true && d.aydinlatma === true && d.yetisk === true);
+  }
+  /* Sunucudan gelen kaydı yerele geri yazar (önbellek silinse de
+     üye bir daha sorulmaz). */
+  function rizaGeriYaz(veri) {
+    if (!veri || !veri.surum) return false;
+    if (veri.riza !== true || veri.aydinlatma !== true || veri.yetisk !== true) return false;
+    try {
+      localStorage.setItem(LS, JSON.stringify({
+        surum: veri.surum, tarih: veri.tarih || new Date().toISOString(),
+        yetisk: true, aydinlatma: true, riza: true,
+        bulten: veri.bulten === true, kanal: veri.kanal || 'web'
+      }));
+    } catch (e) { return false; }
+    try { localStorage.setItem(BILDIRILDI, '1'); } catch (e) {}
+    return true;
   }
   function rizaVer(veri) {
     var d = {
@@ -7632,7 +7897,7 @@ var KVKK = (function () {
     return okunanSayisi() + ' / ' + METIN.length + ' belge okundu';
   }
   /* 4.1 metin listesi (⋮ menüsünden ve giriş ekranından açılır) */
-  function listeEkrani(geriFn) {
+  function listeEkrani(geriFn, rizaFn) {
     var m = q('#modal');
     if (!m) return;
     m.className = 'modal genis';
@@ -7660,27 +7925,32 @@ var KVKK = (function () {
         '</div>' +
       '</div>' +
       '<div class="kvkk-belge-alt">Metinler herkese açıktır; hesap açmadan da okunabilir.</div>' +
-      (geriFn ? '<div class="acts"><button type="button" data-m="geri">← Onaya dön</button></div>' : '');
+      (rizaFn
+        ? '<div class="acts"><button type="button" data-m="riza">← Onaya dön</button></div>'
+        : (geriFn ? '<div class="acts"><button type="button" data-m="geri">← Onaya dön</button></div>' : ''));
 
     m.innerHTML = html;
     m.onclick = function (ev) {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-m]') : null;
       if (!b) return;
       var id = b.getAttribute('data-m');
+      if (id === 'riza' && rizaFn) { rizaFn(); return; }
       if (id === 'geri') { geriFn(); return; }
-      belgeEkrani(id, function () { listeEkrani(geriFn); });
+      belgeEkrani(id, function () { listeEkrani(geriFn, rizaFn); }, rizaFn);
     };
     var bd = q('#backdrop');
     if (bd) bd.classList.add('open');
   }
 
   /* 4.2 tek belge (okunabilir uzun metin) */
-  function belgeEkrani(id, geriFn) {
+  /* rizaFn: metin onay akışından açıldıysa, metin ekranında doğrudan
+   "← Onaya dön" düğmesi görünür (kullanıcı metne girip mahvolmadan döner). */
+function belgeEkrani(id, geriFn, rizaFn) {
     var m = q('#modal');
     if (!m) return;
     var t = null, i;
     for (i = 0; i < METIN.length; i++) if (METIN[i].id === id) { t = METIN[i]; break; }
-    if (!t) { listeEkrani(geriFn); return; }
+    if (!t) { listeEkrani(geriFn, rizaFn); return; }
     m.className = 'modal genis';
     m.innerHTML =
       '<h2>' + t.ad + '</h2>' +
@@ -7692,6 +7962,7 @@ var KVKK = (function () {
       '</div>' +
       '<div class="kvkk-belge" id="kvkkBelge">' + t.govde + '</div>' +
       '<div class="acts">' +
+        (rizaFn ? '<button type="button" data-m="riza">← Onaya dön</button>' : '') +
         '<button type="button" data-m="liste">← Tüm metinler</button>' +
         '<button type="button" data-m="yaz">Yazdır / PDF al</button>' +
       '</div>';
@@ -7699,7 +7970,8 @@ var KVKK = (function () {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-m]') : null;
       if (!b) return;
       var a = b.getAttribute('data-m');
-      if (a === 'liste') { listeEkrani(geriFn); return; }
+      if (a === 'riza' && rizaFn) { rizaFn(); return; }
+      if (a === 'liste') { listeEkrani(geriFn, rizaFn); return; }
       if (a === 'yaz') { yazdir(t); return; }
     };
     var bd = q('#backdrop');
@@ -7755,43 +8027,31 @@ var KVKK = (function () {
     var m = q('#modal');
     if (!m) return;
     m.className = 'modal genis';
+    /* SADE ve RESMÎ: önce ne yapılacağı söylenir, sonra tek tek onay istenir.
+       Ayrıntılı metinler bağlantılardan ve Profil → KVKK bölümünden okunur. */
     m.innerHTML =
-      '<h2>Kişisel verilerin korunması (KVKK)</h2>' +
-      '<div class="sub">Üye olabilmen için aşağıdaki bilgilendirmeyi okuduğunu ve üyeliğe ilişkin ' +
-      'açık rızanı beyan etmen gerekiyor.</div>' +
-      '<div class="kvkk-ozet">' +
-        '<div class="kvkk-ozet-bas"><b>Kısaca</b></div>' +
-        '<p><b>Topluluk:</b> ' + KURUM.ad + '<br>' +
-        '<b>Ne toplanır:</b> ad soyad, e-posta, telefon (isteğe bağlı), öğrenci no (isteğe bağlı), ' +
-        'bölüm, giriş yılı, üyelik, etkinlik katılımı ve görev kayıtları.<br>' +
-        '<b>Ne için:</b> üyeliğin yönetimi, etkinlik planı, katılım ve görevlendirme.<br>' +
-        '<b>Kimde saklanır:</b> ' + KURUM.altyapi + '<br>' +
-        '<b>Süre:</b> üyelik süresince + kanuni saklama süreleri.<br>' +
-        '<b>Talep:</b> ' + KURUM.eposta + '</p>' +
-        '<div class="kvkk-metinler">' +
-          METIN.map(function (t) {
-            return '<button type="button" class="kvkk-etiket" data-m="' + t.id + '">' + t.ad + '</button>';
-          }).join('') +
-        '</div>' +
-        '<button type="button" class="kvkk-hepsi" data-m="hepsi">Tüm metinleri okumak için ayrı ekranı aç</button>' +
-      '</div>' +
-      '<div class="kvkk-adim-oku">' +
-        '<span class="kvkk-ilerleme" id="kvkkIlerlemeAdim">' + ilerlemeMetni() + '</span>' +
-        '<span class="kvkk-adim-ipucu" id="kvkkIlerlemeIpucu"></span>' +
+      '<h2>Kişisel verilerin korunması</h2>' +
+      '<div class="kvkk-yonlendir">' +
+        '<b>Yapmanız gereken</b>' +
+        '<p>Topluluğa üye olabilmek için aşağıdaki üç hususu onaylamanız gerekmektedir. ' +
+        'Onayladığınızda açık rızanız kayıt altına alınır ve üyelik işleminiz tamamlanır.</p>' +
       '</div>' +
       '<label class="kvkk-kutu"><input type="checkbox" data-r="yetisk">' +
         '<span>18 yaşını doldurmuş olduğumu beyan ederim.</span></label>' +
       '<label class="kvkk-kutu"><input type="checkbox" data-r="aydinlatma">' +
-        '<span>KVKK Aydınlatma Metni\'ni ve Açık Rıza Metni\'ni okudum, anladım.</span></label>' +
+        '<span>Aydınlatma Metni ile Açık Rıza Metni\'ni okudum ve anladım.</span></label>' +
       '<label class="kvkk-kutu"><input type="checkbox" data-r="riza">' +
-        '<span>Topluluk üyeliğimin ve buna bağlı olarak tutulan etkinlik katılımı ve görev ' +
-        'kayıtlarımın işlenmesine <b>açık rıza</b> veriyorum.</span></label>' +
+        '<span>Üyeliğimin; etkinlik katılımı ve görev kayıtlarımın işlenmesine ' +
+        '<b>açık rıza</b> veriyorum.</span></label>' +
+      '<div class="kvkk-ayrac"><i>İsteğe bağlı</i></div>' +
       '<label class="kvkk-kutu"><input type="checkbox" data-r="bulten">' +
-        '<span><i>(isteğe bağlı)</i> Topluluk etkinliklerini e-posta ile düzenli olarak ' +
-        'duyurmak istiyorum.</span></label>' +
-      '<div class="kvkk-uyari">Rıza vermek zorunlu değildir. Rıza vermezsen yalnızca takvimi ' +
-      'görüntüleyebilir, hesap oluşturamazsın. Verdiğin rızayı Profil → KVKK ve Gizlilik bölümünden ' +
-      'tek adımda geri çekebilirsin.</div>' +
+        '<span>Topluluk etkinliklerinin e-posta ile düzenli olarak ' +
+        '<b>duyurulmasını</b> istiyorum.</span></label>' +
+      '<div class="kvkk-uyari">Rıza vermek zorunlu değildir. Rıza vermezseniz hesap oluşturamazsınız. ' +
+      'Verdiğiniz rızayı <b>Profil → KVKK ve Gizlilik</b> bölümünden geri çekebilirsiniz. ' +
+      'Metinlerin tamamı, başvuru formu ve ayrıntılı bilgilendirme de aynı bölümde yer alır.</div>' +
+      '<div class="kvkk-satir-alt" data-m="hepsi">Metinleri okumak isterseniz ' +
+        'Aydınlatma · Açık Rıza · Gizlilik · Kullanım Koşulları · Başvuru</div>' +
       '<div class="acts">' +
         '<button type="button" data-r="vaz">Vazgeç</button>' +
         '<button type="button" class="pri" data-r="devam" disabled>Onayla ve devam et</button>' +
@@ -7802,19 +8062,8 @@ var KVKK = (function () {
       var b = dugum('devam');
       if (!b) return;
       var y = dugum('yetisk'), a2 = dugum('aydinlatma'), r = dugum('riza');
-      var kutular = !!(y && y.checked && a2 && a2.checked && r && r.checked);
-      var oku = hepsiOkundu();
-      var il = q('#kvkkIlerlemeAdim');
-      if (il) {
-        il.textContent = ilerlemeMetni() + (oku ? ' ✓' : '');
-        il.className = 'kvkk-ilerleme' + (oku ? ' tamam' : '');
-      }
-      var ip = q('#kvkkIlerlemeIpucu');
-      if (ip) ip.textContent = oku
-        ? 'Tüm metinleri okudun. Şimdi onay kutusuna geçebilirsin.'
-        : 'Onay düğmesi için beş metnin de sonuna kadar okunması gerekir (' +
-            okunanSayisi() + ' / ' + METIN.length + ').';
-      b.disabled = !(kutular && oku);
+      /* Üç beyan yeterlidir; ayrıntılı metinler isteğe bağlıdır. */
+      b.disabled = !(y && y.checked && a2 && a2.checked && r && r.checked);
     }
     m.oninput = guncelle;
     m.onchange = guncelle;
@@ -7823,7 +8072,12 @@ var KVKK = (function () {
       if (!b) return;
       if (b.getAttribute('data-m')) {
         var id = b.getAttribute('data-m');
-        if (id === 'hepsi') { listeEkrani(function () { rizaAdimi(gecis, vazgecFn); }); return; }
+        if (id === 'hepsi') {
+          var geri = function () { rizaAdimi(gecis, vazgecFn); };
+          listeEkrani(function () { rizaAdimi(gecis, vazgecFn); }, geri);
+          return;
+        }
+        /* tek metin: doğrudan o metni aç */
         belgeEkrani(id, function () { rizaAdimi(gecis, vazgecFn); });
         return;
       }
@@ -7876,6 +8130,7 @@ var KVKK = (function () {
     belgeEkrani: belgeEkrani,
     rizaAdimi: rizaAdimi,
     onayliMi: onayliMi,
+    rizaGeriYaz: rizaGeriYaz,
     rizaOku: rizaOku,
     rizaVer: rizaVer,
     rizaGeriAl: rizaGeriAl,
@@ -9497,16 +9752,20 @@ var ETK = (function () {
     if (!ev) { toast('Etkinlik bulunamadı.', 4000); return; }
 
     var hafta = new Date(ev.date + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'long' });
+    /* Başlık kartı: içerik + sağda "Katılacağım" düğmesi (dikey ortalanmış) */
     m.innerHTML =
       '<div class="etp-kapak">' +
-        '<span class="etp-donem">' + esc(SEM_ROZET[ev.sem] || 'ETKİNLİK') + '</span>' +
-        '<h3>' + esc(ev.title) + '</h3>' +
-        '<div class="etp-tarih">' +
-          '<span><b>' + esc(fmt(ev.date)) + '</b> · ' + esc(hafta) + '</span>' +
-          (ev.weekLabel ? '<span>' + esc(ev.weekLabel) + '</span>' : '') +
-          (ev.exact ? '<span>📌 kesin tarih</span>' : '') +
-          (ev.tag && ev.tag.lbl ? '<span>' + esc(ev.tag.lbl) + '</span>' : '') +
+        '<div class="etp-kapak-ana">' +
+          '<span class="etp-donem">' + esc(SEM_ROZET[ev.sem] || 'ETKİNLİK') + '</span>' +
+          '<h3>' + esc(ev.title) + '</h3>' +
+          '<div class="etp-tarih">' +
+            '<span><b>' + esc(fmt(ev.date)) + '</b> · ' + esc(hafta) + '</span>' +
+            (ev.weekLabel ? '<span>' + esc(ev.weekLabel) + '</span>' : '') +
+            (ev.exact ? '<span>📌 kesin tarih</span>' : '') +
+            (ev.tag && ev.tag.lbl ? '<span>' + esc(ev.tag.lbl) + '</span>' : '') +
+          '</div>' +
         '</div>' +
+        '<div class="etp-kapak-sag" id="etpGidecekYer"></div>' +
         '<div class="etp-durum" id="etpDurum"></div>' +
       '</div>' +
       '<div id="etSayfa"><div class="pf-bos">Sayfa yükleniyor…</div></div>';
@@ -9536,24 +9795,21 @@ var ETK = (function () {
         });
         return;
       }
-      if (b && b.getAttribute('data-et') === 'gidecek') {
-        var u = MBGFB.user();
-        if (!u) {
+      /* DİKKAT: 'data-et' düğmeleri 'ob' değişkeninde aranır.
+         (Eski kodda 'b' — yani [data-x] — kullanılıyordu; düğmeye hiç basılamıyordu.) */
+      if (ob && ob.getAttribute('data-et') === 'gidecek') {
+        if (!MBGFB.user()) {
           toast('Katılacağını belirtmek için giriş yap.', 4200);
           MBGM.authModal('giris');
           return;
         }
-        b.disabled = true;
-        var yeniDurum = !gidecek.benim;
-        MBGFB.katilacakYaz(evId, yeniDurum).then(function () {
-          gidecek.benim = yeniDurum;
-          gidecek.adet = Math.max(0, gidecek.adet + (yeniDurum ? 1 : -1));
-          ciz();
-          toast(yeniDurum ? '✓ Katılacağını belirttin.' : 'Katılacak kaydın kaldırıldı.', 3200);
-        }).catch(function (x) {
-          b.disabled = false;
-          toast('Kaydedilemedi: ' + MBGM.err(x), 6000);
-        });
+        if (!MBGFB.verified()) {
+          toast('E-posta adresini doğrulamadan bu bildirimi yapamazsın.', 5200);
+          MBGM.dogrulamaPaneli();
+          return;
+        }
+        /* doğrudan kaydetme yok: önce onay kutusu açılır */
+        gidecekOnayAc(evId, evBul(evId), gidecek.benim);
         return;
       }
       if (b && b.getAttribute('data-x') === 'qr') {
@@ -9573,14 +9829,17 @@ var ETK = (function () {
     }
 
     var katilacakOku = function (id) { return MBGFB.katilacakOku(id); };
+    var katilacakL = [];          /* yönetici için: katılacağını belirtenler */
     var katilanlar = [], gorevler = [], sayfaIceri = {};
     var gidecek = { adet: 0, benim: false };
-    Promise.all([sayfaOku(evId), katilanOku(evId), gorevliOku(evId), katilacakOku(evId)])
+    Promise.all([sayfaOku(evId), katilanOku(evId), gorevliOku(evId), katilacakOku(evId),
+      MBGFB.katilacakListe ? MBGFB.katilacakListe(evId) : []])
       .then(function (r) {
         sayfaIceri = r[0] || {};
         katilanlar = r[1] || [];
         gorevler = r[2] || {};
         gidecek = r[3] || { adet: 0, benim: false };
+        katilacakL = r[4] || [];
         ciz();
       })
       .catch(function (x) {
@@ -9608,6 +9867,25 @@ var ETK = (function () {
             ? '<span class="etp-pill gidecek-pill">' + gidecek.adet + ' kişi katılacak</span>'
             : '') +
           '<span class="etp-pill">' + gorevler.length + ' görevli</span>';
+      }
+
+      /* ---- Katılacağım düğmesi -------------------------------------
+         YALNIZCA gelecek etkinliklerde (bugün ve sonrası) ve yalnızca
+         giriş yapmış kullanıcıya. Geçmiş etkinlikte hiç gösterilmez,
+         üzerinde açıklama yazısı yoktur. */
+      var bugun = (A && A.today) ? A.today() : '';
+      var gelecekMi = !bugun || String(ev.date) >= String(bugun);
+      var gYer = q('#etpGidecekYer');
+      if (gYer) {
+        if (!gelecekMi || !MBGFB.user()) {
+          gYer.innerHTML = '';
+        } else {
+          gYer.innerHTML =
+            '<button type="button" class="etp-gidecek' + (gidecek.benim ? ' on' : '') +
+            '" data-et="gidecek">' +
+            (gidecek.benim ? '✓ Katılacağım' : 'Katılacağım') +
+            '</button>';
+        }
       }
 
       var kart = function (ikon, baslik, deger, ekstra) {
@@ -9650,18 +9928,16 @@ var ETK = (function () {
           (kattim ? '✓ Katılım Başarılı' : '📷 QR Kodu Okut') + '</button>' +
         '</div>' +
 
-        '<div class="etp-not etp-not-gidecek">' +
-          '<i>' + (gidecek.benim ? '✅' : '📌') + '</i>' +
-          '<span>' + (gidecek.benim
-            ? '<b>Katılacağını belirttin.</b> Etkinlik günü QR kodu okutarak katılımını ' +
-              'kesinleştir. İstersen aşağıdaki düğmeyle geri alabilirsin.'
-            : 'Gideceksen belirt: yönetici kaç kişinin geleceğini görsün. ' +
-              'Bu bir <b>niyet bildirimi</b>dir; katılımın QR ile kaydedilir.') +
-          '</span>' +
-          '<button type="button" class="etp-gidecek' + (gidecek.benim ? ' on' : '') +
-            '" data-et="gidecek">' + (gidecek.benim ? '✓ Katılacağım (kaldır)' : '✅ Katılacağım') +
-          '</button>' +
-        '</div>' +
+        (adminMi2 && katilacakL.length
+          ? '<div class="etp-baslik">Katılacağını belirten üyeler (' + katilacakL.length + ')</div>' +
+            '<div class="etp-katilacak-liste">' +
+              katilacakL.map(function (u) {
+                return '<div class="etp-kuluper"><b>' + esc(u.ad) + '</b>' +
+                  (u.no ? '<span>Öğrenci No: ' + esc(u.no) + '</span>' : '') +
+                  '</div>';
+              }).join('') +
+            '</div>'
+          : '') +
 
         yorumPaneli(evId, kattim);
 
@@ -9671,6 +9947,69 @@ var ETK = (function () {
         yorumKutusu(evId, hak || adminMi2 || kattim, uid2, adminMi2);
       });
     }
+  }
+
+  /* =====================================================================
+     KATILACAK ONAY KUTUSU
+     ---------------------------------------------------------------------
+     Düğmeye basınca açılır; "Onaylıyorum" diyenler katılacak listesine
+     eklenir. Metinler TDK kurallarına göre yazılmıştır.
+     ===================================================================== */
+  var KATILACAK_MADDE = [
+    'Bu etkinliğe zamanında katılım sağlayabileceğinizi düşünüyorsanız işaretleyiniz.',
+    'İşaretlediğinizde etkinlik listesine otomatik olarak ekleneceksiniz.',
+    'Kontenjanı sınırlı olan etkinlikler için erken davranmanızı öneririz.',
+    'Etkinlik listesinde olup da etkinliğe katılmayan arkadaşlar, bir sonraki ' +
+      'etkinlikte düşük öncelikli olacaktır.',
+    'Etkinlik listesinde olup da etkinliğe katılan arkadaşlar, bir sonraki ' +
+      'etkinlikte yüksek öncelikli olacaktır.'
+  ];
+
+  function gidecekOnayAc(evId, ev, suanVarMi) {
+    var m = q('#modal');
+    if (!m) return;
+    m.className = 'modal';
+    var baslik = ev ? esc(ev.title) : '';
+    m.innerHTML =
+      '<h2 class="onay-baslik">Etkinliğe Katılacağımı;</h2>' +
+      (baslik ? '<div class="onay-etkinlik">' + baslik + '</div>' : '') +
+      '<ul class="onay-madde">' +
+        KATILACAK_MADDE.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') +
+      '</ul>' +
+      '<div class="acts onay-acts">' +
+        '<button type="button" data-k="hayir">Onaylamıyorum</button>' +
+        '<button type="button" class="pri" data-k="evet">Onaylıyorum</button>' +
+      '</div>';
+    m.oninput = null;
+    q('#backdrop').classList.add('open');
+
+    m.onclick = function (e2) {
+      var b2 = e2.target && e2.target.closest ? e2.target.closest('[data-k]') : null;
+      if (!b2) return;
+      var t = b2.getAttribute('data-k');
+      if (t === 'hayir') {
+        if (!suanVarMi) { etkinlikGoruntule(evId); return; }
+        b2.disabled = true;
+        MBGFB.katilacakYaz(evId, false).then(function () {
+          toast('Listeye eklemediniz.', 3200);
+          etkinlikGoruntule(evId);
+        }).catch(function (x) {
+          b2.disabled = false;
+          toast('Kaydedilemedi: ' + MBGM.err(x), 6000);
+        });
+        return;
+      }
+      if (t !== 'evet') return;
+      if (suanVarMi) { etkinlikGoruntule(evId); return; }
+      b2.disabled = true;
+      MBGFB.katilacakYaz(evId, true).then(function () {
+        toast('✓ Listeye eklendiniz.', 3600);
+        etkinlikGoruntule(evId);
+      }).catch(function (x) {
+        b2.disabled = false;
+        toast('Kaydedilemedi: ' + MBGM.err(x), 6000);
+      });
+    };
   }
 
   /* =====================================================================
@@ -10357,7 +10696,24 @@ var MBGO = (function () {
   var istAc = false;          /* telefonda istatistiklerin tamamı açık mı */
   var DOW = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
   function todayISO() { var n = new Date(); return iso(n.getFullYear(), n.getMonth() + 1, n.getDate()); }
+  /* Ders programı ekranı da aynı kurala tabidir (menüye atlama). */
+  /* erişim değişimini dinleyenler (Ders menüsü vb.) */
+  var erisimDinleyiciler = [];
+  function erisimBildir() {
+    erisimDinleyiciler.forEach(function (f) { try { f(); } catch (e) {} });
+  }
+  function erisimDegiste(f) { if (typeof f === 'function') erisimDinleyiciler.push(f); }
+  window.MBGM_ERISIM = { degisti: erisimBildir, ekle: erisimDegiste };
+
+  function dersGorunumuneIzinVarMi() {
+    if (typeof window.MBG_DERS_ERISIM === 'function') return window.MBG_DERS_ERISIM();
+    return false;
+  }
   function setView(v) {
+    if (v === 'ders' && !dersGorunumuneIzinVarMi()) {
+      toast('Ders programı yalnızca kulübe kayıtlı ve onaylanmış üyeler içindir.', 5000);
+      return;
+    }
     view = (v === 'cal') ? 'cal'
       : (v === 'sayfa' ? 'sayfa' : (v === 'ders' ? 'ders' : 'dna'));
     document.body.classList.toggle('cal', view === 'cal');
@@ -11556,8 +11912,36 @@ var MBGO = (function () {
       else clearPersonal();
     };
     $('#mBug').onclick = function () { sheetOpen(false); openBugReport(); };
+    /* DERS PROGRAMI yalnızca KAYITLI ve ONAYLANMIŞ üyeye açıktır.
+       Amaç: misafirlerin veri tabanına kayıt yazmasını engellemek. */
+    function dersErisimVarMi() {
+      if (!window.MBGFB || !MBGFB.user || !MBGFB.user()) return false;
+      if (!MBGFB.verified || !MBGFB.verified()) return false;
+      return !!(MBGFB.state && MBGFB.state.profile);   /* members kaydı */
+    }
+    window.MBG_DERS_ERISIM = dersErisimVarMi;
+    function dersMenusuTazele() {
+      var md = $('#mDers');
+      if (!md) return;
+      var v = dersErisimVarMi();
+      md.hidden = !v;
+      if (v) md.removeAttribute('aria-hidden');
+      else md.setAttribute('aria-hidden', 'true');
+    }
+    window.MBG_DERS_MENU = dersMenusuTazele;
+    if (window.MBGM_ERISIM) { try { MBGM_ERISIM.ekle(function () { dersMenusuTazele(); }); } catch (e) {} }
+    dersMenusuTazele();
+    /* giriş/çıkış ve profil yüklendikçe menüyü tazele */
+    /* giriş/çıkış sonrası menü tazelenir (aşağıdaki genel bildirim) */
     var mDers = $('#mDers');
-    if (mDers) mDers.onclick = function () { sheetOpen(false); setView('ders'); };
+    if (mDers) mDers.onclick = function () {
+      if (!dersErisimVarMi()) {
+        toast('Ders programı yalnızca kulübe kayıtlı ve onaylanmış üyeler içindir.', 5000);
+        return;
+      }
+      sheetOpen(false);
+      setView('ders');
+    };
     $('#fileInput').onchange = function () {
       if (this.files && this.files[0]) readFile(this.files[0]);
       this.value = '';

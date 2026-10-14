@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.50.0)
+   Firestore güvenlik kuralları  (v3.50.1)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -312,12 +312,16 @@ service cloud.firestore {
       /* Anahtar (qr) belge içinde bir süre kaldığı için okuma girişe ve
          e-posta doğrulamasına bağlandı: kimse canlı anahtarı toplayamaz. */
       allow read: if girisYapildi() && dogrulandiMi();
-      allow create: if girisYapildi()
-        && request.auth.uid == uid
-        && dogrulandiMi()
-        && request.resource.data.uid == uid
-        && request.resource.data.anahtar ==
-             get(/databases/$(database)/documents/events/$(eventId)/qr/anahtar).data.anahtar;
+      /* Üye kendi kaydını QR koduyla yazar; YÖNETİCİ (kulüp adına
+         düzeltme) doğrudan yazabilir — QR gerekmez. Böylece istatistik,
+         profil ve yönetici paneli AYNI kayıtları görür. */
+      allow create: if adminMi()
+        || (girisYapildi()
+            && dogrulandiMi()
+            && request.auth.uid == uid
+            && request.resource.data.uid == uid
+            && request.resource.data.anahtar ==
+                 get(/databases/$(database)/documents/events/$(eventId)/qr/anahtar).data.anahtar);
       /* Üye kendi kaydından anahtarı SİLEBİLİR (sunucu doğrulaması
          tamamlandıktan sonra temizlik) — başka alana dokunamaz. */
       allow update: if girisYapildi()
@@ -354,6 +358,20 @@ service cloud.firestore {
         && resource.data.uid == request.auth.uid);
     }
 
+    /* --- ESKİ ŞEMA (v2) KALINTILARI ---------------------------------
+       Kökte "katilan" ve "gorevli" koleksiyonları kalmıştı; hiçbir kural
+       onları açmadığı için collectionGroup sorguları TÜMÜYLE reddediliyor,
+       üye istatistikleri sessizce 0 yazılıyordu.
+       Artık hiçbir kod collectionGroup kullanmıyor (etkinlik etkinlik
+       okunuyor); bu iki blok yalnızca YÖNETİCİNIN tek seferlik temizliği
+       içindir. Kullanıcıların erişimi yoktur. */
+    match /katilan/{doc} {
+      allow read, write: if adminMi();
+    }
+    match /gorevli/{doc} {
+      allow read, write: if adminMi();
+    }
+
     /* --- KİŞİSEL VERİLER: yalnızca sahibi --- */
     /* Notlar, yapılacaklar: yalnızca sahibi */
     match /ud/{uid}/notes/{doc} {
@@ -380,19 +398,28 @@ service cloud.firestore {
        Etkinlik sayfasındaki "Katılacağım" düğmesi buraya yazar.
        Herkes kaç kişinin katılacağını görebilir (sayı göstergesi için),
        ama yalnızca KENDİ kaydını yazabilir/silebilir. */
-    /* Belge kimliği: katilacak/{evId}/{uid}  (3. seviye = sayaç için
-       collectionGroup ile okunabilir; 4. seviyede sayaç MÜMKÜN DEĞİLdi). */
-    match /katilacak/{evId}/{uid} {
-      /* yalnızca adı geçen üye; "kaç kişi katılacak" sayacı için üyeler
-         okur (kimlerin katıldığı değil, SAYI görünür) */
+    /* --- KATILACAK BELGE MODELİ ---
+       Belge kimliği: katilacak/{etkinlikKimligi}_{uyeKimligi}
+       (Firestore belge yolu ÇİFT segmentli olmak zorundadır; üç segmentli
+        yol bir KOLLEKSİYON'dur, belge olamaz.)
+       Sayaç: db.collection('katilacak').get() + "ev" alanı filtresi
+       (collectionGroup'a gerek yok → eski kalıntı koleksiyonları sorun çıkarmaz).
+       İçerik: yalnızca zaman damgası ve kimlik alanları; İSİM YAZILMAZ. */
+    match /katilacak/{docId} {
+      /* "kaç kişi katılacak" sayacı için giriş yapmış üyeler okur */
       allow read: if girisYapildi();
-      /* isim (ad) YAZILMAZ → belge yalnızca zaman damgası taşır */
-      allow create: if girisYapildi()
-        && dogrulandiMi()
-        && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['at'])
-        && request.resource.data.at == request.time;
-      allow delete: if girisYapildi() && request.auth.uid == uid;
+      allow create: if (girisYapildi()
+            && dogrulandiMi()
+            && request.resource.data.keys().hasOnly(['at', 'ev', 'uid'])
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.ev is string
+            && request.resource.data.at == request.time
+            /* belge kimliği kendi üye kimliğini içermeli → başkasının
+               yerine kayıt açılamaz */
+            && docId == request.resource.data.ev + '_' + request.auth.uid)
+        || adminMi();
+      allow delete: if (girisYapildi() && resource.data.uid == request.auth.uid)
+        || adminMi();
       allow update: if false;
     }
     match /ud/{uid}/{document=**} {
