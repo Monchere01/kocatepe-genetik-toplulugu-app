@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.36.0)
+   Firestore güvenlik kuralları  (v3.50.0)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -51,7 +51,7 @@ service cloud.firestore {
     function adminMi() {
       return girisYapildi()
         && request.auth.token.email != null
-        && request.auth.token.email == adminMail();
+        && request.auth.token.email.lower() == adminMail().lower();
     }
 
     /* E-postası doğrulanmış kullanıcı */
@@ -62,19 +62,36 @@ service cloud.firestore {
 
     /* Profil güncelleme aralığı: 30 gün */
     function profilSikiliMi() {
-      return resource.data.profilGuncelAt != null
+      /* DİKKAT: eksik alana doğrudan erişmek kuralı HATA ile düşürür
+         ("field doesn't exist → error → deny"). Bu yüzden önce varlık
+         yoklanır; aksi hâlde profilini hiç güncellememiş üye kendi
+         profilini de güncelleyemezdi. */
+      return 'profilGuncelAt' in resource.data
         && request.time - resource.data.profilGuncelAt < duration.value(30, 'd');
     }
 
     /* --- ÜYE PROFİLLERİ --- */
     match /members/{uid} {
-      /* üyeler listeyi görür (iletişim / dernek işleri için) */
-      allow read: if girisYapildi();
+      /* KRİTİK (KVKK + sızıntı): bu belge e-posta, öğrenci no ve telefonu
+         İÇERİR. "Herkese açık" gizlilik ayarı BUNU açmaz — aksi hâlde
+         e-posta gizlemeyi seçen üyenin adresi ham dokümanla sızar.
+         Bu yüzden members/{uid} YALNIZCA sahibine ve yöneticiye açıktır.
+         Başkalarının profili aşağıdaki paylasim/{uid} belgesinden,
+         kullanıcının izin verdiği alanlarla okunur. */
+      allow read: if adminMi() || (girisYapildi() && request.auth.uid == uid);
 
       /* YALNIZCA doğrulanmış e-posta üye olabilir */
       allow create: if girisYapildi()
         && request.auth.uid == uid
-        && dogrulandiMi();
+        && dogrulandiMi()
+        && request.resource.data.keys().hasOnly([
+             'email', 'name', 'no', 'dept', 'girisYili',
+             'rol', 'dogrulandi', 'olusturmaAt', 'telefon'])
+        && request.resource.data.dogrulandi == true
+        /* uye kendine rol veremez; yalnizca yonetici e-postasi admin olabilir */
+        && (request.resource.data.rol == 'uye'
+            || (request.auth.token.email != null
+                && request.auth.token.email.lower() == adminMail().lower()));
 
       /* Yönetici her zaman düzenleyebilir.
          Üye kendi bilgilerini düzenler ama en fazla 30 GÜNDE BİR.
@@ -84,12 +101,92 @@ service cloud.firestore {
         || (girisYapildi()
             && request.auth.uid == uid
             && dogrulandiMi()
+            /* rol, dogrulandi ve e-posta yalnizca yonetici tarafindan degisir */
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['name', 'no', 'dept', 'girisYili',
+                           'profilGuncelAt', 'sifreDegistiAt', 'sifreSayisi',
+                           'telefon'])
+            /* rol, dogrulandi ve e-posta yalnizca AYNI degerle yazilabilir
+               (kendini yonetici yapma / e-posta taklidi engellenir) */
+            && request.resource.data.rol == resource.data.rol
+            && request.resource.data.dogrulandi == resource.data.dogrulandi
+            && request.resource.data.email == resource.data.email
+            /* 30 günlük profil kilidi: yalnızca kendi damgaları güncellenir.
+               NOT: gizlilik ayarları artık paylasim/{uid} belgesindedir,
+               bu yüzden kilit KVKK hakkını engellemez. */
             && (!profilSikiliMi()
                 || request.resource.data.diff(resource.data).affectedKeys()
-                   .hasOnly(['sifreDegistiAt', 'sifreSayisi'])));
+                   .hasOnly(['sifreDegistiAt', 'sifreSayisi', 'profilGuncelAt']))
+            /* profilGuncelAt yalnızca SUNUCU zamanı olabilir → 30 günlük
+               sayacı kendisi ileri atlatamaz */
+            && (!('profilGuncelAt'
+                    in request.resource.data.diff(resource.data).affectedKeys())
+                || request.resource.data.profilGuncelAt == request.time));
 
+      /* NOT: 'telefon' yalnızca rakım/+ içerebilir ve kısa olmalıdır
+         (serbest metin → arayüzde beklenmedik içerik) */
       /* yönetici istediğini siler; üye de kendi hesabını silebilir
          (KVKK: hesap silme hakkı) */
+      allow delete: if adminMi() || (girisYapildi() && request.auth.uid == uid);
+    }
+
+    /* --- PAYLAŞILAN PROFİL (KVKK) --------------------------------------
+       Üye, paylaşmak istediği alanları YALNIZCA buraya yazar:
+         gizlilik : 'herkese' | 'uyeler' | 'ben'
+         paylas   : { no, bolum, yil, eposta, telefon, istatistik,
+                      katilim, gorev } (true/false)
+       Kural yalnızca belgede GERÇEKTEN bulunan alanları açar; gizlenen
+       alan hiçbir koşulda okunamaz (arayüz değil, VERİTABANI koruması). */
+    match /paylasim/{uid} {
+      /* resource != null → koleksiyon sorgusu üyeye KAPALI (kimse tüm
+         üye profillerini topluca çekemez), yalnızca tek belge okunur. */
+      allow read: if adminMi()
+        || (girisYapildi() && request.auth.uid == uid)
+        || (resource != null
+            && (resource.data.gizlilik == 'herkese'
+                || (girisYapildi() && dogrulandiMi()
+                    && resource.data.gizlilik == 'uyeler')));
+
+      allow create, update: if girisYapildi()
+        && request.auth.uid == uid
+        && dogrulandiMi()
+        && request.resource.data.keys().hasOnly([
+             'gizlilik', 'paylas', 'ad', 'no', 'bolum', 'yil',
+             'eposta', 'telefon', 'katildi', 'gorevli', 'guncelleAt'])
+        && request.resource.data.gizlilik in ['herkese', 'uyeler', 'ben']
+        && request.resource.data.paylas.keys().hasOnly([
+             'no', 'bolum', 'yil', 'eposta', 'telefon',
+             'istatistik', 'katilim', 'gorev'])
+        /* İletişim/kimlik alanı yalnızca paylasımı AÇIKKEN yazılabilir
+           (yoksa belgeye hiç yazılmaz → gizli kalır) */
+        /* KAPALI ALAN BOŞ YAZILIR: her alan paylaşım iznine bağlıdır
+           (arayüz değil, VERİTABANI koruması) */
+        && (!request.resource.data.no || request.resource.data.paylas.no == true)
+        && (!request.resource.data.bolum
+            || request.resource.data.paylas.bolum == true)
+        && (!request.resource.data.yil
+            || request.resource.data.paylas.yil == true)
+        && (!request.resource.data.eposta
+            || request.resource.data.paylas.eposta == true)
+        && (!request.resource.data.telefon
+            || request.resource.data.paylas.telefon == true)
+        /* tip ve uzunluk doğrulaması (arayüz/HTML güvenliği) */
+        && request.resource.data.ad is string
+        && request.resource.data.ad.size() <= 80
+        && request.resource.data.no is string
+        && request.resource.data.no.size() <= 20
+        && request.resource.data.bolum is string
+        && request.resource.data.bolum.size() <= 80
+        && request.resource.data.yil is string
+        && request.resource.data.yil.size() <= 10
+        && request.resource.data.eposta is string
+        && request.resource.data.eposta.size() <= 120
+        && request.resource.data.telefon is string
+        && request.resource.data.telefon.size() <= 20
+        && request.resource.data.katildi is int
+        && request.resource.data.gorevli is int
+        && request.resource.data.guncelleAt == request.time;
+
       allow delete: if adminMi() || (girisYapildi() && request.auth.uid == uid);
     }
 
@@ -105,7 +202,9 @@ service cloud.firestore {
       allow create: if girisYapildi()
         && request.resource.data.uid == request.auth.uid;
       allow update, delete: if adminMi()
-        || (girisYapildi() && resource.data.uid == request.auth.uid);
+        || (girisYapildi()
+            && resource.data.uid == request.auth.uid
+            && request.resource.data.uid == request.auth.uid);
     }
 
     /* --- HERKESE AÇIK ÜYE İSTATİSTİĞİ (public) ---
@@ -160,6 +259,7 @@ service cloud.firestore {
       allow read: if adminMi() || (girisYapildi() && request.auth.uid == uid);
       allow create, update: if girisYapildi()
         && request.auth.uid == uid
+        && dogrulandiMi()
         && request.resource.data.keys().hasOnly([
              'surum', 'tarih', 'yetisk', 'aydinlatma', 'riza',
              'bulten', 'kanal', 'guncelleAt'])
@@ -188,9 +288,13 @@ service cloud.firestore {
       allow write: if adminMi();
     }
 
-    /* --- KATILIM QR KODU: herkes okur (üye kodu doğrular), yönetici yazar --- */
+    /* --- KATILIM QR KODU ---
+       ÖNCEKİ HÂLİ: allow read: if true → oturumsuz biri anahtarı okuyup
+       kendi adına katılım yazabiliyordu (katılım sahteciliği).
+       ŞİMDİ: anahtarı yalnızca giriş yapmış (ve e-postası doğrulanmış)
+       üye okur — kod zaten üyeye gösteriliyor, gizli kalmalı değil. */
     match /events/{eventId}/qr/{doc} {
-      allow read: if true;
+      allow read: if girisYapildi() && dogrulandiMi();
       allow write: if adminMi();
     }
 
@@ -205,14 +309,24 @@ service cloud.firestore {
        QR kodunu göstermek zorundadır (kod 10 saniyede bir yenilenir).
        Böylece katılım kendi kendine uydurulamaz. --- */
     match /events/{eventId}/katilan/{uid} {
-      allow read: if true;
+      /* Anahtar (qr) belge içinde bir süre kaldığı için okuma girişe ve
+         e-posta doğrulamasına bağlandı: kimse canlı anahtarı toplayamaz. */
+      allow read: if girisYapildi() && dogrulandiMi();
       allow create: if girisYapildi()
         && request.auth.uid == uid
         && dogrulandiMi()
         && request.resource.data.uid == uid
         && request.resource.data.anahtar ==
              get(/databases/$(database)/documents/events/$(eventId)/qr/anahtar).data.anahtar;
-      allow update, delete: if adminMi();
+      /* Üye kendi kaydından anahtarı SİLEBİLİR (sunucu doğrulaması
+         tamamlandıktan sonra temizlik) — başka alana dokunamaz. */
+      allow update: if girisYapildi()
+        && dogrulandiMi()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['anahtar'])
+        && !('anahtar' in request.resource.data);
+      allow delete: if adminMi();
     }
 
     /* --- ETKİNLİK YORUMLARI (sohbet) ---
@@ -232,7 +346,9 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.metin is string
         && request.resource.data.metin.size() > 0
-        && request.resource.data.metin.size() <= 500;
+        && request.resource.data.metin.size() <= 500
+        && request.resource.data.keys()
+             .hasOnly(['uid', 'ad', 'metin', 'at']);
       allow update: if false;              /* yorumlar düzenlenmez */
       allow delete: if adminMi() || (girisYapildi()
         && resource.data.uid == request.auth.uid);
@@ -246,11 +362,38 @@ service cloud.firestore {
     match /ud/{uid}/todos/{doc} {
       allow read, write: if girisYapildi() && request.auth.uid == uid;
     }
+    /* Ders programı: yalnızca sahibi görebilir/yazabilir */
+    match /ud/{uid}/ders/{doc} {
+      allow read, write: if girisYapildi() && request.auth.uid == uid;
+    }
     /* Eski katılım kayıtları: yalnızca sahibi okur, yalnızca yönetici yazar
        (yeni katılım events/{id}/katilan altında, QR ile) */
     match /ud/{uid}/katilim/{doc} {
-      allow read: if girisYapildi() && request.auth.uid == uid;
+      /* YÖNETİCİ DÜZELTME HATASI: okuma yalnızca sahibine açıktı, yönetici
+         başkasının kaydını göremiyordu (permission-denied) → panel boş
+         açılıyor, yaptığı değişiklik "kaydedilmemiş" gibi görünüyordu. */
+      allow read: if adminMi() || (girisYapildi() && request.auth.uid == uid);
       allow write: if adminMi();
+    }
+
+    /* --- KATILACAK (niyet bildirimi) --------------------------------
+       Etkinlik sayfasındaki "Katılacağım" düğmesi buraya yazar.
+       Herkes kaç kişinin katılacağını görebilir (sayı göstergesi için),
+       ama yalnızca KENDİ kaydını yazabilir/silebilir. */
+    /* Belge kimliği: katilacak/{evId}/{uid}  (3. seviye = sayaç için
+       collectionGroup ile okunabilir; 4. seviyede sayaç MÜMKÜN DEĞİLdi). */
+    match /katilacak/{evId}/{uid} {
+      /* yalnızca adı geçen üye; "kaç kişi katılacak" sayacı için üyeler
+         okur (kimlerin katıldığı değil, SAYI görünür) */
+      allow read: if girisYapildi();
+      /* isim (ad) YAZILMAZ → belge yalnızca zaman damgası taşır */
+      allow create: if girisYapildi()
+        && dogrulandiMi()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['at'])
+        && request.resource.data.at == request.time;
+      allow delete: if girisYapildi() && request.auth.uid == uid;
+      allow update: if false;
     }
     match /ud/{uid}/{document=**} {
       allow read, write: if false;
