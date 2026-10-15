@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.6.0)
+   Firestore güvenlik kuralları  (v3.6.5)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -86,7 +86,8 @@ service cloud.firestore {
         && dogrulandiMi()
         && request.resource.data.keys().hasOnly([
              'email', 'name', 'no', 'dept', 'girisYili',
-             'rol', 'dogrulandi', 'olusturmaAt', 'telefon'])
+             'rol', 'dogrulandi', 'olusturmaAt', 'telefon',
+             'instagram', 'x', 'facebook', 'linkedin'])
         && request.resource.data.dogrulandi == true
         /* uye kendine rol veremez; yalnizca yonetici e-postasi admin olabilir */
         && (request.resource.data.rol == 'uye'
@@ -105,7 +106,7 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['name', 'no', 'dept', 'girisYili',
                            'profilGuncelAt', 'sifreDegistiAt', 'sifreSayisi',
-                           'telefon'])
+                           'telefon', 'instagram', 'x', 'facebook', 'linkedin'])
             /* rol, dogrulandi ve e-posta yalnizca AYNI degerle yazilabilir
                (kendini yonetici yapma / e-posta taklidi engellenir) */
             && request.resource.data.rol == resource.data.rol
@@ -134,7 +135,7 @@ service cloud.firestore {
        Üye, paylaşmak istediği alanları YALNIZCA buraya yazar:
          gizlilik : 'herkese' | 'uyeler' | 'ben'
          paylas   : { no, bolum, yil, eposta, telefon, istatistik,
-                      katilim, gorev } (true/false)
+                      katilim, gorev, instagram, x, facebook, linkedin } (true/false)
        Kural yalnızca belgede GERÇEKTEN bulunan alanları açar; gizlenen
        alan hiçbir koşulda okunamaz (arayüz değil, VERİTABANI koruması). */
     match /paylasim/{uid} {
@@ -152,11 +153,13 @@ service cloud.firestore {
         && dogrulandiMi()
         && request.resource.data.keys().hasOnly([
              'gizlilik', 'paylas', 'ad', 'no', 'bolum', 'yil',
-             'eposta', 'telefon', 'katildi', 'gorevli', 'guncelleAt'])
+             'eposta', 'telefon', 'katildi', 'gorevli', 'guncelleAt',
+             'instagram', 'x', 'facebook', 'linkedin'])
         && request.resource.data.gizlilik in ['herkese', 'uyeler', 'ben']
         && request.resource.data.paylas.keys().hasOnly([
              'no', 'bolum', 'yil', 'eposta', 'telefon',
-             'istatistik', 'katilim', 'gorev'])
+             'istatistik', 'katilim', 'gorev',
+             'instagram', 'x', 'facebook', 'linkedin'])
         /* İletişim/kimlik alanı yalnızca paylasımı AÇIKKEN yazılabilir
            (yoksa belgeye hiç yazılmaz → gizli kalır) */
         /* KAPALI ALAN BOŞ YAZILIR: her alan paylaşım iznine bağlıdır
@@ -170,6 +173,14 @@ service cloud.firestore {
             || request.resource.data.paylas.eposta == true)
         && (!request.resource.data.telefon
             || request.resource.data.paylas.telefon == true)
+        && (!request.resource.data.instagram
+            || request.resource.data.paylas.instagram == true)
+        && (!request.resource.data.x
+            || request.resource.data.paylas.x == true)
+        && (!request.resource.data.facebook
+            || request.resource.data.paylas.facebook == true)
+        && (!request.resource.data.linkedin
+            || request.resource.data.paylas.linkedin == true)
         /* tip ve uzunluk doğrulaması (arayüz/HTML güvenliği) */
         && request.resource.data.ad is string
         && request.resource.data.ad.size() <= 80
@@ -183,6 +194,14 @@ service cloud.firestore {
         && request.resource.data.eposta.size() <= 120
         && request.resource.data.telefon is string
         && request.resource.data.telefon.size() <= 20
+        && request.resource.data.instagram is string
+        && request.resource.data.instagram.size() <= 160
+        && request.resource.data.x is string
+        && request.resource.data.x.size() <= 160
+        && request.resource.data.facebook is string
+        && request.resource.data.facebook.size() <= 160
+        && request.resource.data.linkedin is string
+        && request.resource.data.linkedin.size() <= 160
         && request.resource.data.katildi is int
         && request.resource.data.gorevli is int
         && request.resource.data.guncelleAt == request.time;

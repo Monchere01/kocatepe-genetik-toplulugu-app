@@ -463,6 +463,9 @@
   .dp-son b{font-size:.84rem;color:#f2f7ff}
   .dp-son span{font-size:.7rem;color:#a9bcd6}
   .dp-sonlar{display:flex;gap:8px;flex-wrap:wrap}
+  /* dönem bilgi satırı (seçim yok, tarihten otomatik) */
+  .dp-donem-bilgi{padding:10px 12px;border-radius:11px;font-size:.9rem;color:#eaf2ff;
+    background:rgba(14,22,38,.5);border:1px solid rgba(148,178,220,.16)}
   .dp-hafta-btn{padding:8px 12px;border-radius:11px;border:1px solid rgba(148,178,220,.22);
     background:rgba(20,30,50,.7);color:#cfe0f5;font:inherit;font-size:.8rem;cursor:pointer}
   .dp-hafta-btn.on{border-color:rgba(148,178,220,.45);color:#fff}
@@ -985,6 +988,17 @@
   .pf-i.iyi b{color:#34d399}
   .pf-mail{font-size:.66rem;opacity:.8;word-break:break-all}
   .pf-blok{margin-top:14px}
+  /* --- sosyal medya satırları (logo + kullanıcı adı, dokun-git) --- */
+  .sm-liste{display:flex;flex-direction:column;gap:8px}
+  .sm-satir{display:flex;align-items:center;gap:11px;padding:10px 13px;min-height:48px;
+    border-radius:13px;border:1px solid rgba(148,178,220,.16);background:rgba(14,22,38,.42);
+    color:#dce8f8;text-decoration:none;font-size:.9rem}
+  .sm-satir:hover{border-color:rgba(120,170,255,.45);background:rgba(78,163,255,.07)}
+  .sm-satir:active{transform:scale(.99)}
+  .sm-logo{flex:0 0 auto;width:24px;height:24px;display:inline-flex}
+  .sm-logo svg{width:24px;height:24px;display:block}
+  .sm-kul{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sm-git{flex:0 0 auto;color:#5f7392;font-size:1.2rem;line-height:1}
   /* istatistik kartları ile düğmeler arası nefes payı */
   .pf-ustlu{margin-top:20px}
   .pf-blok h3{font-size:.76rem;letter-spacing:.06em;color:#9fb4d2;margin:0 0 6px;font-weight:600}
@@ -1483,7 +1497,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.6.0 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.6.5 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2145,6 +2159,8 @@ var DNA3D = (function () {
   var SEMAD  = { guz: 'GÜZ DÖNEMİ', bahar: 'BAHAR DÖNEMİ', ozel: 'KİŞİSEL' };
   var deck = null, nucleus = null, halo = null, cards = [], chips = [], pickables = [],
       onPick = null, evSig = '';
+  /* rozet ölçüleri: relayout hesaplar, yeni rozet de aynısını alır */
+  var REL = { gw: 0.6, ch2: 0.23, carp: 1.7 };
   var _wp = null, _lm = null, _q = null, _qt = null, _qi = null;
   var _UP = null, _AX = null, _ndc = null, _ray = null;
 
@@ -2454,7 +2470,7 @@ var DNA3D = (function () {
        ( telefonda eskiden kaydirma cubuguyla cakisiyordu). */
     var RAY_PX = 34;
     var Wpx = W || (narrow ? 390 : 1200);
-    var tavanPx = narrow ? 296 : 452;              /* telefon kucuk, genis ekran buyuk */
+    var tavanPx = narrow ? 308 : 464;              /* telefon kucuk, genis ekran buyuk */
     var yanPay = (Wpx - RAY_PX - 22) * (narrow ? 0.94 : 0.68);
     var cwPx = Math.min(tavanPx, yanPay, visW * KPX * wFac, (narrow ? 4.0 : 3.3) * KPX);
     var cw = cwPx / KPX;
@@ -2462,16 +2478,44 @@ var DNA3D = (function () {
     var gw = Math.min(62 / KPX, visW * 0.17);
     if (!isFinite(gw) || gw < 0.15) gw = 0.6;
     var i, ch1 = cw / CARD_ASP, ch2 = gw / CHIP_ASP;
+    /* bugün çarpanı: mobilde biraz küçük (1.4), genişte 1.7. Ardından
+       SIĞMA KELEPÇESİ: en sıkışık iki rozet aralığına göre kısılır
+       (taban 1.15 — hep normalden büyük kalır). Komşu gizlenmez. */
+    var carp = narrow ? 1.4 : 1.7;
+    var enDar = Infinity, ai3, bi3;
+    for (ai3 = 0; ai3 < chips.length; ai3++) {
+      if (!chips[ai3]) continue;
+      for (bi3 = ai3 + 1; bi3 < chips.length; bi3++) {
+        if (!chips[bi3]) continue;
+        var dd = Math.abs(yAt(chips[ai3].day) - yAt(chips[bi3].day));
+        if (dd > 1e-6 && dd < enDar) enDar = dd;
+      }
+      /* etkinlik kartları da komşudur (rozetleri yoktur ama yer kaplar) */
+      for (bi3 = 0; bi3 < cards.length; bi3++) {
+        if (!cards[bi3]) continue;
+        var dk = Math.abs(yAt(chips[ai3].day) - yAt(cards[bi3].day));
+        if (dk > 1e-6 && dk < enDar) enDar = dk;
+      }
+    }
+    if (isFinite(enDar) && ch2 > 0) {
+      var pay = 6 / KPX;   /* ~6 px nefes payı */
+      var ust = (2 * (enDar - pay)) / ch2 - 1;
+      if (ust < carp) carp = Math.max(1.15, ust);
+    }
+    REL.gw = gw; REL.ch2 = ch2; REL.carp = carp;
     for (i = 0; i < cards.length; i++) if (cards[i]) { cards[i].w = cw; cards[i].h = ch1; }
     for (i = 0; i < cards.length; i++) if (cards[i] && cards[i].cvD) {
       var es2 = expSize(); cards[i].expW = es2[0]; cards[i].expH = es2[1];
     }
     for (i = 0; i < chips.length; i++) {
       if (!chips[i]) continue;
-      /* bugünün rozeti belirgin olsun (etkinlik yoksa kart zaten yok) */
+      /* bugünün rozeti belirgin olsun (etkinlik yoksa kart zaten yok).
+         Mobilde birkaç px küçük tutulur ama altın rengi + "Bugün" yazısı
+         ile belirginliği korunur. TÜM rozetler sığar: bugün rozeti,
+         en sıkışık iki rozet aralığına kelepçelenir (komşu gizlenmez). */
       var bugunMu = (chips[i].day === todayDay) && !gununEtkinligiVar(chips[i].day);
-      chips[i].w = bugunMu ? gw * 1.55 : gw;
-      chips[i].h = bugunMu ? ch2 * 1.55 : ch2;
+      chips[i].w = bugunMu ? gw * REL.carp : gw;
+      chips[i].h = bugunMu ? ch2 * REL.carp : ch2;
     }
   }
   function clearGroup(gr) {
@@ -2756,7 +2800,11 @@ var DNA3D = (function () {
     ms2.renderOrder = 19;
     g2.add(ms2);
     deck.add(g2);
-    var c = { grp: g2, mesh: ms2, mat: m2, tex: t2, day: day, w: 0.6, h: 0.23 };
+    /* ölçü relayout ile aynı (bugün rozeti çarpanlı) */
+    var bugMu = (day === todayDay) && !gununEtkinligiVar(day);
+    var c = { grp: g2, mesh: ms2, mat: m2, tex: t2, day: day,
+      w: bugMu ? REL.gw * REL.carp : REL.gw,
+      h: bugMu ? REL.ch2 * REL.carp : REL.ch2 };
     chips.push(c);
     return c;
   }
@@ -2948,6 +2996,7 @@ var DNA3D = (function () {
         var clearGap = refH * KPX / 2 + 2;
         for (ii = 0; ii < chips.length; ii++) {
           cp = chips[ii];
+          if (!cp) continue;
           dyy = (yAt(cp.day) - yP) * KPX;
           /* kartin onune dusen rozet gizlenir (okunabilirlik) */
           vs = Math.abs(dyy) < lim && Math.abs(dyy - actY) > clearGap;
@@ -2995,7 +3044,9 @@ var DNA3D = (function () {
         var hedef = 0;
         /* ETKINLIGIN KENDI KARTI merkezde kalir: bugun manyeti onu
            cekiyordu ve kart 50 px asagi kayiyordu (kullanici "kart tam
-           ortada degil" diyordu). Aktif kart haric digerleri manyetlenir. */
+           ortada degil" diyordu). Aktif kart haric digerleri manyetlenir.
+           BUGÜN kartı/çipi manyetten muaftır: komşular bugüne çekilirken
+           bugünün kendisi kımıldamaz (en az etki). */
         if (magAktif && mc.day !== todayDay && mi !== ACT) {
           var gunFark = Math.abs(mc.day - todayDay);
           if (gunFark < MAG_DAYS) {
@@ -3509,6 +3560,7 @@ var MBGFB = (function () {
       return yaz().catch(function (h) { return jetonTazeleVeTekrar(h, yaz); }).then(function () {
         state.profile = veri;
         state.role = veri.rol;
+        try { paylasimDogrula(); } catch (e) {}
         return veri;
       });
     });
@@ -3640,6 +3692,10 @@ var MBGFB = (function () {
           dept: alanlar.dept != null ? alanlar.dept : (mevcut.dept || ''),
           girisYili: alanlar.girisYili != null ? alanlar.girisYili : (mevcut.girisYili || ''),
           telefon: alanlar.telefon != null ? alanlar.telefon : (mevcut.telefon || ''),
+          instagram: alanlar.instagram != null ? sosyalAdres(alanlar.instagram) : sosyalAdres(mevcut.instagram),
+          x: alanlar.x != null ? sosyalAdres(alanlar.x) : sosyalAdres(mevcut.x),
+          facebook: alanlar.facebook != null ? sosyalAdres(alanlar.facebook) : sosyalAdres(mevcut.facebook),
+          linkedin: alanlar.linkedin != null ? sosyalAdres(alanlar.linkedin) : sosyalAdres(mevcut.linkedin),
           profilGuncelAt: ts()
         };
         var yaz = function () { return ref.update(veri); };
@@ -3714,6 +3770,7 @@ var MBGFB = (function () {
           if (snap && snap.dogrulandi === true) {
             state.profile = snap;
             state.role = snap.rol === 'admin' ? 'admin' : 'uye';
+            try { paylasimDogrula(); } catch (e) {}
             cb(u, state.role, snap);
           } else if (u.emailVerified) {
             /* doğrulanmış ama belge yok (ilk doğrulama): oluştur */
@@ -3768,6 +3825,7 @@ var MBGFB = (function () {
         return profilGet(cred.user.uid, 2).then(function (p) {
           state.profile = p && p.dogrulandi ? p : null;
           state.role = role();
+          try { paylasimDogrula(); } catch (e) {}
           return state;
         }).catch(function () { return state; });
       });
@@ -3778,6 +3836,7 @@ var MBGFB = (function () {
     return auth.signOut().then(function () {
       state.user = null; state.role = 'guest'; state.profile = null;
       state.bekleyenProfil = null;
+      paylasimDogrulandi = false;
     });
   }
   /* HESAP SİLME (KVKK): yalnızca members silinmiyordu; herkese açık
@@ -4148,7 +4207,8 @@ var MBGFB = (function () {
      TEK kaynak: paylasim/{uid}
        gizlilik : 'herkese' | 'uyeler' | 'ben'
        paylas   : { no, bolum, yil, eposta, telefon,
-                    istatistik, katilim, gorev } (true/false)
+                    istatistik, katilim, gorev,
+                    instagram, x, facebook, linkedin } (true/false)
      Belgeye YALNIZCA paylaşılması istenen alanlar yazılır; kapalı alan
      boş metin olur. Böylece members/{uid} (e-posta, öğrenci no) hiçbir
      koşulda dışarı açılmaz — gizlilik KURALDA uygulanır, arayüzde değil. */
@@ -4156,8 +4216,24 @@ var MBGFB = (function () {
   var PAYLAS_VARSAYILAN = {
     no: true, bolum: true, yil: true,
     eposta: false, telefon: false,
-    istatistik: true, katilim: true, gorev: true
+    istatistik: true, katilim: true, gorev: true,
+    instagram: true, x: true, facebook: true, linkedin: true
   };
+  /* Sosyal medya adresi düzenler: başa https ekler, boşluk siler.
+     Platformu dayatmaz; görüntüde alan adından kullanıcı adı çıkar. */
+  var SOSYAL_ALAN = ['instagram', 'x', 'facebook', 'linkedin'];
+  function sosyalAdres(v) {
+    var s = String(v == null ? '' : v).trim().replace(/\s+/g, '');
+    if (!s) return '';
+    if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+    return s.slice(0, 160);
+  }
+  function sosyalKullanici(url) {
+    var s = String(url || '').split('?')[0].split('#')[0].replace(/\/+$/, '');
+    var par = s.split('/').pop() || '';
+    try { par = decodeURIComponent(par); } catch (e) {}
+    return par.replace(/^@/, '').slice(0, 60);
+  }
   function gizlilikOku() {
     if (!state.user) return Promise.resolve(null);
     var varsay = {
@@ -4203,6 +4279,10 @@ var MBGFB = (function () {
       yil: pay.yil ? (p.girisYili || '') : '',
       eposta: pay.eposta ? (p.email || u.email || '') : '',
       telefon: pay.telefon ? (p.telefon || '') : '',
+      instagram: pay.instagram ? sosyalAdres(p.instagram) : '',
+      x: pay.x ? sosyalAdres(p.x) : '',
+      facebook: pay.facebook ? sosyalAdres(p.facebook) : '',
+      linkedin: pay.linkedin ? sosyalAdres(p.linkedin) : '',
       katildi: 0,
       gorevli: 0,
       guncelleAt: ts()
@@ -4230,16 +4310,62 @@ var MBGFB = (function () {
       });
     }).catch(function () { return null; });
   }
+  /* Paylaşım belgesi yoksa varsayılanlarla üret (tek seferlik).
+     Üye gizlilik ekranını hiç açmamışsa paylasim/{uid} yoktur ve profili
+     herkese "boş" görünürdü. Anlaşılan varsayılan (üyelere açık; e-posta
+     ve telefon kapalı) ilk girişte belgeye yazılır. */
+  var paylasimDogrulandi = false;
+  function paylasimDogrula() {
+    if (paylasimDogrulandi) return Promise.resolve(false);
+    if (!state.user || !verified() || !state.profile) return Promise.resolve(false);
+    paylasimDogrulandi = true;
+    return ready().then(function () {
+      return db.collection('paylasim').doc(state.user.uid).get().then(function (sn) {
+        if (sn.exists) return false;
+        return gizlilikYaz(GIZLILIK_VARSAYILAN, Object.assign({}, PAYLAS_VARSAYILAN))
+          .then(function () { return true; });
+      });
+    }).catch(function () { return false; });
+  }
   /* Başka bir üyenin profilini izin kapsamında oku.
-     Kural reddederse { gizli: true } döner (hata fırlatmaz). */
+     Kural reddederse { gizli: true } döner (hata fırlatmaz).
+     Paylaşım belgesi yoksa varsayılan (üyelere açık) uygulanır ve ad +
+     sayılar herkese açık satırdan alınır — profiller "boş" görünmez. */
   function uyeProfilOku(uid) {
     if (!uid) return Promise.resolve(null);
     var kim = String(uid);
     var yonetici = isAdmin();
     var uyeMi = !!(state.user && state.user.uid === kim);
     return ready().then(function () {
+      /* Belge yoksa VEYA okunamazsa (kural/paylaşım): varsayılan gizlilik
+         + herkese açık satır. Profiller "boş"/"gizli" görünmez. */
+      var belgesiz = function () {
+        return db.collection('public').doc(kim).get().then(function (ps) {
+          var o = (ps.exists ? (ps.data() || {}) : {});
+          var ad = ((o.ad || '') + ' ' + (o.soyad || '')).trim();
+          return {
+            uid: kim,
+            ad: ad, no: '', bolum: '', yil: '', eposta: '', telefon: '',
+            instagram: '', x: '', facebook: '', linkedin: '',
+            katildi: o.katildi || 0, gorevli: o.gorevli || 0,
+            gizlilik: GIZLILIK_VARSAYILAN,
+            paylas: Object.assign({}, PAYLAS_VARSAYILAN),
+            yok: !ad
+          };
+        }).catch(function () {
+          return {
+            uid: kim, ad: '', no: '', bolum: '', yil: '', eposta: '', telefon: '',
+            instagram: '', x: '', facebook: '', linkedin: '',
+            katildi: null, gorevli: null,
+            gizlilik: GIZLILIK_VARSAYILAN,
+            paylas: Object.assign({}, PAYLAS_VARSAYILAN),
+            yok: true
+          };
+        });
+      };
       return db.collection('paylasim').doc(kim).get().then(function (sn) {
         var d = sn.exists ? (sn.data() || {}) : null;
+        if (!d) return belgesiz();
         var temel = {
           uid: kim,
           ad: d ? (d.ad || '') : '',
@@ -4248,6 +4374,10 @@ var MBGFB = (function () {
           yil: d ? (d.yil || '') : '',
           eposta: d ? (d.eposta || '') : '',
           telefon: d ? (d.telefon || '') : '',
+          instagram: d ? (d.instagram || '') : '',
+          x: d ? (d.x || '') : '',
+          facebook: d ? (d.facebook || '') : '',
+          linkedin: d ? (d.linkedin || '') : '',
           katildi: d ? (d.katildi || 0) : null,
           gorevli: d ? (d.gorevli || 0) : null,
           gizlilik: d ? (d.gizlilik || GIZLILIK_VARSAYILAN) : GIZLILIK_VARSAYILAN,
@@ -4266,11 +4396,15 @@ var MBGFB = (function () {
             if (g.girisYili) temel.yil = g.girisYili;
             if (g.email) temel.eposta = g.email;
             if (g.telefon) temel.telefon = g.telefon;
+            if (g.instagram) temel.instagram = g.instagram;
+            if (g.x) temel.x = g.x;
+            if (g.facebook) temel.facebook = g.facebook;
+            if (g.linkedin) temel.linkedin = g.linkedin;
             temel.yoneticiTam = true;
           }
           return temel;
         }).catch(function () { return temel; });
-      });
+      }, function () { return belgesiz(); });
     }).catch(function (x) {
       var kod = x && x.code;
       if (kod === 'permission-denied' || kod === 'unavailable' || kod === 'not-found') {
@@ -4416,8 +4550,7 @@ var MBGFB = (function () {
     return ready().then(function () { return db.collection('members').doc(String(uid)).update({ rol: rol }); });
   }
   /* YÖNETİCİ ÜYE DÜZENLEME (tam yetki): ad, no, bölüm, giriş yılı, telefon,
-     e-posta, rol — kurallar yöneticiye serbest bırakır, istemci de denetler.
-     Ad değişirse herkese açık satırdaki ad/soyad da eşlenir (liste tutarlı). */
+     e-posta, sosyal medya, rol — kurallar yöneticiye serbest bırakır. */
   function adminUyeYaz(uid, alanlar) {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     var a = alanlar || {};
@@ -4425,6 +4558,9 @@ var MBGFB = (function () {
       var veri = {};
       ['name', 'no', 'dept', 'girisYili', 'telefon', 'email'].forEach(function (k) {
         if (a[k] !== undefined) veri[k] = a[k];
+      });
+      SOSYAL_ALAN.forEach(function (k) {
+        if (a[k] !== undefined) veri[k] = sosyalAdres(a[k]);
       });
       if (a.rol === 'uye' || a.rol === 'admin') veri.rol = a.rol;
       if (!Object.keys(veri).length) return Promise.reject(new Error('Değişiklik yok.'));
@@ -4960,6 +5096,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     dersOku: dersOku, dersKaydet: dersKaydet,
     katilacakOku: katilacakOku, katilacakYaz: katilacakYaz,
     katilacakListe: katilacakListe,
+    sosyalAdres: sosyalAdres, sosyalKullanici: sosyalKullanici,
     gizlilikOku: gizlilikOku, gizlilikYaz: gizlilikYaz, uyeProfilOku: uyeProfilOku,
     paylasimTazele: paylasimTazele,
     GIZLILIK_VARSAYILAN: GIZLILIK_VARSAYILAN, PAYLAS_VARSAYILAN: PAYLAS_VARSAYILAN,
@@ -6302,10 +6439,8 @@ var MBGM = (function () {
       '<div class="field"><label>Tarih *</label><input id="aeD" type="date" value="' + esc(e.date) + '"></div>' +
       '<div class="field"><label>Başlık *</label><input id="aeT" maxlength="120" value="' + esc(e.title) + '"></div>' +
       '<div class="field"><label>Açıklama</label><textarea id="aeX" maxlength="600">' + esc(e.desc) + '</textarea></div>' +
-      '<div class="field"><label>Dönem</label><select id="aeS">' +
-        '<option value="guz"' + (e.sem === 'guz' ? ' selected' : '') + '>GÜZ DÖNEMİ</option>' +
-        '<option value="bahar"' + (e.sem === 'bahar' ? ' selected' : '') + '>BAHAR DÖNEMİ</option>' +
-      '</select></div>' +
+      '<div class="field"><label>Dönem</label>' +
+        '<div class="dp-donem-bilgi" id="aeDonemBilgi"></div></div>' +
       '<div class="field"><label>Etiket (örn. Özel Gün)</label><input id="aeG" maxlength="40" value="' +
         esc((e.tag && e.tag.lbl) || '') + '"></div>' +
       '<div class="acts"><button type="button" data-a="vaz">Vazgeç</button>' +
@@ -6322,7 +6457,7 @@ var MBGM = (function () {
       if (g) g = g.charAt(0).toLocaleUpperCase('tr-TR') + g.slice(1);
       var rec = {
         date: d, title: t, desc: (q('#aeX').value || '').trim(),
-        sem: q('#aeS').value, exact: false, tag: g ? { lbl: g } : null,
+        sem: MBGO.donemBul(d), exact: false, tag: g ? { lbl: g } : null,
         month: A && A.ayAd ? A.ayAd(+d.slice(5, 7)) : '', mi: +d.slice(5, 7),
         week: 0, weekLabel: 'Özel etkinlik'
       };
@@ -6339,6 +6474,17 @@ var MBGM = (function () {
       }).catch(function (x) { toast('Kaydedilemedi: ' + err(x), 6500); });
     };
     q('#backdrop').classList.add('open');
+    /* dönem bilgisi tarihten otomatik (seçim yok) */
+    (function () {
+      var bilgi = q('#aeDonemBilgi'), tarih = q('#aeD');
+      function tazele() {
+        if (bilgi && tarih) {
+          bilgi.textContent = MBGO.donemBul(tarih.value) === 'bahar' ? 'Bahar dönemi' : 'Güz dönemi';
+        }
+      }
+      tazele();
+      if (tarih) tarih.oninput = tazele;
+    })();
   }
 
   function newsForm(vazgecFn, sonraFn) {
@@ -6378,13 +6524,14 @@ var MBGM = (function () {
     var m = q('#modal');
     if (!m) return;
     var yonetici = MBGFB.isAdmin();
+    var donusVar = typeof geriFn === 'function';
     m.className = 'modal genis';
     m.innerHTML =
       '<h2>📢 Duyurular</h2>' +
       '<div class="sub">Topluluk duyuruları (yeniden eskiye)</div>' +
       '<div id="duyListe"><div class="pf-bos">Duyurular yükleniyor…</div></div>' +
       '<div class="acts">' +
-        '<button type="button" data-d="geri">← Geri</button>' +
+        (donusVar ? '<button type="button" data-d="geri">← Geri</button>' : '') +
         (yonetici ? '<button type="button" class="pri" data-d="ekle">📢 Duyuru ekle</button>' : '') +
       '</div>';
     m.onclick = function (ev) {
@@ -6529,7 +6676,9 @@ var MBGM = (function () {
       if (uy) {
         var uid2 = uy.getAttribute('data-uy');
         var yazi = (uy.getAttribute('data-ad') || '').trim();
-        if (window.MBGP && MBGP.profilGoruntule) MBGP.profilGoruntule(uid2, yazi);
+        if (window.MBGP && MBGP.profilGoruntule) {
+          MBGP.profilGoruntule(uid2, yazi, false, function () { uyeSayfasi(false); });
+        }
         return;
       }
       var b = olay.target && olay.target.closest ? olay.target.closest('[data-a]') : null;
@@ -6798,6 +6947,42 @@ var MBGP = (function () {
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   function toast(m, ms) { if (A && A.toast) A.toast(m, ms || 4000); }
+
+  /* --- sosyal medya logoları (çevrimdışı, gömülü SVG) --- */
+  var SM_AD = { instagram: 'Instagram', x: 'X', facebook: 'Facebook', linkedin: 'LinkedIn' };
+  function smLogo(k) {
+    var c = { instagram: '#E1306C', x: '#e8eaed', facebook: '#1877F2', linkedin: '#0A66C2' }[k] || '#9fb4d0';
+    var ic = '';
+    if (k === 'instagram') {
+      ic = '<rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="' + c + '" stroke-width="2"/>' +
+        '<circle cx="12" cy="12" r="3.6" fill="none" stroke="' + c + '" stroke-width="2"/>' +
+        '<circle cx="17" cy="7" r="1.5" fill="' + c + '"/>';
+    } else if (k === 'x') {
+      ic = '<path d="M5 5l14 14M19 5L5 19" stroke="' + c + '" stroke-width="2.6" stroke-linecap="round" fill="none"/>';
+    } else if (k === 'facebook') {
+      ic = '<path d="M13.4 21v-7h2.4l.4-3h-2.8V9.1c0-.9.3-1.6 1.6-1.6h1.7V4.8c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1V11H7.6v3h2.7v7h3.1z" fill="' + c + '"/>';
+    } else {
+      ic = '<rect x="3.5" y="3.5" width="17" height="17" rx="3.5" fill="' + c + '"/>' +
+        '<text x="12" y="16.6" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#0b1220" font-family="Arial,sans-serif">in</text>';
+    }
+    return '<span class="sm-logo" aria-hidden="true"><svg viewBox="0 0 24 24">' + ic + '</svg></span>';
+  }
+  /* Sosyal satırlar: yalnızca http(s) bağlantılar (javascript: sızmaz) */
+  function smSatirlari(kaynak) {
+    var sir = ['instagram', 'x', 'facebook', 'linkedin'];
+    var out = [];
+    sir.forEach(function (k) {
+      var u = kaynak ? kaynak[k] : '';
+      if (!u || !/^https?:\/\//i.test(String(u))) return;
+      var kul = (MBGFB.sosyalKullanici ? MBGFB.sosyalKullanici(u) : u) || SM_AD[k];
+      out.push('<a class="sm-satir" href="' + esc(u) + '" target="_blank" rel="noopener" title="' + esc(SM_AD[k]) + '">' +
+        smLogo(k) + '<span class="sm-kul">@' + esc(String(kul).replace(/^@/, '')) + '</span>' +
+        '<span class="sm-git">›</span></a>');
+    });
+    if (!out.length) return '';
+    return '<div class="pf-blok"><h3>Sosyal Medya Platformları</h3>' +
+      '<div class="sm-liste">' + out.join('') + '</div></div>';
+  }
   function close() { if (A && A.closeModal) A.closeModal(); }
   function fmt(d) { return A && A.fmtDate ? A.fmtDate(d) : d; }
   function evler() { return (A && A.events) ? A.events() : []; }
@@ -7051,12 +7236,14 @@ var MBGP = (function () {
         '</div>' +
 
         '<div class="acts pf-acts pf-ustlu">' +
-          '<button type="button" class="pri" data-k="kisisel">Kişisel bilgilerim</button>' +
+          '<button type="button" class="pri" data-k="kisisel">Kişisel ve İletişim Bilgilerim</button>' +
           '<button type="button" class="pri" data-k="hesap">Hesap bilgilerim</button>' +
           '<button type="button" class="pri" data-k="gizlilik">Profil gizliliği</button>' +
               '<button type="button" data-k="yenile">Yenile</button>' +
           '<button type="button" data-k="kvkk">KVKK ve Gizlilik</button>' +
         '</div>' +
+
+        smSatirlari(p) +
 
         tablo('Katıldığım etkinlikler', katildi.length,
           katildi.map(trEtkinlik), 'Henüz işaretlenmiş etkinlik yok.') +
@@ -7288,7 +7475,11 @@ var MBGP = (function () {
     { k: 'telefon', ad: 'Telefon numaram' },
     { k: 'istatistik', ad: 'İstatistiklerim (katılım yüzdesi, görevler)' },
     { k: 'katilim', ad: 'Katıldığım etkinlikler' },
-    { k: 'gorev', ad: 'Görev aldığım etkinlikler' }
+    { k: 'gorev', ad: 'Görev aldığım etkinlikler' },
+    { k: 'instagram', ad: 'Instagram profilim' },
+    { k: 'x', ad: 'X profilim' },
+    { k: 'facebook', ad: 'Facebook profilim' },
+    { k: 'linkedin', ad: 'LinkedIn profilim' }
   ];
 
   var gizAcik = false;
@@ -7420,7 +7611,7 @@ var MBGP = (function () {
      ya da permission dönmez. Gelen belge de kendi paylaşımına göre
      gösterilir; gizlediği alanların adı sayılır (şeffaflık). */
   var profilNo = 0;
-  function profilGoruntule(uid, ad, adminMi) {
+  function profilGoruntule(uid, ad, adminMi, geriFn) {
     var m = q('#modal');
     if (!m) return;
     if (!uid) { toast('Üye bulunamadı.'); return; }
@@ -7433,15 +7624,17 @@ var MBGP = (function () {
     MBGFB.uyeProfilOku(uid).then(function (d) {
       if (no !== profilNo) return;      /* bu ekran artık geçersiz */
       try {
-        m.innerHTML = profilHtml(uid, ad, d, adminMi || MBGFB.isAdmin());
+        m.innerHTML = profilHtml(uid, ad, d, adminMi || MBGFB.isAdmin(), geriFn);
       } catch (x) {
         m.innerHTML = '<div class="pf-bos" style="padding:18px">Profil gösterilemedi.</div>';
       }
       m.onclick = function (ev) {
         var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
         if (!b) return;
-        if (b.getAttribute('data-k') === 'yonet') { uyeYonetimPanel(uid, ad); }
-        else { close(); }              /* Kapat → pencereyi gerçekten kapat */
+        if (b.getAttribute('data-k') === 'yonet') { uyeYonetimPanel(uid, ad); return; }
+        /* Geri düğmesi varsa listeye döner (kapatma çarpıda); yoksa kapatır */
+        if (b.getAttribute('data-k') === 'geri' && typeof geriFn === 'function') { geriFn(); return; }
+        close();
       };
     }).catch(function () {
       if (no !== profilNo) return;
@@ -7461,7 +7654,8 @@ var MBGP = (function () {
     toast('Üye yönetimi açılamadı.', 4500);
   }
 
-  function profilHtml(uid, ad, d, adminMi) {
+  function profilHtml(uid, ad, d, adminMi, geriFn) {
+    var geriVar = typeof geriFn === 'function';
     var bas = d && d.ad ? d.ad : (ad || '');
     var baslik = bas.trim() || 'Üye';
     var avatar = baslik.slice(0, 1).toUpperCase() || '?';
@@ -7469,16 +7663,16 @@ var MBGP = (function () {
     if (d && d.hata) {
       return kutuHtml(baslik, avatar,
         '<div class="pf-bos">Profil okunamadı (bağlantı sorunu). ' +
-        'Lütfen biraz sonra tekrar dene.</div>', adminMi);
+        'Lütfen biraz sonra tekrar dene.</div>', adminMi, false, geriVar);
     }
     if (!d || d.yok) {
       return kutuHtml(baslik, avatar,
-        '<div class="pf-bos">Bu üye henüz profil paylaşımı yapmamış.</div>', adminMi);
+        '<div class="pf-bos">Bu üye henüz profil paylaşımı yapmamış.</div>', adminMi, false, geriVar);
     }
     if (d.gizli) {
       return kutuHtml(baslik, avatar,
         '<div class="pf-bos">🔒 <b>' + esc(baslik) + '</b> profili gizli tutuyor ' +
-        'ya da henüz paylaşım yapmamış.</div>', adminMi, true);
+        'ya da henüz paylaşım yapmamış.</div>', adminMi, true, geriVar);
     }
     var p = d.paylas || {};
     /* Yönetici KVKK gereği (kulüp işleri: VERBİS, etkinlik planı) tüm alanları
@@ -7503,9 +7697,18 @@ var MBGP = (function () {
       if (d.telefon && !p.telefon) gizli.push('telefon');
     }
 
+    var sayiVar = (d.katildi != null || d.gorevli != null);
+    var sayiAcik = yoneticiGirdi || !!p.istatistik;
     var ic = sat.length
       ? '<div class="pf-tab pf-form"><table>' + sat.join('') + '</table></div>'
-      : '<div class="pf-bos">Bu üye henüz profil bilgisi girmedi.</div>';
+      : (sayiVar && sayiAcik
+        ? ''
+        : '<div class="pf-bos">Bu üye henüz profil bilgisi girmedi.</div>');
+    /* Sayılar açıksa katılım özeti gösterilir (ad + sayı herkese açıktır) */
+    if (sayiVar && sayiAcik) {
+      ic += '<div class="sub" style="margin-top:10px">📊 Katılım: <b>' + (d.katildi || 0) +
+        '</b> · Görev: <b>' + (d.gorevli || 0) + '</b></div>';
+    }
     /* NOT: bu satır 'ic' ATANDIKTAN SONRA gelmeli — önceki sürümde yönetici
        notu 'ic' tanımlanmadan ekleniyor, sonra eziliyordu (not görünmüyordu). */
     if (yoneticiGirdi) {
@@ -7526,13 +7729,14 @@ var MBGP = (function () {
       ic += '<div class="sub" style="margin-top:6px">🔒 ' + esc(gizli.join(', ')) +
         ' gizli tutuluyor.</div>';
     }
-    return kutuHtml(baslik, avatar, ic, adminMi);
+    ic += smSatirlari(d);
+    return kutuHtml(baslik, avatar, ic, adminMi, false, geriVar);
   }
 
   function satir(etiket, deger) {
     return '<tr><td class="pf-t">' + esc(etiket) + '</td><td>' + esc(String(deger)) + '</td></tr>';
   }
-  function kutuHtml(baslik, avatar, ic, adminMi, gizliMi) {
+  function kutuHtml(baslik, avatar, ic, adminMi, gizliMi, geriVar) {
     return '<div class="pf-kart-h">' +
         '<div class="pf-avatar">' + esc(avatar) + '</div>' +
         '<div class="pf-kimlik"><h2>' + esc(baslik) + '</h2>' +
@@ -7540,7 +7744,8 @@ var MBGP = (function () {
         '</div></div>' + ic +
       '<div class="acts">' +
         (adminMi ? '<button type="button" data-k="yonet">⚙️ Yönetici: düzenle</button>' : '') +
-        '<button type="button" data-k="kapat">← Kapat</button>' +
+        (geriVar ? '<button type="button" data-k="geri">← Geri</button>'
+                 : '<button type="button" data-k="kapat">← Kapat</button>') +
       '</div>';
   }
 
@@ -7564,7 +7769,7 @@ var MBGP = (function () {
         (son ? ' (son güncelleme: ' + son.toLocaleDateString('tr-TR') + ')' : '') + '.';
 
     m.innerHTML =
-      '<h2>Kişisel bilgilerim</h2>' +
+      '<h2>Kişisel ve İletişim Bilgilerim</h2>' +
       '<div class="sub">Ad, öğrenci numarası, bölüm ve üniversiteye giriş yılın</div>' +
       '<div class="sub ' + (kilitli ? 'pf-uyari' : 'pf-ok') + '">' + uyar + '</div>' +
       '<div class="field"><label>İsim soyisim *</label>' +
@@ -7585,6 +7790,19 @@ var MBGP = (function () {
         esc(p.telefon || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
       '<p class="sub" style="margin:-6px 0 10px">Telefon bilgin profil panelinde ' +
         '<b>yalnızca senin paylaşım tercihine göre</b> görünür.</p>' +
+      '<div class="pf-blok"><h3>Sosyal medya (isteğe bağlı)</h3>' +
+      '<div class="field"><label>Instagram</label>' +
+        '<input id="pIns" maxlength="160" inputmode="url" data-alan="instagram" placeholder="Örn. https://instagram.com/kullaniciadin" value="' +
+        esc(p.instagram || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
+      '<div class="field"><label>X (Twitter)</label>' +
+        '<input id="pX" maxlength="160" inputmode="url" data-alan="x" placeholder="Örn. https://x.com/kullaniciadin" value="' +
+        esc(p.x || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
+      '<div class="field"><label>Facebook</label>' +
+        '<input id="pFb" maxlength="160" inputmode="url" data-alan="facebook" placeholder="Örn. https://facebook.com/kullaniciadin" value="' +
+        esc(p.facebook || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
+      '<div class="field"><label>LinkedIn</label>' +
+        '<input id="pLi" maxlength="160" inputmode="url" data-alan="linkedin" placeholder="Örn. https://linkedin.com/in/kullaniciadin" value="' +
+        esc(p.linkedin || '') + '"' + (kilitli ? ' disabled' : '') + '></div></div>' +
       '<div class="acts">' +
       '<button type="button" data-k="vaz">&larr; Geri</button>' +
         (kilitli ? '' : '<button type="button" class="pri" data-k="kay">Kaydet</button>') +
@@ -7607,10 +7825,22 @@ var MBGP = (function () {
       }
       var duz = MBGM.dogrulaAlan ? MBGM.dogrulaAlan(ad, no, yil) : null;
       if (duz) { toast(duz, 6500); return; }
+      var smAlan = [['pIns', 'instagram', 'Instagram'], ['pX', 'X', 'X'],
+        ['pFb', 'facebook', 'Facebook'], ['pLi', 'linkedin', 'LinkedIn']];
+      var sm = {}, smBozuk = null;
+      for (var si = 0; si < smAlan.length; si++) {
+        var ham = ((q('#' + smAlan[si][0]) || {}).value || '').trim();
+        if (!ham) { sm[smAlan[si][1]] = ''; continue; }
+        var adr = MBGFB.sosyalAdres ? MBGFB.sosyalAdres(ham) : ham;
+        if (/[\s<>]/.test(adr) || adr.indexOf('.') < 0) { smBozuk = smAlan[si][2]; break; }
+        sm[smAlan[si][1]] = adr;
+      }
+      if (smBozuk) { toast(smBozuk + ' adresi geçersiz görünüyor.', 6500); return; }
 
       var btn = b;
       btn.disabled = true; btn.textContent = '…';
-      MBGFB.profilGuncelle({ name: ad, no: no, dept: bol, girisYili: yil, telefon: tel })
+      MBGFB.profilGuncelle({ name: ad, no: no, dept: bol, girisYili: yil, telefon: tel,
+        instagram: sm.instagram, x: sm.x, facebook: sm.facebook, linkedin: sm.linkedin })
         .then(function () {
           toast('Kişisel bilgilerin güncellendi. Bir sonraki güncelleme 30 gün sonra.', 6000);
           profil();
@@ -7755,6 +7985,14 @@ var MBGP = (function () {
         '<input id="yTel" maxlength="20" inputmode="tel" autocomplete="off" value="' + esc(o.telefon || '') + '"></div>' +
       '<div class="field"><label>E-posta *</label>' +
         '<input id="yEposta" maxlength="120" inputmode="email" autocomplete="off" value="' + esc(o.email || '') + '"></div>' +
+      '<div class="field"><label>Instagram</label>' +
+        '<input id="yIns" maxlength="160" inputmode="url" autocomplete="off" value="' + esc(o.instagram || '') + '"></div>' +
+      '<div class="field"><label>X (Twitter)</label>' +
+        '<input id="yX" maxlength="160" inputmode="url" autocomplete="off" value="' + esc(o.x || '') + '"></div>' +
+      '<div class="field"><label>Facebook</label>' +
+        '<input id="yFb" maxlength="160" inputmode="url" autocomplete="off" value="' + esc(o.facebook || '') + '"></div>' +
+      '<div class="field"><label>LinkedIn</label>' +
+        '<input id="yLi" maxlength="160" inputmode="url" autocomplete="off" value="' + esc(o.linkedin || '') + '"></div>' +
       '<div class="field"><label>Rol</label><select id="yRol">' +
         '<option value="uye"' + (String(o.rol || '') !== 'admin' ? ' selected' : '') + '>Üye</option>' +
         '<option value="admin"' + (String(o.rol || '') === 'admin' ? ' selected' : '') + '>Yönetici</option>' +
@@ -7798,6 +8036,13 @@ var MBGP = (function () {
       if (epo !== String(o.email || '')) fark.epo = ['E-posta', o.email || '—', epo];
       if (rol !== String(o.rol || 'uye')) fark.rol =
         ['Rol', String(o.rol || 'uye') === 'admin' ? 'Yönetici' : 'Üye', rol === 'admin' ? 'Yönetici' : 'Üye'];
+      var smAd = { instagram: 'Instagram', x: 'X', facebook: 'Facebook', linkedin: 'LinkedIn' };
+      var smId = { instagram: 'yIns', x: 'yX', facebook: 'yFb', linkedin: 'yLi' };
+      var smYeni = {};
+      Object.keys(smAd).forEach(function (k) {
+        smYeni[k] = MBGFB.sosyalAdres ? MBGFB.sosyalAdres((q('#' + smId[k]) || {}).value || '') : '';
+        if (smYeni[k] !== String(o[k] || '')) fark[k] = [smAd[k], o[k] || '—', smYeni[k] || '—'];
+      });
       var anahtarlar = Object.keys(fark);
       if (!anahtarlar.length) { toast('Değişiklik yok.', 3000); return; }
       /* Kaydetmeden ÖNCE özetli onay kutusu */
@@ -7812,7 +8057,8 @@ var MBGP = (function () {
         geri: function () { uyeDuzenle(uid, o, geriFn); }
       }).then(function (ok) {
         if (!ok) return;
-        var yaz = { name: ad, no: no, dept: bol, girisYili: yil, telefon: tel, email: epo, rol: rol };
+        var yaz = { name: ad, no: no, dept: bol, girisYili: yil, telefon: tel, email: epo, rol: rol,
+          instagram: smYeni.instagram, x: smYeni.x, facebook: smYeni.facebook, linkedin: smYeni.linkedin };
         var btn = m.querySelector('[data-k="kay"]');
         if (btn) { btn.disabled = true; btn.textContent = '…'; }
         MBGO.islem({
@@ -9684,6 +9930,10 @@ var ETK = (function () {
   function toast(m, ms) { if (A && A.toast) A.toast(m, ms || 4000); }
   function close() { if (A && A.closeModal) A.closeModal(); }
   function fmt(d) { return A && A.fmtDate ? A.fmtDate(d) : d; }
+  /* Dönem görünen adı (cümle biçimi) */
+  function donemAd(tarih) {
+    return (window.MBGO && MBGO.donemBul(tarih) === 'bahar') ? 'Bahar dönemi' : 'Güz dönemi';
+  }
   function evler() { return (A && A.events) ? A.events() : []; }
   function evBul(id) {
     var l = evler(), k;
@@ -9800,11 +10050,11 @@ var ETK = (function () {
         if (!tarih || !baslik) { toast('Tarih ve başlık gerekli.', 3500); return; }
         var etiket = (q('#esEtiket').value || '').trim();
         if (etiket) etiket = etiket.charAt(0).toLocaleUpperCase('tr-TR') + etiket.slice(1);
-        /* tarih değiştiyse ay bilgisi tazelenir (hafta etiketi korunur) */
+        /* Dönem tarihten bulunur (seçimlik değil) */
         var yama = {
           title: baslik, date: tarih,
           desc: (q('#esNot').value || '').trim(),
-          sem: (q('#esDonem') || {}).value === 'bahar' ? 'bahar' : 'guz',
+          sem: MBGO.donemBul(tarih),
           tag: etiket ? { lbl: etiket } : null
         };
         if (window.MBG && MBG.ayAd && tarih !== (ev ? ev.date : '')) {
@@ -9822,6 +10072,7 @@ var ETK = (function () {
             yer: (q('#esYer').value || '').trim()
           })
         ]).then(function () {
+          d.taslak = null;   /* kaydedildi: taslak temizlenir */
           toast('✓ Etkinlik bilgileri kaydedildi.', 4000);
           yenile();
         }).catch(function (x) { toast(MBGM.err(x), 6500); });
@@ -9872,7 +10123,13 @@ var ETK = (function () {
     };
 
     m.oninput = function (e) {
-      if (!e.target || e.target.id !== 'esAra') return;
+      if (!e.target) return;
+      /* tarih değişince dönem bilgisi anında tazelenir */
+      if (e.target.id === 'esTarih') {
+        var db2 = q('#esDonemBilgi');
+        if (db2) db2.textContent = donemAd(e.target.value);
+      }
+      if (e.target.id !== 'esAra') return;
       d.ara = e.target.value;
       ciz();
       var i2 = q('#esAra');
@@ -9919,6 +10176,28 @@ var ETK = (function () {
     function ciz() {
       var g = q('#esGovde');
       if (!g) { kapat(); return; }
+      /* TASLAK KORUMA: QR sayacı ciz()'i düzenli tetikler; kaydedilmemiş
+         yazılar silinmesin diye mevcut girdiler anımsanır ve aynen geri
+         basılır (odak da korunur). Kaydedince taslak temizlenir. */
+      var alanlar = ['esBaslik', 'esTarih', 'esEtiket', 'esNot',
+        'esKonu', 'esKonuk', 'esSaat', 'esYer'];
+      var once = {}, odakta = null, secBas = 0, secBit = 0, i3;
+      for (i3 = 0; i3 < alanlar.length; i3++) {
+        var el3 = g.querySelector('#' + alanlar[i3]);
+        if (el3) {
+          once[alanlar[i3]] = el3.value;
+          try {
+            if (document.activeElement === el3) {
+              odakta = alanlar[i3];
+              secBas = el3.selectionStart || 0;
+              secBit = el3.selectionEnd || 0;
+            }
+          } catch (e3) {}
+        }
+      }
+      if (Object.keys(once).length) d.taslak = once;
+      var t3 = d.taslak || {};
+      var val = function (id, sunucu) { return t3[id] !== undefined ? t3[id] : sunucu; };
       var s = d.sayfa || {};
       var ara = MBGO.duz(d.ara || '');
       var gList = ara ? d.gorevli.filter(function (x) {
@@ -9932,23 +10211,21 @@ var ETK = (function () {
         : YENILE_MS;
 
       g.innerHTML =
-        '<div class="es-blok"><h3>Etkinlik bilgileri (plana işlenir)</h3>' +
-        '<div class="field"><label>Başlık *</label><input id="esBaslik" maxlength="120" value="' + esc(ev ? ev.title : '') + '"></div>' +
-        '<div class="field"><label>Tarih *</label><input id="esTarih" type="date" value="' + esc(ev ? ev.date : '') + '"></div>' +
-        '<div class="field"><label>Dönem</label><select id="esDonem">' +
-          '<option value="guz"' + (!ev || ev.sem !== 'bahar' ? ' selected' : '') + '>GÜZ DÖNEMİ</option>' +
-          '<option value="bahar"' + (ev && ev.sem === 'bahar' ? ' selected' : '') + '>BAHAR DÖNEMİ</option>' +
-        '</select></div>' +
+        '<div class="es-blok"><h3>Etkinlik bilgileri</h3>' +
+        '<div class="field"><label>Başlık *</label><input id="esBaslik" maxlength="120" value="' + esc(val('esBaslik', ev ? ev.title : '')) + '"></div>' +
+        '<div class="field"><label>Tarih *</label><input id="esTarih" type="date" value="' + esc(val('esTarih', ev ? ev.date : '')) + '"></div>' +
+        '<div class="field"><label>Dönem</label>' +
+          '<div class="dp-donem-bilgi" id="esDonemBilgi">' + esc(donemAd(val('esTarih', ev ? ev.date : ''))) + '</div></div>' +
         '<div class="field"><label>Etiket (örn. Özel Gün)</label><input id="esEtiket" maxlength="40" value="' +
-          esc((ev && ev.tag && ev.tag.lbl) || '') + '"></div>' +
+          esc(val('esEtiket', (ev && ev.tag && ev.tag.lbl) || '')) + '"></div>' +
         '<div class="field"><label>📌 Program Notu</label><textarea id="esNot" maxlength="600">' +
-          esc(s.aciklama || (ev ? ev.desc : '') || '') + '</textarea></div>' +
+          esc(val('esNot', s.aciklama || (ev ? ev.desc : '') || '')) + '</textarea></div>' +
         '</div>' +
         '<div class="es-blok"><h3>Etkinlik sayfası içeriği</h3>' +
-        '<div class="field"><label>Konu</label><input id="esKonu" maxlength="140" placeholder="Örn. CRISPR ve gen düzenleme" value="' + esc(s.konu || '') + '"></div>' +
-        '<div class="field"><label>Konuk (ad soyad)</label><input id="esKonuk" maxlength="80" placeholder="Örn. Prof. Dr. Ayşe Yılmaz" value="' + esc(s.konuk || '') + '"></div>' +
-        '<div class="field"><label>Konuşma saati</label><input id="esSaat" maxlength="40" placeholder="Örn. 14.00 – 15.30" value="' + esc(s.saat || '') + '"></div>' +
-        '<div class="field"><label>Nerede</label><input id="esYer" maxlength="120" placeholder="Örn. Mühendislik Fakültesi, Seminer Salonu B" value="' + esc(s.yer || '') + '"></div>' +
+        '<div class="field"><label>Konu</label><input id="esKonu" maxlength="140" placeholder="Örn. CRISPR ve gen düzenleme" value="' + esc(val('esKonu', s.konu || '')) + '"></div>' +
+        '<div class="field"><label>Konuk (ad soyad)</label><input id="esKonuk" maxlength="80" placeholder="Örn. Prof. Dr. Ayşe Yılmaz" value="' + esc(val('esKonuk', s.konuk || '')) + '"></div>' +
+        '<div class="field"><label>Konuşma saati</label><input id="esSaat" maxlength="40" placeholder="Örn. 14.00 – 15.30" value="' + esc(val('esSaat', s.saat || '')) + '"></div>' +
+        '<div class="field"><label>Nerede</label><input id="esYer" maxlength="120" placeholder="Örn. Mühendislik Fakültesi, Seminer Salonu B" value="' + esc(val('esYer', s.yer || '')) + '"></div>' +
         '<div class="acts pf-acts"><button type="button" class="pri" data-es="kaydet">Sayfayı kaydet</button></div></div>' +
 
         '<div class="es-blok"><h3>Katılım QR kodu <em>' + Math.ceil(kalan / 1000) + ' sn</em></h3>' +
@@ -10001,6 +10278,19 @@ var ETK = (function () {
         } catch (qe) {
           cv.parentNode.innerHTML = '<div class="pf-bos">QR çizilemedi: ' +
             esc(String(qe && qe.message ? qe.message : qe).slice(0, 80)) + '</div>';
+        }
+      }
+
+      /* yeniden çizimde odak kaybolmasın (yazarken imleç atlamaz) */
+      if (odakta) {
+        var od = g.querySelector('#' + odakta);
+        if (od) {
+          try {
+            od.focus({ preventScroll: true });
+            if (od.setSelectionRange && od.type !== 'date') {
+              od.setSelectionRange(Math.min(secBas, od.value.length), Math.min(secBit, od.value.length));
+            }
+          } catch (e4) {}
         }
       }
 
@@ -10632,7 +10922,6 @@ var MBGO = (function () {
       .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/İ/g, 'i')
       .replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u');
   }
-
   /* hata mesajını anlaşılır Türkçeye çevir */
   function hata(e) {
     var m = (e && e.code) || '';
@@ -10844,7 +11133,13 @@ var MBGO = (function () {
     return { ciz: ciz, arama: function () { return t; } };
   }
 
-  return { sor: sor, onay: onay, islem: islem, uyeAra: uyeAra, hata: hata, duz: duz };
+  /* Dönem tarihten bulunur (seçimlik değil): Eylül–Ocak güz, gerisi bahar */
+  function donemBul(tarih) {
+    var ay = +String(tarih || '').slice(5, 7);
+    return (ay >= 9 || ay <= 1) ? 'guz' : 'bahar';
+  }
+
+  return { sor: sor, onay: onay, islem: islem, uyeAra: uyeAra, hata: hata, duz: duz, donemBul: donemBul };
 })();
 </script>
 <script>
@@ -10931,8 +11226,9 @@ var MBGO = (function () {
     return (m >= 9 && m <= 12) ? 'guz' : (m >= 1 && m <= 6) ? 'bahar' : 'ozel';
   }
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
-  /* kullanici girdisi -> manyet gecerliligini sifirla */
+  /* kullanici girdisi -> manyet gecerliligini sifirla + uçuşu kes */
   function touched() {
+    intro.aktif = false;     /* açılış/Bugün kayışı dokununca kesilir */
     lastInput = (typeof performance !== 'undefined') ? performance.now() : (new Date()).getTime();
     snapDay = null;
   }
@@ -10981,10 +11277,13 @@ var MBGO = (function () {
   var lastInput = -1e9;      /* son kullanici girdisi (manyet icin) */
   var snapDay = null;       /* BUGÜN: kilitlenen gercek gun */
   var _lastToday = null, _lastSync = 0;
-  /* --- manyet ayarlari: yumuşak, kısa menzilli, zayıf çekim --------- */
+  /* --- manyet ayarlari: yumuşak, orta menzilli, zayıf çekim ---------
+     Boş sarmalda kalınmaz: sessizlikte en yakın etkinlik günü mutlaka
+     (zayıfça) kendine çeker; inceleme yine serbesttir. */
   var MAGNET_MS = 210;       /* bu kadar sessizlik sonraysa çekim başlar */
-  var MAGNET_RANGE = 3.0;    /* bu kadar gün içinde etki eder (menzil) */
+  var MAGNET_RANGE = 4.5;    /* bu kadar gün içinde etki eder (menzil) */
   var MAGNET_SOFT = 0.42;    /* en yakında çekim şiddeti (0..1) */
+  var gezYon = 0;            /* son sürükleme yönü: +1 ileri, -1 geri (yönlü mıknatıs) */
   /* kart iki baz cifti arasinda duruyor (ölçülen yerinde);
      manyet bu yüzden olay gününün yarım gün öncesine oturur, böylece
      kart ekranın tam merkezine düşer. 0.5 = yarım riss / 3.28 Å riss */
@@ -11750,7 +12049,12 @@ var MBGO = (function () {
       var snapTgt = (snapDay != null) ? snapDay : (eDay(nearestIdx(progT)) - CARD_OFF);
       var mDiff = snapTgt - progT;
       var mA = Math.abs(mDiff);
-      if (mA > 0.002 && mA < MAGNET_RANGE) {
+      /* YÖNLÜ MIKNATIS: durduktan sonraki 1.2 sn içinde, gidilen yöne TERS
+         çekiş bastırılır (hızlı kaydırınca geri savrulma hissi vermez).
+         Süre dolunca her yöne serbestçe oturur. Ek yük: 2 karşılaştırma. */
+      var yon = (t - lastInput < 1200) ? gezYon : 0;
+      var tersYon = yon !== 0 && (mDiff > 0 ? 1 : -1) !== yon;
+      if (mA > 0.002 && mA < MAGNET_RANGE && !tersYon) {
         /* yaklaştıkça güçlenir (yumuşak his), sonunda TAM oturur:
            sorun eskiden 1.2 gün kaydırmada 0.46 gün kalmasıydı,
            yani kart hiçbir zaman yerine oturmuyordu. */
@@ -11759,6 +12063,12 @@ var MBGO = (function () {
         progT = clampP(progT + mDiff * (1 - Math.exp(-pull)));
         /* son kademe: 0.04 gün içinde birebir otur */
         if (Math.abs(snapTgt - progT) < 0.05) progT = clampP(snapTgt);
+      } else if (mA >= MAGNET_RANGE && !tersYon) {
+        /* UZAK ÇEKİM: menzil dışında (ara tatil boşluğu, sarmal başı/sonu)
+           çok zayıf sürüklenme — boş sarmalda donuk kalınmaz. Menzile
+           girince yukarıdaki asıl mıknatıs devralır ve tam oturtur. */
+        var uPull = 0.22 * dt / 1000;
+        progT = clampP(progT + mDiff * (1 - Math.exp(-uPull)));
       }
     }
     var d = progT - prog;
@@ -11814,7 +12124,9 @@ var MBGO = (function () {
   function goTo(i, instant) {
     if (!EV.length) return;
     i = clamp(i, 0, maxI());
-    progT = eDay(i);
+    var hedef = eDay(i);
+    if (hedef > progT) gezYon = 1; else if (hedef < progT) gezYon = -1;
+    progT = hedef;
     if (instant) { prog = progT; setActive(i); }
   }
   function step(d) {
@@ -11824,13 +12136,16 @@ var MBGO = (function () {
   /* BUGÜN: en yakın etkinliğe değil, takvimdeki gerçek güne gidilir.
      O günde etkinlik yoksa bile manyetik o güne kilitlenir. */
   /* Sayfa açılışında: planın ilk gününden bugüne yumuşak ve HIZLANAN bir
-     kayış. Bugün çok aşağıdaysa süre mesafeyle orantılı uzar. */
+     kayış. Bugün çok aşağıdaysa süre mesafeyle orantılı uzar.
+     HEDEF BAŞTAN OTURTULUR: uçuş ham bugüne değil, bitiş oturtmasıyla AYNI
+     noktaya (en yakın etkinlik kartı) gider. Yoksa uçuş bitince yumuşatma
+     kartı bir kademe daha aşağı kaydırıyordu (arada kalmış hissi). */
   function introBaslat() {
     if (introYapildi || REDUCED || !EV.length) return;
     introYapildi = true;
     var bugun = DNA3D.dayOf(todayISO());
     if (bugun == null) return;
-    var hedef = clampP(bugun);
+    var hedef = clampP(hedefGun(bugun));
     var mesafe = Math.abs(hedef - D0);
     if (mesafe < 2.5) return;                 /* zaten başındayız */
     intro = { aktif: true, t0: 0, a: D0, b: hedef,
@@ -11879,6 +12194,30 @@ var MBGO = (function () {
     var yakin = eDay(nearestIdx(gun));
     return Math.abs(yakin - gun) <= 3 ? yakin : gun;
   }
+  /* BUGÜN düğmesi: nerede olursan ol, önce ağır ağır sonra hızlanarak
+     bugüne kayış (açılış efektiyle aynı eğri). Dokunmak uçuşu keser. */
+  function buguneKay(hedef, msj) {
+    touched();
+    try { DNA3D.setExpanded(-1); } catch (e0) {}
+    if (REDUCED || !EV.length) {
+      progT = clampP(hedef); prog = progT;
+      snapDay = clampP(hedefGun(hedef));
+      setActive(nearestIdx(prog));
+    } else {
+      var mesafe = Math.abs(clampP(hedef) - prog);
+      if (mesafe < 0.5) {
+        progT = clampP(hedef);
+        snapDay = clampP(hedefGun(hedef));
+        setActive(nearestIdx(prog));
+      } else {
+        /* uçuş bitince introIsle hedefe oturtur (hedefGun idempotent) */
+        snapDay = null;
+        intro = { aktif: true, t0: 0, a: prog, b: clampP(hedef),
+          ms: Math.min(4600, 900 + mesafe * 30) };
+      }
+    }
+    if (msj) toast(msj, 5000);
+  }
   function goToday() {
     if (!EV.length) { toast('Takvim boş.'); return; }
     var now = new Date();
@@ -11900,13 +12239,11 @@ var MBGO = (function () {
         ' tarihinde bitti, sona gidildi.', 5000);
       return;
     }
-    touched();
     /* Bugün etkinliksizse en yakın etkinliğe kay: kart merkezde dursun */
     var hdn = clampP(hedefGun(tdn));
-    snapDay = hdn;
-    progT = hdn;
-    toast('Bugün ' + fmtDate(today) + ' · ' + baz + ' bazı' +
-      (ysn.length ? ' · ' + (ysn.length > 1 ? ysn.length + ' etkinlik' : ysn[0]) : ' · etkinlik yok'), 5000);
+    buguneKay(hdn,
+      'Bugün ' + fmtDate(today) + ' · ' + baz + ' bazı' +
+      (ysn.length ? ' · ' + (ysn.length > 1 ? ysn.length + ' etkinlik' : ysn[0]) : ' · etkinlik yok'));
   }
   /* gece yarisi gun degisse bugunun bazini tazele (hareket yok, sadece renk) */
   function syncToday() {
@@ -12006,7 +12343,9 @@ var MBGO = (function () {
       touched();
       DNA3D.setExpanded(-1);
       /* surekli surukleme: snap YOK, magnet birakinca karta oturtur */
-      progT = clampP(D0 + frac * (D1 - D0));
+      var hedef = clampP(D0 + frac * (D1 - D0));
+      if (hedef > progT) gezYon = 1; else if (hedef < progT) gezYon = -1;
+      progT = hedef;
     });
     if (DNA3D.attach($('#dna')) === false) {
       document.body.classList.add('no-dna');
@@ -12117,8 +12456,9 @@ var MBGO = (function () {
       e.preventDefault();
       var dy = e.deltaY * (e.deltaMode === 1 ? 16 : 1);
       touched();
+      if (dy > 0) gezYon = 1; else if (dy < 0) gezYon = -1;
       DNA3D.setExpanded(-1);
-      progT = clampP(progT + dy * 0.026);
+      progT = clampP(progT + dy * 0.020);
     }, { passive: false });
 
     /* dokunmatik sürükleme */
@@ -12132,8 +12472,10 @@ var MBGO = (function () {
       e.preventDefault();
       var y = e.touches[0].clientY;
       touched();
+      var fark = touchY - y;
+      if (fark > 0) gezYon = 1; else if (fark < 0) gezYon = -1;
       DNA3D.setExpanded(-1);
-      progT = clampP(progT + (touchY - y) * 0.042);
+      progT = clampP(progT + fark * 0.030);
       touchY = y;
     }, { passive: false });
     window.addEventListener('touchend', function () { touchY = -1; }, { passive: true });
