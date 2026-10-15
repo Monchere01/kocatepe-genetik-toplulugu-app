@@ -96,37 +96,21 @@ service cloud.firestore {
       /* Yönetici her zaman düzenleyebilir.
          Üye kendi bilgilerini düzenler ama en fazla 30 GÜNDE BİR.
          Kilit süresince yalnızca kendi damgalarını (şifre değişikliği gibi)
-         güncelleyebilir; profil alanlarına dokunamaz.
-         ESKİ ŞEMA GEÇİŞİ (v3.4x -> v3.50): eski belgede 'rol' ve 'dogrulandi'
-         alanı yoktur. Eksik alana doğrudan erişim kuralı HATA ile düşürür
-         ("field doesn't exist → error → deny") ve üye kendi profilini bile
-         güncelleyemezdi. Bu yüzden aşağıdaki karşılaştırmalar eksik alanı
-         tolere eder: eksikse istemci 'uye' / true değerini yazar (geçiş). */
+         güncelleyebilir; profil alanlarına dokunamaz. */
       allow update: if adminMi()
         || (girisYapildi()
             && request.auth.uid == uid
             && dogrulandiMi()
-            /* rol, dogrulandi ve e-posta yalnizca yonetici tarafindan degisir;
-               ESKİ belgede eksiklerse geçiş değerleriyle yazılabilir */
+            /* rol, dogrulandi ve e-posta yalnizca yonetici tarafindan degisir */
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['name', 'no', 'dept', 'girisYili',
                            'profilGuncelAt', 'sifreDegistiAt', 'sifreSayisi',
-                           'telefon', 'rol', 'dogrulandi', 'olusturmaAt', 'email'])
-            /* rol: eksikse 'uye' yazılır (geçiş), varsa AYNI kalır
-               (kendini yonetici yapma engellenir) */
-            && ((!('rol' in resource.data) && request.resource.data.rol == 'uye')
-                || (('rol' in resource.data) && ('rol' in request.resource.data)
-                    && request.resource.data.rol == resource.data.rol))
-            /* dogrulandi: eksikse true yazılır (geçiş), varsa AYNI kalır */
-            && ((!('dogrulandi' in resource.data) && request.resource.data.dogrulandi == true)
-                || (('dogrulandi' in resource.data) && ('dogrulandi' in request.resource.data)
-                    && request.resource.data.dogrulandi == resource.data.dogrulandi))
-            /* e-posta: eksikse giriş yapan hesabın e-postası yazılır (geçiş),
-               varsa AYNI kalır (e-posta taklidi engellenir) */
-            && ((!('email' in resource.data)
-                    && request.resource.data.email == request.auth.token.email)
-                || (('email' in resource.data) && ('email' in request.resource.data)
-                    && request.resource.data.email == resource.data.email))
+                           'telefon'])
+            /* rol, dogrulandi ve e-posta yalnizca AYNI degerle yazilabilir
+               (kendini yonetici yapma / e-posta taklidi engellenir) */
+            && request.resource.data.rol == resource.data.rol
+            && request.resource.data.dogrulandi == resource.data.dogrulandi
+            && request.resource.data.email == resource.data.email
             /* 30 günlük profil kilidi: yalnızca kendi damgaları güncellenir.
                NOT: gizlilik ayarları artık paylasim/{uid} belgesindedir,
                bu yüzden kilit KVKK hakkını engellemez. */
