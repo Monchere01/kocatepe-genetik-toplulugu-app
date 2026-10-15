@@ -227,7 +227,9 @@ service cloud.firestore {
        Yalnızca ad, soyad, katıldığı ve görev sayısı tutulur.
        İletişim bilgisi (e-posta, telefon, öğrenci no) BURAYA YAZILMAZ.
        Herkes okuyabilir. Üye kendi satırını günceller, yönetici herkesininkini.
-       Takvimde gösterilmez; yalnızca "Üyeler ve katılım" sayfasında listelenir. */
+       Takvimde gösterilmez; yalnızca "Üyeler ve katılım" sayfasında listelenir.
+       ŞİŞİRME ENGELİ: üye yazdığı sayı plan büyüklüğünü (meta/plan.count)
+       geçemez; yönetici her zaman yazabilir. */
     match /public/{uid} {
       allow read: if true;
       /* Yönetici herkesin satırını oluşturabilir/gunceller;
@@ -236,15 +238,38 @@ service cloud.firestore {
         || (girisYapildi()
             && request.auth.uid == uid
             && dogrulandiMi()
+            && uyeSatiriGecerli()
             && request.resource.data.keys()
                  .hasOnly(['ad', 'soyad', 'katildi', 'gorevli', 'guncelleAt']));
       allow update: if adminMi()
         || (girisYapildi()
             && request.auth.uid == uid
             && dogrulandiMi()
+            && uyeSatiriGecerli()
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['ad', 'soyad', 'katildi', 'gorevli', 'guncelleAt']));
       allow delete: if adminMi();
+    }
+    /* Üye istatistik satırı: tip denetimi + plan büyüklüğü üst sınırı.
+       (İstemci zaten gerçek kayıtlardan hesaplar; bu kural el ile
+       şişirilmiş sayaç yazımını engeller.) */
+    function uyeSatiriGecerli() {
+      return request.resource.data.ad is string
+        && request.resource.data.ad.size() <= 80
+        && request.resource.data.soyad is string
+        && request.resource.data.soyad.size() <= 80
+        && request.resource.data.katildi is int
+        && request.resource.data.katildi >= 0
+        && request.resource.data.gorevli is int
+        && request.resource.data.gorevli >= 0
+        && request.resource.data.katildi <= planSayisi()
+        && request.resource.data.gorevli <= planSayisi();
+    }
+    function planSayisi() {
+      return exists(/databases/$(database)/documents/meta/plan)
+        && get(/databases/$(database)/documents/meta/plan).data.count is int
+        ? get(/databases/$(database)/documents/meta/plan).data.count
+        : 0;
     }
 
     /* --- DUYURULAR --- */
@@ -253,17 +278,26 @@ service cloud.firestore {
       allow create, update, delete: if adminMi();
     }
 
-    /* --- GERİ BİLDİRİMLER: hata bildirimi --- */
+    /* --- GERİ BİLDİRİMLER: hata bildirimi ---
+       Herkes yazabilir (girişsiz bildirim için); YALNIZCA yönetici okur.
+       KOTA KALKANI: ileti 2000 karakteri geçemez, tür sabittir. */
     match /reports/{reportId} {
       allow read: if adminMi();
-      allow create: if true;
+      allow create: if true
+        && request.resource.data.mesaj is string
+        && request.resource.data.mesaj.size() <= 2000
+        && request.resource.data.tur in ['hata', 'oneri'];
       allow update, delete: if adminMi();
     }
 
-    /* --- ÖNERİ / GÖRÜŞ BİLDİRİMLERİ --- */
+    /* --- ÖNERİ / GÖRÜŞ BİLDİRİMLERİ ---
+       Kota kalkanı raporlarla aynıdır. */
     match /oneriler/{oneriId} {
       allow read: if adminMi();
-      allow create: if true;
+      allow create: if true
+        && request.resource.data.mesaj is string
+        && request.resource.data.mesaj.size() <= 2000
+        && request.resource.data.tur in ['hata', 'oneri'];
       allow update, delete: if adminMi();
     }
 
@@ -292,6 +326,8 @@ service cloud.firestore {
       allow create: if girisYapildi()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.tur in ['silme', 'bilgi', 'erisim', 'düzeltme']
+        && request.resource.data.aciklama is string
+        && request.resource.data.aciklama.size() <= 2000
         && request.resource.data.keys().hasOnly([
              'uid', 'ad', 'eposta', 'tur', 'aciklama', 'durum', 'tarih']);
       allow update: if adminMi();
@@ -330,22 +366,30 @@ service cloud.firestore {
       allow read: if girisYapildi() && dogrulandiMi();
       /* Üye kendi kaydını QR koduyla yazar; YÖNETİCİ (kulüp adına
          düzeltme) doğrudan yazabilir — QR gerekmez. Böylece istatistik,
-         profil ve yönetici paneli AYNI kayıtları görür. */
+         profil ve yönetici paneli AYNI kayıtları görür.
+         Alan kilidi: ad en fazla 80 karakter (kota kalkanı; e-posta
+         istemci tarafından zaten temizlenir). */
       allow create: if adminMi()
         || (girisYapildi()
             && dogrulandiMi()
             && request.auth.uid == uid
+            && request.resource.data.keys().hasOnly(['uid', 'ad', 'anahtar', 'at'])
             && request.resource.data.uid == uid
+            && request.resource.data.ad is string
+            && request.resource.data.ad.size() <= 80
             && request.resource.data.anahtar ==
                  get(/databases/$(database)/documents/events/$(eventId)/qr/anahtar).data.anahtar);
       /* Üye kendi kaydından anahtarı SİLEBİLİR (sunucu doğrulaması
-         tamamlandıktan sonra temizlik) — başka alana dokunamaz. */
-      allow update: if girisYapildi()
-        && dogrulandiMi()
-        && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['anahtar'])
-        && !('anahtar' in request.resource.data);
+         tamamlandıktan sonra temizlik) — başka alana dokunamaz.
+         Yönetici düzeltmesi (çift okutma sonrası yeniden işaretleme)
+         engellenmez. */
+      allow update: if adminMi()
+        || (girisYapildi()
+            && dogrulandiMi()
+            && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['anahtar'])
+            && !('anahtar' in request.resource.data));
       allow delete: if adminMi();
     }
 
@@ -388,17 +432,22 @@ service cloud.firestore {
       allow read, write: if adminMi();
     }
 
-    /* --- KİŞİSEL VERİLER: yalnızca sahibi --- */
-    /* Notlar, yapılacaklar: yalnızca sahibi */
+    /* --- KİŞİSEL VERİLER: yalnızca sahibi ---
+       SİLME HAKKI (KVKK): yönetici, silme/erasure işlemi için bu belgeleri
+       SİLEBİLİR ama OKUYAMAZ (içerik gizliliği korunur, iz temizlenir). */
+    /* Notlar, yapılacaklar: yalnızca sahibi okur/yazar; yönetici silebilir */
     match /ud/{uid}/notes/{doc} {
       allow read, write: if girisYapildi() && request.auth.uid == uid;
+      allow delete: if adminMi();
     }
     match /ud/{uid}/todos/{doc} {
       allow read, write: if girisYapildi() && request.auth.uid == uid;
+      allow delete: if adminMi();
     }
-    /* Ders programı: yalnızca sahibi görebilir/yazabilir */
+    /* Ders programı: yalnızca sahibi görebilir/yazabilir; yönetici silebilir */
     match /ud/{uid}/ders/{doc} {
       allow read, write: if girisYapildi() && request.auth.uid == uid;
+      allow delete: if adminMi();
     }
     /* Eski katılım kayıtları: yalnızca sahibi okur, yalnızca yönetici yazar
        (yeni katılım events/{id}/katilan altında, QR ile) */
@@ -422,8 +471,9 @@ service cloud.firestore {
        (collectionGroup'a gerek yok → eski kalıntı koleksiyonları sorun çıkarmaz).
        İçerik: yalnızca zaman damgası ve kimlik alanları; İSİM YAZILMAZ. */
     match /katilacak/{docId} {
-      /* "kaç kişi katılacak" sayacı için giriş yapmış üyeler okur */
-      allow read: if girisYapildi();
+      /* "kaç kişi katılacak" sayacı: doğrulanmış üyeler okur (doğrulanmamış
+         hesaplar üye niyetlerini toplayamaz). */
+      allow read: if adminMi() || (girisYapildi() && dogrulandiMi());
       allow create: if (girisYapildi()
             && dogrulandiMi()
             && request.resource.data.keys().hasOnly(['at', 'ev', 'uid'])
@@ -434,9 +484,13 @@ service cloud.firestore {
                yerine kayıt açılamaz */
             && docId == request.resource.data.ev + '_' + request.auth.uid)
         || adminMi();
-      allow delete: if (girisYapildi() && resource.data.uid == request.auth.uid)
-        || adminMi();
-      allow update: if false;
+      /* Olmayan belgeyi silmek sessizce başarılı sayılır (vazgeçme
+         düğmesi, kayıt yokken hata vermez); başkasının kaydı resource
+         üzerindeki uid denetimiyle korunur. */
+      allow delete: if adminMi()
+        || (girisYapildi()
+            && (resource == null || resource.data.uid == request.auth.uid));
+      allow update: if adminMi();
     }
     match /ud/{uid}/{document=**} {
       allow read, write: if false;

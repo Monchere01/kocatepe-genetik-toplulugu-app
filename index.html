@@ -571,7 +571,9 @@
     .dp-ders{font-size:.76rem;white-space:normal;line-height:1.15}
     .dp-alt{font-size:.64rem;white-space:normal}
     .dp-arac{margin-left:0;width:100%}
-    .dp-duzen-btn{flex:1;justify-content:center;padding:11px 12px;font-size:.9rem}
+    /* iki düğme eşit, orantılı: biri büyümesin */
+    .dp-arac .dp-hafta-btn,.dp-arac .dp-duzen-btn{flex:1 1 0;justify-content:center;
+      padding:11px 12px;font-size:.86rem;min-height:44px}
   }
   #sayfaView{display:none}
   body.sayfa #dna,body.sayfa main,body.sayfa #rail,
@@ -3802,17 +3804,34 @@ var MBGFB = (function () {
       state.bekleyenProfil = null;
     });
   }
+  /* HESAP SİLME (KVKK): yalnızca members silinmiyordu; herkese açık
+     istatistik satırı, paylaşılan profil, rıza kaydı ve katılacak
+     niyetleri kalıyordu (silinen üyenin adı listelerde görünüyordu).
+     Artık görünür izlerin TAMAMI silinir. */
   function deleteMe() {
     if (!auth || !auth.currentUser) return Promise.resolve();
     var u = auth.currentUser;
-    var udRef = db.collection('ud').doc(u.uid);
+    var uid = u.uid;
+    var udRef = db.collection('ud').doc(uid);
+    var katilacakTemizle = function () {
+      return db.collection('katilacak').where('uid', '==', uid).get()
+        .then(function (s) {
+          var isler = [];
+          s.forEach(function (d) { isler.push(d.ref.delete()); });
+          return Promise.all(isler);
+        }).catch(function () {});
+    };
     return Promise.all([
       udRef.collection('notes').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
       udRef.collection('ders').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
       udRef.collection('todos').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
       udRef.collection('katilim').get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {}),
-      db.collection('members').doc(u.uid).delete(),
-      db.collection('regs').where('uid', '==', u.uid).get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {})
+      db.collection('members').doc(uid).delete(),
+      db.collection('public').doc(uid).delete().catch(function () {}),
+      db.collection('paylasim').doc(uid).delete().catch(function () {}),
+      db.collection('kvkk').doc(uid).delete().catch(function () {}),
+      katilacakTemizle(),
+      db.collection('regs').where('uid', '==', uid).get().then(function (s) { s.forEach(function (d) { d.ref.delete(); }); }).catch(function () {})
     ]).then(function () { return u.delete(); });
   }
   /* yetki: belge değil, giriş yapan hesabın e-postası (kurallarla aynı) */
@@ -3931,15 +3950,35 @@ var MBGFB = (function () {
       return batch.commit();
     });
   }
+  /* meta/plan sayacı (public istatistik üst sınırı bu sayaca bakar) */
+  function planSayac(fark) {
+    var ref = db.collection('meta').doc('plan');
+    return db.runTransaction(function (t) {
+      return t.get(ref).then(function (s) {
+        var simdi = s.exists ? (+((s.data() || {}).count) || 0) : 0;
+        var yeni = Math.max(0, simdi + fark);
+        t.set(ref, { count: yeni, at: ts() }, { merge: true });
+      });
+    }).catch(function () {});
+  }
   function upsertEvent(ev) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () {
       var data = normEv(ev, null, ev.order == null ? 999 : ev.order);
       if (ev.__id) return db.collection('events').doc(ev.__id).set(data);
-      return db.collection('events').add(data).then(function (r) { return r.id; });
+      return db.collection('events').add(data).then(function (r) {
+        planSayac(1);
+        return r.id;
+      });
     });
   }
   function deleteEvent(id) {
-    return ready().then(function () { return db.collection('events').doc(String(id)).delete(); });
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return db.collection('events').doc(String(id)).delete().then(function () {
+        planSayac(-1);
+      });
+    });
   }
   /* sunucudaki planın tam yüklendiğinin işareti (meta/plan) */
   function planMeta() {
@@ -4011,31 +4050,33 @@ var MBGFB = (function () {
         snap.forEach(function (doc) {
           var d = doc.data() || {};
           if (d.gun == null || d.bas == null) return;
-          liste.push({ gun: +d.gun, bas: +d.bas, ders: d.ders || '',
+          liste.push({ gun: +d.gun, bas: String(d.bas), ders: d.ders || '',
             hoca: d.hoca || '', sinif: d.sinif || '', renk: d.renk || 'guz' });
         });
         return liste;
       });
     }).catch(function () { return null; });
   }
+  /* Kayıt: önce koleksiyondaki eski belgeler silinir, sonra güncel liste
+     yazılır (toplu işlem). Böylece boşaltılan kutular sunucuda kalıp geri
+     gelmez. 'bas' saat metnidir ('08:30'); sayıya çevrilmez (NaN olur). */
   function dersKaydet(liste) {
     if (!state.user) return Promise.reject(new Error('Önce giriş yapmalısın.'));
     return ready().then(function () {
       var yaz = function () {
         var col = udCol('ders');
-        var silinecek = col.get().then(function (s) { var a = []; s.forEach(function (d) { a.push(d.ref); }); return a; });
-        var islemler = silinecek.then(function (refs) {
-          var y = [col.doc('liste')];
+        return col.get().then(function (s) {
+          var toplu = db.batch();
+          s.forEach(function (d) { toplu.delete(d.ref); });
           (liste || []).forEach(function (d) {
-            y.push(col.doc(String(d.gun) + '-' + String(d.bas)).set({
-              gun: +d.gun, bas: +d.bas, ders: d.ders || '',
+            toplu.set(col.doc(String(d.gun) + '-' + String(d.bas)), {
+              gun: +d.gun, bas: String(d.bas), ders: d.ders || '',
               hoca: d.hoca || '', sinif: d.sinif || '', renk: d.renk || 'guz',
               at: ts()
-            }));
+            });
           });
-          return Promise.all(y);
+          return toplu.commit();
         });
-        return islemler;
       };
       return yaz().catch(function (h) { return jetonTazeleVeTekrar(h, yaz); });
     });
@@ -4050,11 +4091,10 @@ var MBGFB = (function () {
     var ev = String(evId);
     var benimId = ev + '_' + state.user.uid;
     return ready().then(function () {
-      return db.collection('katilacak').get().then(function (snap) {
+      return db.collection('katilacak').where('ev', '==', ev).get().then(function (snap) {
         var benim = false, adet = 0;
         snap.forEach(function (belge) {
           var o = belge.data() || {};
-          if (String(o.ev) !== ev) return;
           adet++;
           if (belge.id === benimId || String(o.uid) === state.user.uid) benim = true;
         });
@@ -4070,7 +4110,7 @@ var MBGFB = (function () {
     var ev = String(evId);
     return ready().then(function () {
       return Promise.all([
-        db.collection('katilacak').get().catch(function () { return null; }),
+        db.collection('katilacak').where('ev', '==', ev).get().catch(function () { return null; }),
         listMembers().catch(function () { return []; })
       ]).then(function (r) {
         var uyeler = {};
@@ -4314,7 +4354,9 @@ var MBGFB = (function () {
       var katRef = db.collection('events').doc(ev).collection('katilan').doc(u);
       var gorRef = db.collection('events').doc(ev).collection('gorevli').doc(u);
       var gelRef = db.collection('katilacak').doc(ev + '_' + u);
-      var isim = String(ad || '');
+      /* YÖNETİCİ PANELİNDEN SIZINTI ENGELİ: ad yerine e-posta geldiyse
+         (isimsiz üye) herkese açık listeye e-posta yazılmaz. */
+      var isim = adTemizle(ad);
       var isler = [];
       if (rec && rec.durum === 'katildi') {
         isler.push(katRef.set({ uid: u, ad: isim, at: ts() }));
@@ -4359,9 +4401,26 @@ var MBGFB = (function () {
       });
     });
   }
+  /* YÖNETİCİ SİLME ZİNCİRİ: üye kaydı + herkese açık satır + paylaşılan
+     profil + rıza kaydı + katılacak niyetleri birlikte silinir. */
   function deleteMember(uid) {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
-    return ready().then(function () { return db.collection('members').doc(String(uid)).delete(); });
+    var id = String(uid);
+    return ready().then(function () {
+      var katilacakTemizle = db.collection('katilacak').where('uid', '==', id).get()
+        .then(function (s) {
+          var isler = [];
+          s.forEach(function (d) { isler.push(d.ref.delete()); });
+          return Promise.all(isler);
+        }).catch(function () {});
+      return Promise.all([
+        db.collection('members').doc(id).delete(),
+        db.collection('public').doc(id).delete().catch(function () {}),
+        db.collection('paylasim').doc(id).delete().catch(function () {}),
+        db.collection('kvkk').doc(id).delete().catch(function () {}),
+        katilacakTemizle
+      ]);
+    });
   }
   /* --- eski şema yükseltme (yalnızca yönetici) -------------------------
      v3.4x şeması: role | year | createdAt | phone  (dogrulandi alanı yok)
@@ -4421,7 +4480,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () {
       return evRef(evId).collection('sayfa').doc('genel').set(Object.assign({}, veri, {
-        guncelle: ts(), ekleyen: state.user ? state.user.email : ''
+        guncelle: ts(), ekleyen: 'Yönetim'
       })).then(function () { return veri; });
     });
   }
@@ -4432,7 +4491,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     return ready().then(function () {
       return evRef(evId).collection('qr').doc('anahtar').set({
         anahtar: anahtar, uretilme: ts(),
-        ekleyen: state.user ? state.user.email : ''
+        ekleyen: 'Yönetim'
       }).then(function () { return anahtar; });
     });
   }
@@ -4467,28 +4526,41 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
       });
     });
   }
-  /* üye kendi katılımını yazar (kurul geçerli kodu doğrular) */
+  /* üye kendi katılımını yazar (kurul geçerli kodu doğrular).
+     GİZLİLİK: ad yoksa e-posta DEĞİL 'Üye' yazılır (katılan listesi
+     doğrulanmış üyelere açıktır). Çift okutma sessizce başarılı sayılır
+     (kural 'update'i yasaklar; önceki kayıt varsa yalnızca anahtar
+     temizlenir). */
   function katilanYaz(evId, anahtar) {
     if (!state.user) return Promise.reject(new Error('Önce giriş yapmalısın.'));
     if (!verified()) return Promise.reject(new Error('E-posta adresi doğrulanmadan katılım kaydedilemez.'));
     return ready().then(function () {
       var p = state.profile || {};
-      return evRef(evId).collection('katilan').doc(state.user.uid).set({
-        uid: state.user.uid,
-        ad: p.name || state.user.email || '',
-        anahtar: anahtar,
-        at: ts()
-      }).then(function () {
-        /* Sunucu anahtarı doğruladı → kayıttan sil (istemci dışında
-           kimse canlı anahtarı okuyamasın) */
+      var ref = evRef(evId).collection('katilan').doc(state.user.uid);
+      var temizle = function () {
         try {
-          evRef(evId).collection('katilan').doc(state.user.uid).update({
+          return ref.update({
             anahtar: fb.firestore.FieldValue.delete()
-          })['catch'](function () {});
-        } catch (e) {}
-        return true;
+          }).catch(function () { return true; });
+        } catch (e) { return Promise.resolve(true); }
+      };
+      return ref.get().then(function (sn) {
+        if (sn.exists) return temizle().then(function () { return true; });
+        return ref.set({
+          uid: state.user.uid,
+          ad: adTemizle(p.name),
+          anahtar: anahtar,
+          at: ts()
+        }).then(function () { return temizle().then(function () { return true; }); });
       });
     });
+  }
+  /* Herkese açık listelere yazılan ad: e-posta sızdırmaz.
+     İsimsiz üye 'Üye' olarak görünür. */
+  function adTemizle(ad) {
+    var a = String(ad || '').trim();
+    if (!a || a.indexOf('@') >= 0) return 'Üye';
+    return a.slice(0, 80);
   }
 
   /* =====================================================================
@@ -4525,8 +4597,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
       var p = state.profile || {};
       return evRef(evId).collection('yorumlar').add({
         uid: state.user.uid,
-        ad: p.name || state.user.email || '',
-        
+        ad: adTemizle(p.name),
         metin: m,
         at: ts()
       }).then(function (r) { return r.id; });
@@ -6116,7 +6187,9 @@ var MBGM = (function () {
           },
           ciz: function (goster) {
             return goster.map(function (u) {
-              var yonetici = u.email && String(u.email).toLowerCase() === 'b.gul.baba.can@hotmail.com';
+              /* rol belgenin kendisinden okunur (kural değişikliği üye
+                 kendini yönetici yapamaz; sabit e-posta metni gerekmez) */
+              var yonetici = String(u.rol || '') === 'admin';
               var bilgi = [u.no, u.dept, u.girisYili].filter(function (x) { return x; }).join(' · ');
               var ad = u.name || u.email || '(isim yok)';
               return '<div class="todo"><span><b>' + esc(ad) + '</b>' +
@@ -6162,7 +6235,8 @@ var MBGM = (function () {
         uyari: true,
         ikon: '⚠',
         mesaj: '<b>' + esc(kim) + '</b> üye listesinden silinecek.',
-        not: 'Not: e-posta doğrulaması yapılmamışa yalnızca profil kaydı silinir; ' +
+        not: 'Üyelik kaydı, herkese açık istatistik satırı, paylaşılan profil, ' +
+          'rıza kaydı ve katılacak niyetleri birlikte silinir; ' +
           'giriş hesabı Firebase Auth içinde kalır.',
         onayMetni: 'Evet, sil',
         geri: function () { if (geriFn) geriFn(); }
@@ -8970,7 +9044,8 @@ var DERS = (function () {
   }
 
   /* ---------- sunucu ---------- */
-  function sunucuyaYaz(liste) {
+  /* sessiz=true: başarıda bildirim yok (Bitirdim süpürmesi), hatada sesli */
+  function sunucuyaYaz(liste, sessiz) {
     if (!window.MBGFB || !MBGFB.dersKaydet) return Promise.resolve(false);
     return MBGFB.dersKaydet(liste).then(function () { return true; })
       .catch(function (e) { toastY('Kaydedilemedi: ' + ((e && e.code) || 'hata')); return false; });
@@ -9187,7 +9262,7 @@ var DERS = (function () {
         : '') +
       '<div class="field"><label>Ders *</label>' +
         '<input id="dpD" maxlength="60" autocomplete="off" placeholder="Örn. Genetik" value="' + esc2(v.d) + '"></div>' +
-      '<div class="field"><label>Hoca</label>' +
+      '<div class="field"><label>Öğretim Üyesi</label>' +
         '<input id="dpH" maxlength="60" autocomplete="off" placeholder="Örn. Prof. Dr. Ahmet Yılmaz" value="' + esc2(v.h) + '"></div>' +
       '<div class="field"><label>Sınıf / Şube</label>' +
         '<input id="dpC" maxlength="30" autocomplete="off" placeholder="Örn. 2-A" value="' + esc2(v.c) + '"></div>' +
@@ -9266,18 +9341,25 @@ var DERS = (function () {
     }
     kaydetYerel();
     ciz();
-    if (!window.MBGFb || !MBGFb.user || !MBGFb.user()) {
+    if (!window.MBGFB || !MBGFB.user || !MBGFB.user()) {
       toastY('Kaydedildi (bu cihazda). Sunucuya yazmak için giriş yap.'); return;
     }
+    var liste = listeKur();
+    sunucuyaYaz(liste).then(function (ok) {
+      if (ok) toastY('Ders programı kaydedildi · ' + liste.length + ' ders');
+    }).catch(function (e) {
+      toastY('Sunucuya yazılamadı: ' + ((e && (e.code || e.message)) || 'bağlantı hatası'));
+    });
+  }
+  /* bellekten sunucu biçimli liste kurar */
+  function listeKur() {
     var liste = [];
     for (var k in veri) {
       var x = veri[k];
       if (!x || !x.d) continue;
       liste.push({ gun: x.g, bas: x.s, ders: x.d, hoca: x.h, sinif: x.c, renk: x.r });
     }
-    sunucuyaYaz(liste).then(function (ok) {
-      if (ok) toastY('Ders programı kaydedildi · ' + liste.length + ' ders');
-    });
+    return liste;
   }
 
   return {
@@ -9305,7 +9387,18 @@ var DERS = (function () {
         el.duzenBtn.onclick = function () {
           duzenleme = !duzenleme;
           ciz();
-          toastY(duzenleme ? 'Düzenleme modu açık — boş kutulara dokun.' : 'Düzenleme modu kapandı.');
+          if (duzenleme) {
+            toastY('Düzenleme modu açık — boş kutulara dokun.');
+            return;
+          }
+          /* Bitirdim: güncel sürüm sunucuya yazılır (sessiz eşitleme;
+             başarısızlık bildirilir, başarı kutu kayıtlarında zaten duyuruldu). */
+          if (window.MBGFB && MBGFB.user && MBGFB.user()) {
+            sunucuyaYaz(listeKur(), true).catch(function (e) {
+              toastY('Sunucuya yazılamadı: ' + ((e && (e.code || e.message)) || 'bağlantı hatası'));
+            });
+          }
+          toastY('Düzenleme modu kapandı.');
         };
       }
       if (el.haftaBtn && !el.haftaBtn.onclick) {
@@ -9327,7 +9420,7 @@ var DERS = (function () {
     veri: function () { return veri; },
     temizle: function () {
       veri = {}; kaydetYerel(); ciz();
-      if (window.MBGFb && MBGFb.user && MBGFb.user()) {
+      if (window.MBGFB && MBGFB.user && MBGFB.user()) {
         sunucuyaYaz([]).then(function () { toastY('Ders programı silindi.'); });
       }
     }
@@ -11735,9 +11828,14 @@ var MBGO = (function () {
        kendi kaydırmasını yapar; sadece DNA sahnesi kendi kaydırır. */
     function kaydirilabilir(el) {
       while (el && el !== document.body && el !== document.documentElement) {
-        var oy;
-        try { oy = getComputedStyle(el).overflowY; } catch (e) { oy = ''; }
+        var oy, ox;
+        try { oy = getComputedStyle(el).overflowY; ox = getComputedStyle(el).overflowX; }
+        catch (e) { oy = ''; ox = ''; }
         if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 4) return el;
+        /* YATAY kayan kap (ders programı tablosu): parmak yatay sürükleyince
+           sahne çalıyordu; özellikle sayfa dikey kaymıyorsa (hafta sonu gizli
+           → kısa içerik) preventDefault yatay kaydırmayı da öldürüyordu. */
+        if ((ox === 'auto' || ox === 'scroll') && el.scrollWidth > el.clientWidth + 4) return el;
         el = el.parentElement;
       }
       return null;
