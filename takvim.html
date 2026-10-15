@@ -232,7 +232,7 @@
     border:2px solid transparent;background-clip:content-box}
   .modal::-webkit-scrollbar-thumb:hover{background:rgba(148,178,220,.5);background-clip:content-box}
   .modal{scrollbar-width:thin;scrollbar-color:rgba(148,178,220,.3) transparent}
-.modal{position:relative;width:min(580px,100%);max-height:88vh;overflow-y:auto;-ms-overflow-style:none;border-radius:22px;
+.modal{position:relative;width:min(580px,100%);max-height:88vh;max-height:88dvh;overflow-y:auto;-ms-overflow-style:none;border-radius:22px;
     /* üstte ve sağda çarpı düğmesi için pay bırak */
     padding:54px 28px 26px;
     border:1px solid var(--stroke-2);background:linear-gradient(160deg,#131c2c,#0a101c);
@@ -853,7 +853,7 @@
   .kvkk-satir:hover{background:rgba(148,178,220,.12);border-color:rgba(56,189,248,.45)}
   .kvkk-satir-ad{font-weight:600;font-size:.92rem}
   .kvkk-satir-kisa{font-size:.76rem;color:#a9bbd4}
-  .kvkk-belge{max-height:58vh;overflow-y:auto;margin-top:10px;padding:2px 4px 2px 0;
+  .kvkk-belge{max-height:58vh;max-height:58dvh;overflow-y:auto;margin-top:10px;padding:2px 4px 2px 0;
     font-size:.87rem;line-height:1.6;color:#d3deee;-webkit-overflow-scrolling:touch}
   .adm-alt{display:block;font-size:.74rem;color:#9db0c9;margin-top:2px;line-height:1.45}
   /* --- "okudum" mekanizması --- */
@@ -941,7 +941,7 @@
     border:1px solid rgba(148,178,220,.2);background:rgba(148,178,220,.07);color:#e2ecf9;
     font-size:.86rem}
   .kvkk-eylem button:hover{background:rgba(148,178,220,.13)}
-  @media (max-width:560px){.kvkk-belge{max-height:56vh}.kvkk-tablo{font-size:.75rem}}
+  @media (max-width:560px){.kvkk-belge{max-height:56vh;max-height:56dvh}.kvkk-tablo{font-size:.75rem}}
   .inst p{font-size:.85rem;line-height:1.55;color:#c9d6ea;margin:0 0 7px}
   .inst p.dim{color:#8fa2bd}
   .inst b{color:#e6edf7}
@@ -1293,6 +1293,8 @@
     .gun-panel .gp-satir{gap:6px}
     .gun-panel .gp-etiket{font-size:.72rem;padding:5px 11px;border-radius:999px}
     .gun-panel .gp-kart p{font-size:.88rem;line-height:1.62;margin-top:9px}
+    /* tüm modal alt düğmeleri dokunma hedefi (en az 44px) */
+    .modal .acts button{min-height:44px}
     /* kart içi ve alt düğmeler tam genişlik: dokunması kolay */
     .gun-panel .gp-kart .acts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
     .gun-panel .gp-kart .acts button{width:100%;min-height:44px;justify-content:center}
@@ -1301,6 +1303,13 @@
     .gp-not{font-size:.86rem;line-height:1.6;padding:12px 13px}
   }
 
+  /* iOS Safari 16px altı girdide odağı zumlar (okunabilirlik + kayma sorunu);
+     mobilde tüm yazı girişleri 16px olur. Düğme yazı boyutları değişmez. */
+  @media (max-width:680px){
+    .field input,.field textarea,.field select,#search,.todo-add input,
+    #pfArama,#etpAra,#admAra,#esAra,.kvkk-basvuru input,.kvkk-basvuru textarea,
+    .kvkk-basvuru select,.dp-duzen input,.dp-duzen select{font-size:16px}
+  }
   @media (max-width:400px){
     .toolbar button{font-size:.68rem;padding:6px 7px}
     .titles h1{font-size:.74rem}
@@ -3080,9 +3089,14 @@ var DNA3D = (function () {
       /* tiklanan kart buyur ve detay yuzune gecer (butonsuz salt okunur) */
     function expSize() {
       var visW = 2 * Math.tan(FOV * Math.PI / 360) * CAMZ * Math.max(0.25, camera.aspect);
-      /* genisletilmis detay karti: ekranin %92 sini gecmesin */
-      var exPx = Math.min(560, visW * KPX * 0.92, W * 0.94);
-      if (!isFinite(exPx) || exPx < 60) exPx = 300;
+      /* BÜYÜMÜŞ KART RAYIN ALTINA GİRMEZ (mobil denetim): kart ekranda
+         ortalanır; sağda ray (canvas + sağ boşluk + pay) durur. Genişlik,
+         sol kenar payı ile ray bölgesi çıkarılarak sınırlanır. */
+      var darEkran = camera.aspect < 0.62;
+      var SOL_PAY = 12, RAY_BOLGE = darEkran ? 56 : 64;
+      var enFazla = W - SOL_PAY - RAY_BOLGE;
+      var exPx = Math.min(560, visW * KPX * 0.92, enFazla);
+      if (!isFinite(exPx) || exPx < 60) exPx = Math.max(120, Math.min(300, enFazla));
       var ew = exPx / KPX;
       return [ew, ew / (DCW / DCH)];
     }
@@ -3406,10 +3420,43 @@ var MBGFB = (function () {
     return loading;
   }
 
+  /* --- eski şema uyumluluğu (v3.4x -> v3.50) -----------------------
+     v3.4x'te üye belgesi şu alanlarla yazılıyordu:
+        role:'member' | year | createdAt | email | phone | dept | name | no
+     v3.50 şeması:
+        rol:'uye' | girisYili | olusturmaAt | dogrulandi:true | ...
+     Farklı alan adları yüzünden eski üyeler "misafir" sayılıyordu.
+     Burada OKUMA katmanında tek noktada eski yazımı yeni yazıma çeviririz;
+     böylece istemci (profil, ders erişimi, arama, yönetici listesi)
+     daima yeni alan adlarını görür.
+     'epostaDogrulu' verildiyse doğrulama alanı o bilgiye göre doldurulur
+     (eski kayıtta doğrulama alanı yoktu). */
+  function uyeyiNormalize(d, epostaDogrulu) {
+    if (!d || typeof d !== 'object') return d;
+    var o = {}, k;
+    for (k in d) if (Object.prototype.hasOwnProperty.call(d, k)) o[k] = d[k];
+    /* rol: role ('member' | 'admin' | 'yonetici') -> rol ('uye' | 'admin') */
+    if (!o.rol && o.role) {
+      o.rol = (String(o.role) === 'admin' || String(o.role) === 'yonetici') ? 'admin' : 'uye';
+    }
+    if (!o.rol) o.rol = 'uye';
+    /* giriş yılı: year -> girisYili */
+    if (o.girisYili == null || o.girisYili === '') {
+      o.girisYili = (o.year == null || o.year === '') ? '' : String(o.year);
+    }
+    /* oluşturma zamanı: createdAt -> olusturmaAt */
+    if (o.olusturmaAt == null) o.olusturmaAt = o.createdAt || null;
+    /* doğrulama: eski belgelerde alan yok; e-posta doğrulanmışsa üyedir */
+    if (o.dogrulandi == null) o.dogrulandi = (epostaDogrulu === true);
+    /* telefon: phone -> telefon (her yerde 'telefon' kullanılıyor) */
+    if (o.telefon == null) o.telefon = o.phone || '';
+    return o;
+  }
+
   /* profil belgesi: kayit yazisi birkac yuzde sonra daha gorunur olabilir */
-  function profilGet(uid, kalan) {
+  function profilGet(uid, kalan, epostaDogrulu) {
     return db.collection('members').doc(uid).get().then(function (snap) {
-      if (snap.exists) return snap.data();
+      if (snap.exists) return uyeyiNormalize(snap.data(), epostaDogrulu);
       if (kalan > 0) {
         return new Promise(function (r) {
           setTimeout(function () { profilGet(uid, kalan - 1).then(r); }, 450);
@@ -3604,6 +3651,19 @@ var MBGFB = (function () {
           telefon: alanlar.telefon != null ? alanlar.telefon : (mevcut.telefon || ''),
           profilGuncelAt: ts()
         };
+        /* ESKİ ŞEMA GEÇİŞİ (v3.4x -> v3.50): belgede 'rol' / 'dogrulandi' /
+           'olusturmaAt' yoksa kurallar eksik alanı tolere etmez; bu yüzden
+           ilk güncellemede geçiş değerleri birlikte yazılır. Güvenlik:
+           rol yalnızca 'uye', dogrulandi yalnızca true olabilir (kural
+           denetler); mevcut değer varsa ASLA değiştirilmez. */
+        if (mevcut.rol == null) veri.rol = 'uye';
+        if (mevcut.dogrulandi == null) veri.dogrulandi = true;
+        if (mevcut.olusturmaAt == null) {
+          veri.olusturmaAt = mevcut.createdAt || ts();
+        }
+        if ((mevcut.email == null || mevcut.email === '') && auth.currentUser.email) {
+          veri.email = auth.currentUser.email;
+        }
         var yaz = function () { return ref.update(veri); };
         return yaz().catch(function (h) { return jetonTazeleVeTekrar(h, yaz); }).then(function () {
           state.profile = Object.assign({}, mevcut, veri);
@@ -3672,7 +3732,7 @@ var MBGFB = (function () {
         state.user = u || null;
         state.role = 'guest'; state.profile = null;
         if (!u) { cb(null, 'guest', null); return; }
-        profilGet(u.uid, 3).then(function (snap) {
+        profilGet(u.uid, 3, !!u.emailVerified).then(function (snap) {
           if (snap && snap.dogrulandi === true) {
             state.profile = snap;
             state.role = snap.rol === 'admin' ? 'admin' : 'uye';
@@ -3727,7 +3787,7 @@ var MBGFB = (function () {
     return ready().then(function () {
       return auth.signInWithEmailAndPassword(email, pw).then(function (cred) {
         state.user = cred.user;
-        return profilGet(cred.user.uid, 2).then(function (p) {
+        return profilGet(cred.user.uid, 2, !!cred.user.emailVerified).then(function (p) {
           state.profile = p && p.dogrulandi ? p : null;
           state.role = role();
           return state;
@@ -4170,7 +4230,7 @@ var MBGFB = (function () {
         /* YÖNETİCİ: kulüp işleri kapsamında gizli alanları da görür */
         return db.collection('members').doc(kim).get().then(function (m) {
           if (m.exists) {
-            var g = m.data() || {};
+            var g = uyeyiNormalize(m.data(), true);
             if (g.name) temel.ad = g.name;
             if (g.no) temel.no = g.no;
             if (g.dept) temel.bolum = g.dept;
@@ -4288,7 +4348,7 @@ var MBGFB = (function () {
       return db.collection('members').get().then(function (snap) {
         var out = [];
         snap.forEach(function (d) {
-          var o = d.data() || {};
+          var o = uyeyiNormalize(d.data(), true);
           o.uid = d.id;
           out.push(o);
         });
@@ -4303,6 +4363,40 @@ var MBGFB = (function () {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () { return db.collection('members').doc(String(uid)).delete(); });
   }
+  /* --- eski şema yükseltme (yalnızca yönetici) -------------------------
+     v3.4x şeması: role | year | createdAt | phone  (dogrulandi alanı yok)
+     v3.50 şeması: rol | girisYili | olusturmaAt | telefon | dogrulandi
+     Kullanıcı verisi SİLİNMEZ; yalnızca eksik alanlar eklenir. */
+  function semaYukselt() {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return db.collection('members').get().then(function (snap) {
+        var isler = [], alanlar = {};
+        snap.forEach(function (d) {
+          var o = d.data() || {};
+          var p = {}, degisti = false;
+          if (!o.rol) {
+            p.rol = (String(o.role) === 'admin' || String(o.role) === 'yonetici') ? 'admin' : 'uye';
+            degisti = true;
+          }
+          if ((o.girisYili == null || o.girisYili === '') && o.year != null && o.year !== '') {
+            p.girisYili = String(o.year); degisti = true;
+          }
+          if (o.olusturmaAt == null && o.createdAt != null) { p.olusturmaAt = o.createdAt; degisti = true; }
+          if (o.telefon == null && o.phone) { p.telefon = String(o.phone); degisti = true; }
+          if (o.dogrulandi !== true) { p.dogrulandi = true; degisti = true; }
+          if (!degisti) return;
+          Object.keys(p).forEach(function (k) { alanlar[k] = 1; });
+          isler.push(db.collection('members').doc(d.id).set(p, { merge: true }));
+        });
+        if (!isler.length) return { toplam: snap.size, yazilacak: 0, alanlar: [] };
+        return Promise.all(isler).then(function () {
+          return { toplam: snap.size, yazilacak: isler.length, alanlar: Object.keys(alanlar).sort() };
+        });
+      });
+    });
+  }
+
   function setMemberRole(uid, rol) {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () { return db.collection('members').doc(String(uid)).update({ rol: rol }); });
@@ -4481,7 +4575,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () {
       return db.collection('members').doc(String(uid)).get().then(function (s) {
-        var u = s.exists ? (s.data() || {}) : {};
+        var u = s.exists ? uyeyiNormalize(s.data(), true) : {};
         /* NOT: 'ad' ALANI AD SOYAD olmalı; e-posta düşerse herkese açık
            bu koleksiyondan sızar. İsim yoksa üye etiketi yazılır. */
         return evRef(evId).collection('gorevli').doc(String(uid)).set({
@@ -4694,8 +4788,12 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     var ekle = function (uid) { if (!say[uid]) say[uid] = { katildi: 0, gorevli: 0 }; return say[uid]; };
     /* gruplar hâlinde (rate limit'e takılmamak için 6'şılı) */
     function grup(ci, kalan) {
-      if (!kalan.length) return Promise.resolve();
+      /* SONSUZ DÖNGÜ DÜZELTMESİ: eski kod yalnızca kalan.length'e bakıyor,
+         ci büyüdükçe parça boşalıyor ama özyineleme durmuyordu (söz hiç
+         çözülmüyor → "hesaplanıyor…" ekranı donmuş gibi kalıyordu). */
+      if (!kalan.length || ci >= kalan.length) return Promise.resolve();
       var parca = kalan.slice(ci, ci + 6);
+      if (!parca.length) return Promise.resolve();
       var isler = parca.map(function (id) {
         return Promise.all([
           db.collection('events').doc(id).collection('katilan').get().catch(function () { return null; }),
@@ -4780,6 +4878,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     gorevliOku: gorevliOku, gorevliEkle: gorevliEkle, gorevliSil: gorevliSil,
     benimKatildiklarim: benimKatildiklarim, benimGorevlerim: benimGorevlerim,
     listMembers: listMembers, deleteMember: deleteMember, setMemberRole: setMemberRole,
+    semaYukselt: semaYukselt,
     watchEvents: watchEvents, replaceEvents: replaceEvents, upsertEvent: upsertEvent,
     deleteEvent: deleteEvent, eventIds: eventIds, planMeta: planMeta,
     saveTodos: saveTodos, loadTodos: loadTodos, saveNote: saveNote, loadNotes: loadNotes,
@@ -5836,6 +5935,7 @@ var MBGM = (function () {
         '<button type="button" data-a="rapor">Hata bildirimleri</button>' +
         '<button type="button" data-a="gorus">Öneri / görüşler</button>' +
         '<button type="button" data-a="kvkk">🔒 KVKK talepleri</button>' +
+        '<button type="button" data-a="sema">🛠 Eski üye kayıtlarını yükselt</button>' +
       '</div>' +
       '<div class="pf-ara" style="margin-top:14px"><span class="pf-ara-ikon">⌕</span>' +
         '<input type="search" id="admAra" autocomplete="off" spellcheck="false" ' +
@@ -5959,6 +6059,7 @@ var MBGM = (function () {
       else if (a === 'rapor') reports();
       else if (a === 'gorus') gorusler();
       else if (a === 'kvkk') kvkkTalepleri();
+      else if (a === 'sema') { close(); uyeSchemaYukselt(); }
       else if (a === 'kapat') close();
     };
     q('#admXlsx').onchange = function () {
@@ -6157,6 +6258,54 @@ var MBGM = (function () {
       MBGFB.addNews(t, (q('#anB').value || '').trim()).then(function () {
         toast('Duyuru yayınlandı.', 4000); close();
       }).catch(function (x) { toast(err(x), 6000); });
+    };
+    q('#backdrop').classList.add('open');
+  }
+
+/* --- yönetici: eski şemadaki üye belgelerini yeni şemaya yükselt -------
+   v3.4x'te yazılmış üyelerde alan adları farklıydı (role / year / createdAt /
+   phone) ve 'dogrulandi' alanı yoktu. İstemci okurken normalleştiriyor;
+   bu işlem kayıtları kalıcı olarak yeni şemaya taşır. */
+  function uyeSchemaYukselt() {
+    var m = q('#modal');
+    if (!m) return;
+    if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
+    m.className = 'modal genis';
+    m.innerHTML =
+      '<h2>Eski üye kayıtlarını yükselt</h2>' +
+      '<div class="sub">v3.4x şemasındaki üyeleri güncel şemaya taşır ' +
+        '(rol, giriş yılı, telefon, oluşturma zamanı, doğrulama)</div>' +
+      '<div id="semaSonuc" class="pf-bos">Henüz çalıştırılmadı.</div>' +
+      '<div class="acts">' +
+        '<button type="button" data-s="geri">← Admin Paneli</button>' +
+        '<button type="button" class="pri" data-s="calistir">Tara ve yükselt</button>' +
+      '</div>';
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-s]') : null;
+      if (!b) return;
+      var k = b.getAttribute('data-k');
+      if (k === 'geri') { adminPanel(); return; }
+      if (k !== 'calistir') return;
+      b.disabled = true;
+      var kutu = q('#semaSonuc');
+      if (kutu) kutu.textContent = 'Üyeler taranıyor…';
+      MBGFB.semaYukselt().then(function (r) {
+        b.disabled = false;
+        if (kutu) {
+          kutu.innerHTML = r.yazilacak === 0
+            ? '<b>✓ Güncel şemada uyumsuz kayıt bulunamadı.</b>'
+            : '<b>✓ ' + r.yazilacak + ' kayıt yükseltildi</b><br>' +
+              'Güncellenen alanlar: ' + esc(r.alanlar.join(', ') || '—') +
+              '<br>Kontrol edilen belge: ' + r.toplam;
+        }
+        toast(r.yazilacak === 0
+          ? '✓ Güncel şemada uyumsuz kayıt yok.'
+          : '✓ ' + r.yazilacak + ' üye kaydı yükseltildi.', 4500);
+      }).catch(function (x) {
+        b.disabled = false;
+        if (kutu) kutu.textContent = 'Hata: ' + err(x);
+        toast('Yükseltilemedi: ' + err(x), 6000);
+      });
     };
     q('#backdrop').classList.add('open');
   }
@@ -9002,7 +9151,7 @@ var DERS = (function () {
         ? '<b>Düzenleme modu açık.</b> Boş bir kutuya dokun, dersini yaz. Aynı dersi ' +
           'yan yana saatlere yazarsan tek blok görünür. Son yazdığın dersler ' +
           'pencere başında hazır şablon olarak çıkar.'
-        : 'Kendi haftalık ders programın. Yalnızca sen görürsün; başka cihazda da aynı program açılır.';
+        : 'Kendi haftalık ders programın. Yalnızca sen görürsün; başka bir cihazdan da aynı programa ulaşabilirsin.';
     }
     var hf = el.haftaBtn;
     if (hf) {
@@ -9568,11 +9717,13 @@ var ETK = (function () {
         liste: ls,
         ipucu: 'Üye ara: ad, e-posta, öğrenci no, bölüm',
         alan: function (u) {
-          return [u.name, u.email, u.no, u.dept, u.year].filter(function (x) { return x; }).join(' ');
+          return [u.name, u.email, u.no, u.dept, u.girisYili || u.year]
+            .filter(function (x) { return x; }).join(' ');
         },
         ciz: function (goster) {
           return goster.map(function (u) {
-            var bilgi = [u.no, u.dept, u.year].filter(function (x) { return x; }).join(' · ');
+            var bilgi = [u.no, u.dept, u.girisYili || u.year]
+              .filter(function (x) { return x; }).join(' · ');
             return '<button type="button" class="ge-uye' + (secili === u.uid ? ' secili' : '') +
               '" data-u="' + esc(u.uid) + '">' +
               '<b>' + esc(u.name || '(isim girilmemiş)') + '</b>' +
