@@ -1483,7 +1483,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.50.1 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.6.0 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -4415,6 +4415,28 @@ var MBGFB = (function () {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () { return db.collection('members').doc(String(uid)).update({ rol: rol }); });
   }
+  /* YÖNETİCİ ÜYE DÜZENLEME (tam yetki): ad, no, bölüm, giriş yılı, telefon,
+     e-posta, rol — kurallar yöneticiye serbest bırakır, istemci de denetler.
+     Ad değişirse herkese açık satırdaki ad/soyad da eşlenir (liste tutarlı). */
+  function adminUyeYaz(uid, alanlar) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    var a = alanlar || {};
+    return ready().then(function () {
+      var veri = {};
+      ['name', 'no', 'dept', 'girisYili', 'telefon', 'email'].forEach(function (k) {
+        if (a[k] !== undefined) veri[k] = a[k];
+      });
+      if (a.rol === 'uye' || a.rol === 'admin') veri.rol = a.rol;
+      if (!Object.keys(veri).length) return Promise.reject(new Error('Değişiklik yok.'));
+      return db.collection('members').doc(String(uid)).update(veri).then(function () {
+        if (veri.name === undefined) return veri;
+        var b = adSoyadBol(veri.name);
+        return db.collection('public').doc(String(uid)).set({
+          ad: b.ad, soyad: b.soyad, guncelleAt: ts()
+        }, { merge: true }).then(function () { return veri; });
+      });
+    });
+  }
 function addReport(text) { return geriBildirim('reports', 'hata', text); }
   function addOneri(text) { return geriBildirim('oneriler', 'oneri', text); }
 /* =====================================================================
@@ -4930,6 +4952,7 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     gorevliOku: gorevliOku, gorevliEkle: gorevliEkle, gorevliSil: gorevliSil,
     benimKatildiklarim: benimKatildiklarim, benimGorevlerim: benimGorevlerim,
     listMembers: listMembers, deleteMember: deleteMember, setMemberRole: setMemberRole,
+    adminUyeYaz: adminUyeYaz,
     watchEvents: watchEvents, replaceEvents: replaceEvents, upsertEvent: upsertEvent,
     eventYama: eventYama,
     deleteEvent: deleteEvent, eventIds: eventIds, planMeta: planMeta,
@@ -5810,7 +5833,7 @@ var MBGM = (function () {
       },
       basarili: '✓ İstatistikler güncellendi.',
       sure: 4500,
-      sonra: function () { uyeSayfasi(true); }
+      sonra: function () { katilimPaneli(); }
     });
   }
 
@@ -5986,7 +6009,8 @@ var MBGM = (function () {
         '</div></div>' +
       '<div class="adm-grup"><div class="adm-grup-baslik">👥 Üyeler</div>' +
         '<div class="adm-grup-dugmeler">' +
-          '<button type="button" data-a="uyeliste">👥 Üyeler ve katılım</button>' +
+          '<button type="button" data-a="uyeler">👥 Üyeler</button>' +
+          '<button type="button" data-a="katilim">📊 Katılım</button>' +
         '</div></div>' +
       '<div class="adm-grup"><div class="adm-grup-baslik">📢 Duyurular</div>' +
         '<div class="adm-grup-dugmeler">' +
@@ -6117,7 +6141,8 @@ var MBGM = (function () {
       if (a === 'ekle') eventForm(null);
       else if (a === 'aktar') q('#admXlsx').click();
       else if (a === 'istat') { close(); istatistikTazele(); }
-      else if (a === 'uyeliste') { close(); uyeSayfasi(true); }
+      else if (a === 'uyeler') { close(); uyelerPaneli(); }
+      else if (a === 'katilim') { close(); katilimPaneli(); }
       else if (a === 'duyuru') newsForm(adminPanel, function () { duyurular(adminPanel); });
       else if (a === 'duyuruliste') { close(); duyurular(adminPanel); }
       else if (a === 'uyeler') uyeler();
@@ -6148,8 +6173,8 @@ var MBGM = (function () {
   }
 
 /* ------------------------------------------------------------------
-   UYE YONETIMI (yalnizca yonetici)
-   "Uye ve katilim" sayfasina gomulu blok: arama + Katilim + Sil.
+   UYE YONETIMI (yalnizca yonetici, Üyeler paneli):
+   satıra dokun = yönetici profili aç (düzenle), Sil düğmesi ile kaldır.
    ------------------------------------------------------------------ */
   function uyeYonetim(kutuSec, geriFn, ara) {
     /* ara: açılışta arama kutusuna yazılacak metin (profilden gelir) */
@@ -6180,15 +6205,14 @@ var MBGM = (function () {
           },
           ciz: function (goster) {
             return goster.map(function (u) {
-              /* rol belgenin kendisinden okunur (kural değişikliği üye
-                 kendini yönetici yapamaz; sabit e-posta metni gerekmez) */
               var yonetici = String(u.rol || '') === 'admin';
               var bilgi = [u.no, u.dept, u.girisYili].filter(function (x) { return x; }).join(' · ');
               var ad = u.name || u.email || '(isim yok)';
-              return '<div class="todo"><span><b>' + esc(ad) + '</b>' +
+              return '<div class="todo"><button type="button" class="uy-satir uy-tikla" data-pu="' +
+                esc(u.uid) + '" title="Profili yönetici olarak aç">' +
+                '<span class="uy-ad"><b>' + esc(ad) + '</b>' +
                 (yonetici ? ' <em>(yönetici)</em>' : '') +
-                (bilgi ? '<br><small>' + esc(bilgi) + '</small>' : '') + '</span>' +
-                '<button type="button" class="td" data-e="' + esc(u.uid) + '">Katılım</button>' +
+                (bilgi ? '<br><small>' + esc(bilgi) + '</small>' : '') + '</span></button>' +
                 (u.uid === benimUid || yonetici ? '' :
                   '<button type="button" class="td td-sil" data-u="' + esc(u.uid) + '">Sil</button>') +
                 '</div>';
@@ -6196,10 +6220,10 @@ var MBGM = (function () {
           },
           bos: 'Aramana uyan üye yok.'
         })) {
-          box = q('#pfAraSonuc');
+          box = q(kutuSec + ' .pf-ara-liste');
           if (box) box.onclick = tikla;
         }
-        var kutu2 = q('#pfAraSonuc');
+        var kutu2 = q(kutuSec + ' .pf-ara-liste');
         if (kutu2) kutu2.onclick = tikla;
       }).catch(function (x) {
         var box = q(kutuSec);
@@ -6207,13 +6231,24 @@ var MBGM = (function () {
       });
     }
 
-    /* Katilim ac / uye sil */
+    /* Katilim ac / profil ac / uye sil */
     function tikla(ev) {
       var be = ev.target && ev.target.closest ? ev.target.closest('[data-e]') : null;
       if (be) {
         var euid = be.getAttribute('data-e');
         var eu = (ls || []).filter(function (x) { return x.uid === euid; })[0];
         if (eu && window.MBGP && MBGP.katilimForm) MBGP.katilimForm(euid, eu.name || eu.email || euid);
+        return;
+      }
+      var pu = ev.target && ev.target.closest ? ev.target.closest('[data-pu]') : null;
+      if (pu) {
+        var puid = pu.getAttribute('data-pu');
+        var puu = (ls || []).filter(function (x) { return x.uid === puid; })[0];
+        if (puu && window.MBGP && MBGP.uyeDuzenle) {
+          MBGP.uyeDuzenle(puid, puu, function () {
+            if (typeof geriFn === 'function') geriFn();
+          });
+        }
         return;
       }
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-u]') : null;
@@ -6257,7 +6292,7 @@ var MBGM = (function () {
   }
 
   /* eski cagri icin: uye yonetimi sayfasi acilir */
-  function uyeler() { uyeSayfasi(true); }
+  function uyeler() { uyelerPaneli(); }
   function eventForm(existing) {
     var m = q('#modal');
     if (!m) return;
@@ -6475,33 +6510,20 @@ var MBGM = (function () {
      public/{uid} koleksiyonundan okunur. İletişim bilgisi YOK.
      Sayılar güncel takvime göre hesaplanır.
      =================================================================== */
-  /* yoneticiMi = true → yönetici panelinden açıldı (yeniden hesapla düğmesi olur) */
+  /* yoneticiMi = true → yönetici panelinden açıldı: katılım paneline gider.
+     Herkese açık liste herkese aynıdır (yalnızca ad soyad + sayılar). */
   function uyeSayfasi(yoneticiMi, ara) {
+    if (yoneticiMi && MBGFB.isAdmin()) { katilimPaneli(); return; }
     var m = q('#modal');
     if (!m) return;
-    var evList = (A && A.events) ? A.events() : [];
-    var toplam = evList.length;
     m.className = 'modal genis';
     m.innerHTML =
       '<h2>Üyeler ve katılım</h2>' +
       '<div class="sub">Yalnızca ad soyad ve katılım sayıları görünür; ' +
-        'e-posta, telefon ve öğrenci numarası gizlidir. Sayılar güncel takvime göredir (' +
-        toplam + ' etkinlik).</div>' +
-      (yoneticiMi && MBGFB.isAdmin()
-        ? '<div class="acts" style="justify-content:flex-start;flex-wrap:wrap">' +
-            '<button type="button" class="pri" data-a="yenile">🔄 İstatistikleri yeniden hesapla</button></div>'
-        : '') +
+        'e-posta, telefon ve öğrenci numarası gizlidir.</div>' +
       '<div id="uyKutu" style="margin-top:12px"></div>' +
-      (yoneticiMi && MBGFB.isAdmin()
-        ? '<hr class="sheet-sep">' +
-          '<div class="pf-blok"><h3>Üye yönetimi</h3>' +
-          '<div class="sub" style="margin:-4px 0 8px">Arama yap; <b>Katılım</b> ile görev ' +
-            'işaretle, <b>Sil</b> ile üye kaydını kaldır.</div>' +
-          '<div id="uyYonetim"></div></div>'
-        : '') +
       '<div class="acts" style="justify-content:flex-end">' +
         '<button type="button" data-a="kapat">← Geri</button></div>';
-    var profilAcik = false;
     m.onclick = function (olay) {
       var uy = olay.target && olay.target.closest ? olay.target.closest('[data-uy]') : null;
       if (uy) {
@@ -6512,58 +6534,114 @@ var MBGM = (function () {
       }
       var b = olay.target && olay.target.closest ? olay.target.closest('[data-a]') : null;
       if (!b) return;
-      var t = b.getAttribute('data-a');
-      if (t === 'kapat') { close(); return; }
-      if (t === 'yenile') { istatistikTazele(); return; }
-      if (t === 'uyeye' && profilAcik) { uyeSayfasi(true); return; }
+      if (b.getAttribute('data-a') === 'kapat') { close(); return; }
     };
     q('#backdrop').classList.add('open');
-    if (yoneticiMi && MBGFB.isAdmin()) {
-      uyeYonetim('#uyYonetim', function () { uyeSayfasi(true); }, ara);
-    }
-    yuke();
+    kamuListesi('#uyKutu');
+  }
 
-    function yuke() {
-      var kutu = q('#uyKutu');
-      if (kutu) kutu.innerHTML = '<div class="todo-empty">Üye listesi okunuyor…</div>';
-      MBGFB.publicOku().then(function (ls) {
-        var liste = (ls || []).map(function (u) {
-          return {
-            uid: u.uid, ad: u.ad || '', soyad: u.soyad || '',
-            katildi: +u.katildi || 0, gorevli: +u.gorevli || 0
-          };
-        }).filter(function (u) { return u.ad || u.soyad; });
-        liste.sort(function (x, y) {
-          if (y.katildi !== x.katildi) return y.katildi - x.katildi;
-          if (y.gorevli !== x.gorevli) return y.gorevli - x.gorevli;
-          var xs = MBGO.duz(x.ad + ' ' + x.soyad), ys = MBGO.duz(y.ad + ' ' + y.soyad);
-          return xs < ys ? -1 : (xs > ys ? 1 : 0);
-        });
-        MBGO.uyeAra({
-          kutu: '#uyKutu',
-          liste: liste,
-          ipucu: 'Ara: ad veya soyad',
-          alan: function (u) { return u.ad + ' ' + u.soyad; },
-          ciz: function (goster) {
-            return goster.map(function (u) {
-              var y = toplam ? Math.round(u.katildi / toplam * 100) : 0;
-              return '<button type="button" class="uy-satir uy-tikla" data-uy="' +
-                esc(u.uid) + '" data-ad="' + esc((u.ad + ' ' + u.soyad).trim()) +
-                  '" title="Profili aç">' +
-                '<span class="uy-ad"><b>' + esc((u.ad + ' ' + u.soyad).trim()) + '</b>' +
-                  '<small>' + (u.gorevli ? u.gorevli + ' görevli' : 'üye') + '</small></span>' +
-                '<span class="uy-bar"><i style="width:' + Math.min(100, y) + '%"></i></span>' +
-                '<span class="uy-sayi">' + u.katildi + '<small>/' + toplam + '</small></span>' +
-              '</button>';
-            }).join('');
-          },
-          bos: 'Henüz istatistik kaydı yok. Yönetici "İstatistikleri yeniden hesapla" diyebilir.',
-        });
-      }).catch(function (x) {
-        var k = q('#uyKutu');
-        if (k) k.innerHTML = '<div class="todo-empty">' + esc(err(x)) + '</div>';
+  /* Herkese açık üye listesi (ad soyad + katılım sayıları) */
+  function kamuListesi(kutuSec) {
+    var evList = (A && A.events) ? A.events() : [];
+    var toplam = evList.length;
+    var kutu = q(kutuSec);
+    if (kutu) kutu.innerHTML = '<div class="todo-empty">Üye listesi okunuyor…</div>';
+    MBGFB.publicOku().then(function (ls) {
+      var liste = (ls || []).map(function (u) {
+        return {
+          uid: u.uid, ad: u.ad || '', soyad: u.soyad || '',
+          katildi: +u.katildi || 0, gorevli: +u.gorevli || 0
+        };
+      }).filter(function (u) { return u.ad || u.soyad; });
+      liste.sort(function (x, y) {
+        if (y.katildi !== x.katildi) return y.katildi - x.katildi;
+        if (y.gorevli !== x.gorevli) return y.gorevli - x.gorevli;
+        var xs = MBGO.duz(x.ad + ' ' + x.soyad), ys = MBGO.duz(y.ad + ' ' + y.soyad);
+        return xs < ys ? -1 : (xs > ys ? 1 : 0);
       });
-    }
+      MBGO.uyeAra({
+        kutu: kutuSec,
+        liste: liste,
+        ipucu: 'Ara: ad veya soyad',
+        alan: function (u) { return u.ad + ' ' + u.soyad; },
+        ciz: function (goster) {
+          return goster.map(function (u) {
+            var y = toplam ? Math.round(u.katildi / toplam * 100) : 0;
+            return '<button type="button" class="uy-satir uy-tikla" data-uy="' +
+              esc(u.uid) + '" data-ad="' + esc((u.ad + ' ' + u.soyad).trim()) +
+                '" title="Profili aç">' +
+              '<span class="uy-ad"><b>' + esc((u.ad + ' ' + u.soyad).trim()) + '</b>' +
+                '<small>' + (u.gorevli ? u.gorevli + ' görevli' : 'üye') + '</small></span>' +
+              '<span class="uy-bar"><i style="width:' + Math.min(100, y) + '%"></i></span>' +
+              '<span class="uy-sayi">' + u.katildi + '<small>/' + toplam + '</small></span>' +
+            '</button>';
+          }).join('');
+        },
+        bos: 'Henüz istatistik kaydı yok. Yönetici "İstatistikleri yeniden hesapla" diyebilir.',
+      });
+    }).catch(function (x) {
+      var k = q(kutuSec);
+      if (k) k.innerHTML = '<div class="todo-empty">' + esc(err(x)) + '</div>';
+    });
+  }
+
+  /* --- YÖNETİCİ: ÜYELER paneli (tam yetki profil düzenleme) --- */
+  function uyelerPaneli(ara) {
+    if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
+    var m = q('#modal');
+    if (!m) return;
+    m.className = 'modal genis';
+    m.innerHTML =
+      '<h2>👥 Üyeler</h2>' +
+      '<div class="sub">Üyeye dokun: profilini <b>yönetici olarak</b> aç ve düzenle ' +
+        '(ad, öğrenci no, bölüm, giriş yılı, telefon, e-posta, rol). ' +
+        '<b>Sil</b> ile üye kaydını kaldır.</div>' +
+      '<div id="uyYonetim"></div>' +
+      '<div class="acts" style="justify-content:flex-end">' +
+        '<button type="button" data-a="kapat">← Admin Paneli</button></div>';
+    m.onclick = function (olay) {
+      var b = olay.target && olay.target.closest ? olay.target.closest('[data-a]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-a') === 'kapat') { adminPanel(); return; }
+    };
+    q('#backdrop').classList.add('open');
+    uyeYonetim('#uyYonetim', function () { uyelerPaneli(); }, ara);
+  }
+
+  /* --- YÖNETİCİ: KATILIM paneli (istatistik + dokun-düzenle) ---
+     Ayrı düzenleme listesi YOK: üye satırına dokunmak katılım
+     düzenleme sayfasını açar. */
+  function katilimPaneli() {
+    if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
+    var evList = (A && A.events) ? A.events() : [];
+    var m = q('#modal');
+    if (!m) return;
+    m.className = 'modal genis';
+    m.innerHTML =
+      '<h2>📊 Katılım</h2>' +
+      '<div class="sub">Katılım sayıları güncel takvime göredir (' +
+        evList.length + ' etkinlik). Üyeye dokun: katılım ve görev düzenleme sayfası açılır.</div>' +
+      '<div class="acts" style="justify-content:flex-start;flex-wrap:wrap">' +
+        '<button type="button" class="pri" data-a="yenile">🔄 İstatistikleri yeniden hesapla</button></div>' +
+      '<div id="katKamu" style="margin-top:12px"></div>' +
+      '<div class="acts" style="justify-content:flex-end">' +
+        '<button type="button" data-a="kapat">← Admin Paneli</button></div>';
+    m.onclick = function (olay) {
+      var uy = olay.target && olay.target.closest ? olay.target.closest('[data-uy]') : null;
+      if (uy) {
+        var uid2 = uy.getAttribute('data-uy');
+        var yazi = (uy.getAttribute('data-ad') || '').trim();
+        if (window.MBGP && MBGP.katilimForm) MBGP.katilimForm(uid2, yazi || uid2);
+        return;
+      }
+      var b = olay.target && olay.target.closest ? olay.target.closest('[data-a]') : null;
+      if (!b) return;
+      var t = b.getAttribute('data-a');
+      if (t === 'kapat') { adminPanel(); return; }
+      if (t === 'yenile') { istatistikTazele(); return; }
+    };
+    q('#backdrop').classList.add('open');
+    kamuListesi('#katKamu');
   }
 
   /* plan (events) değiştiğinde açık olan listeyi tazelemek için kanca:
@@ -6671,7 +6749,8 @@ var MBGM = (function () {
     iosKurulumYardim: iosKurulumYardim, kurulumYardim: kurulumYardim,
     kurulmusMu: kurulmusMu, KULLUP_MAIL: KULLUP_MAIL,
     uyeler: uyeler,
-    uyeSayfasi: uyeSayfasi, duyurular: duyurular, tosumYukle: tosumYukle, istatistikTazele: istatistikTazele,
+    uyeSayfasi: uyeSayfasi, uyelerPaneli: uyelerPaneli, katilimPaneli: katilimPaneli,
+    duyurular: duyurular, tosumYukle: tosumYukle, istatistikTazele: istatistikTazele,
     alanDinle: alanDinle, alanFiltre: alanFiltre,
     sifreKurtarma: sifreKurtarma,
     planDegisti: planDegisti,
@@ -7370,14 +7449,14 @@ var MBGP = (function () {
     });
   }
 
-  /* Yönetici, başka üyenin profilinden üye yönetimine geçer.
-     Arama kutusu o üyenin adıyla doldurulur → "Katılım" düğmesi hazır. */
+  /* Yönetici, başka üyenin profilinden üye listesine geçer.
+     Arama kutusu o üyenin adıyla doldurulur. */
   function uyeYonetimPanel(uid, ad) {
     if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
     close();
     var isim = (ad || '').trim();
-    toast(isim ? (isim + ' — üye yönetimi') : 'Üye yönetimi', 3200);
-    if (window.MBGM && MBGM.uyeSayfasi) { MBGM.uyeSayfasi(true, isim); return; }
+    toast(isim ? (isim + ' — üyeler') : 'Üyeler', 3200);
+    if (window.MBGM && MBGM.uyelerPaneli) { MBGM.uyelerPaneli(isim); return; }
     if (window.MBGM && MBGM.uyeler) { MBGM.uyeler(); return; }
     toast('Üye yönetimi açılamadı.', 4500);
   }
@@ -7648,9 +7727,107 @@ var MBGP = (function () {
     katilimYukle();
   }
 
+  /* ------------------------------------------------------------------
+     YÖNETİCİ ÜYE DÜZENLEME (tam yetki): isimden e-postaya, rol dahil.
+     Kaydetmeden ÖNCE özetli onay kutusu açılır (yanlışlık engeli).
+     ------------------------------------------------------------------ */
+  function uyeDuzenle(uid, uye, geriFn) {
+    var m = q('#modal');
+    if (!m) return;
+    if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
+    if (!uid) { toast('Üye bulunamadı.'); return; }
+    var o = uye || {};
+    m.className = 'modal genis';
+    m.innerHTML =
+      '<h2>👤 Üye profili (yönetici)</h2>' +
+      '<div class="sub">Tam yetki: ad, öğrenci no, bölüm, giriş yılı, telefon, ' +
+        'e-posta ve rol düzenlenebilir. E-posta yalnızca kayıttaki adrestir; ' +
+        'giriş adresi değişmez.</div>' +
+      '<div class="field"><label>İsim soyisim *</label>' +
+        '<input id="yAd" maxlength="60" autocomplete="off" value="' + esc(o.name || '') + '"></div>' +
+      '<div class="field"><label>Öğrenci numarası</label>' +
+        '<input id="yNo" maxlength="20" inputmode="numeric" autocomplete="off" value="' + esc(o.no || '') + '"></div>' +
+      '<div class="field"><label>Bölüm</label>' +
+        '<input id="yBolum" maxlength="60" autocomplete="off" value="' + esc(o.dept || '') + '"></div>' +
+      '<div class="field"><label>Üniversiteye giriş yılı</label>' +
+        '<input id="yYil" maxlength="4" inputmode="numeric" autocomplete="off" value="' + esc(o.girisYili || '') + '"></div>' +
+      '<div class="field"><label>Telefon</label>' +
+        '<input id="yTel" maxlength="20" inputmode="tel" autocomplete="off" value="' + esc(o.telefon || '') + '"></div>' +
+      '<div class="field"><label>E-posta *</label>' +
+        '<input id="yEposta" maxlength="120" inputmode="email" autocomplete="off" value="' + esc(o.email || '') + '"></div>' +
+      '<div class="field"><label>Rol</label><select id="yRol">' +
+        '<option value="uye"' + (String(o.rol || '') !== 'admin' ? ' selected' : '') + '>Üye</option>' +
+        '<option value="admin"' + (String(o.rol || '') === 'admin' ? ' selected' : '') + '>Yönetici</option>' +
+      '</select></div>' +
+      '<div class="acts">' +
+        '<button type="button" data-k="vaz">← Geri</button>' +
+        '<button type="button" class="pri" data-k="kay">Kaydet</button>' +
+      '</div>';
+    q('#backdrop').classList.add('open');
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
+      if (!b) return;
+      var a = b.getAttribute('data-k');
+      if (a === 'vaz') {
+        if (typeof geriFn === 'function') geriFn();
+        else close();
+        return;
+      }
+      if (a !== 'kay') return;
+      var ad = (q('#yAd').value || '').trim();
+      var no = (q('#yNo').value || '').trim();
+      var bol = (q('#yBolum').value || '').trim();
+      var yil = (q('#yYil').value || '').trim();
+      var tel = (q('#yTel').value || '').replace(/[^0-9+]/g, '');
+      var epo = (q('#yEposta').value || '').trim();
+      var rol = (q('#yRol') || {}).value === 'admin' ? 'admin' : 'uye';
+      var duz = window.MBGM && MBGM.dogrulaAlan
+        ? MBGM.dogrulaAlan(ad, no, yil !== String(o.girisYili || '') ? yil : '')
+        : null;
+      if (duz) { toast(duz, 6500); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(epo)) { toast('E-posta adresi geçersiz.', 5000); return; }
+      if (tel && (tel.length < 10 || tel.length > 15)) {
+        toast('Telefon numarası 10–15 karakter olmalı (yalnızca rakam).', 6500); return;
+      }
+      var fark = {};
+      if (ad !== String(o.name || '')) fark.ad = ['İsim', o.name || '—', ad];
+      if (no !== String(o.no || '')) fark.no = ['Öğrenci no', o.no || '—', no || '—'];
+      if (bol !== String(o.dept || '')) fark.bolum = ['Bölüm', o.dept || '—', bol || '—'];
+      if (yil !== String(o.girisYili || '')) fark.yil = ['Giriş yılı', o.girisYili || '—', yil || '—'];
+      if (tel !== String(o.telefon || '')) fark.tel = ['Telefon', o.telefon || '—', tel || '—'];
+      if (epo !== String(o.email || '')) fark.epo = ['E-posta', o.email || '—', epo];
+      if (rol !== String(o.rol || 'uye')) fark.rol =
+        ['Rol', String(o.rol || 'uye') === 'admin' ? 'Yönetici' : 'Üye', rol === 'admin' ? 'Yönetici' : 'Üye'];
+      var anahtarlar = Object.keys(fark);
+      if (!anahtarlar.length) { toast('Değişiklik yok.', 3000); return; }
+      /* Kaydetmeden ÖNCE özetli onay kutusu */
+      window.MBGO.sor({
+        baslik: 'Değişiklikleri kaydet',
+        ikon: '💾',
+        mesaj: '<b>' + esc(ad) + '</b> için ' + anahtarlar.length + ' alan değişecek:',
+        not: anahtarlar.map(function (k) {
+          return '• ' + esc(fark[k][0]) + ': ' + esc(String(fark[k][1])) + ' → <b>' + esc(String(fark[k][2])) + '</b>';
+        }).join('<br>'),
+        onayMetni: 'Evet, kaydet',
+        geri: function () { uyeDuzenle(uid, o, geriFn); }
+      }).then(function (ok) {
+        if (!ok) return;
+        var yaz = { name: ad, no: no, dept: bol, girisYili: yil, telefon: tel, email: epo, rol: rol };
+        var btn = m.querySelector('[data-k="kay"]');
+        if (btn) { btn.disabled = true; btn.textContent = '…'; }
+        MBGO.islem({
+          baslat: 'Üye bilgileri kaydediliyor…',
+          islem: function () { return MBGFB.adminUyeYaz(uid, yaz); },
+          basarili: '✓ Üye bilgileri güncellendi.',
+          sonra: function () { if (typeof geriFn === 'function') geriFn(); else close(); }
+        });
+      });
+    };
+  }
+
   return {
     init: init, profil: profil, katilimForm: katilimForm, kisiselForm: kisiselForm,
-    gizlilikForm: gizlilikForm, profilGoruntule: profilGoruntule,
+    gizlilikForm: gizlilikForm, profilGoruntule: profilGoruntule, uyeDuzenle: uyeDuzenle,
     kvkkPaneli: kvkkPaneli,
     hesapBilgileri: hesapBilgileri, altBar: altBar,
     katilimYukle: katilimYukle, istatistik: istatistik,
@@ -10616,6 +10793,9 @@ var MBGO = (function () {
      opts: { kutu, liste, alan(u)->metin, ciz(liste)->html, bos, ipucu }
      Sonuç: #geKutu gibi bir kutuya arama + sayaç + satırlar basar.
      =================================================================== */
+  /* Aynı sayfada birden çok arama kutusu olabilir (örn. Katılım panelinde
+     genel liste + düzenleme listesi). Sorgular kutuya göre sınırlanır;
+     yoksa kutular birbirinin sonuçlarını ezer. */
   function uyeAra(opts) {
     var kutu = q(opts.kutu);
     if (!kutu) return null;
@@ -10629,13 +10809,15 @@ var MBGO = (function () {
       '</div>' +
       '<div class="pf-ara-sonuc" id="pfAraSayi"></div>' +
       '<div class="pf-ara-liste" id="pfAraSonuc"></div>';
+    function sk() { return kutu.querySelector('.pf-ara-sonuc'); }
+    function kx() { return kutu.querySelector('.pf-ara-liste'); }
 
     function ciz() {
       var s = duz(t);
       var sonuc = s ? liste.filter(function (u) { return duz(opts.alan(u)).indexOf(s) >= 0; }) : liste.slice();
-      var sk = q('#pfAraSayi');
-      if (sk) sk.textContent = sonuc.length + ' / ' + liste.length + ' kişi' + (s ? ' · "' + t + '"' : '');
-      var k = q('#pfAraSonuc');
+      var sayac = sk();
+      if (sayac) sayac.textContent = sonuc.length + ' / ' + liste.length + ' kişi' + (s ? ' · "' + t + '"' : '');
+      var k = kx();
       if (k) {
         k.innerHTML = sonuc.length
           ? opts.ciz(sonuc)
@@ -10643,7 +10825,7 @@ var MBGO = (function () {
       }
       if (typeof opts.cizildi === 'function') opts.cizildi(sonuc);
     }
-    var inp = q('#pfArama');
+    var inp = kutu.querySelector('.pf-ara input');
     if (inp) {
       inp.value = t;
       inp.oninput = function () { t = inp.value; ciz(); };
@@ -10652,7 +10834,7 @@ var MBGO = (function () {
         /* ENTER = listedeki ilk kişiyi seç */
         if (e.key === 'Enter') {
           e.preventDefault();
-          var ilk2 = q('#pfAraSonuc button, #pfAraSonuc [data-uid]');
+          var ilk2 = kutu.querySelector('.pf-ara-liste button, .pf-ara-liste [data-uid]');
           if (ilk2) ilk2.click();
           else toast('Aramana uyan kişi yok.');
         }
