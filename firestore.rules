@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.6.5)
+   Firestore güvenlik kuralları  (v3.6.6)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -68,6 +68,15 @@ service cloud.firestore {
          profilini de güncelleyemezdi. */
       return 'profilGuncelAt' in resource.data
         && request.time - resource.data.profilGuncelAt < duration.value(30, 'd');
+    }
+
+    /* Plan büyüklüğü (kaç etkinlik var): sayaç şişirme üst sınırı.
+       public/ ve paylasim/ sayıları buradan tavanlanır. */
+    function planSayisi() {
+      return exists(/databases/$(database)/documents/meta/plan)
+        && get(/databases/$(database)/documents/meta/plan).data.count is int
+        ? get(/databases/$(database)/documents/meta/plan).data.count
+        : 0;
     }
 
     /* --- ÜYE PROFİLLERİ --- */
@@ -164,22 +173,29 @@ service cloud.firestore {
            (yoksa belgeye hiç yazılmaz → gizli kalır) */
         /* KAPALI ALAN BOŞ YAZILIR: her alan paylaşım iznine bağlıdır
            (arayüz değil, VERİTABANI koruması) */
-        && (!request.resource.data.no || request.resource.data.paylas.no == true)
-        && (!request.resource.data.bolum
+        /* ÖNEMLİ (dil kuralı): Firestore'da '!' operatörü YALNIZCA mantıksal
+           değerde çalışır; metin üzerinde kullanılırsa kural HATA
+           düşürür ve işlem REDDEDİLİR (sessizce "izin yok" görünür).
+           Bu yüzden boş metin kontrolleri "== ''" ile yazılır.
+           (Eskiden burada !no, !eposta... vardı: profil gizliliği
+            KESİNLİKLE kaydedilemiyordu, veritabanı boş kalıyordu.) */
+        && (request.resource.data.no == ''
+            || request.resource.data.paylas.no == true)
+        && (request.resource.data.bolum == ''
             || request.resource.data.paylas.bolum == true)
-        && (!request.resource.data.yil
+        && (request.resource.data.yil == ''
             || request.resource.data.paylas.yil == true)
-        && (!request.resource.data.eposta
+        && (request.resource.data.eposta == ''
             || request.resource.data.paylas.eposta == true)
-        && (!request.resource.data.telefon
+        && (request.resource.data.telefon == ''
             || request.resource.data.paylas.telefon == true)
-        && (!request.resource.data.instagram
+        && (request.resource.data.instagram == ''
             || request.resource.data.paylas.instagram == true)
-        && (!request.resource.data.x
+        && (request.resource.data.x == ''
             || request.resource.data.paylas.x == true)
-        && (!request.resource.data.facebook
+        && (request.resource.data.facebook == ''
             || request.resource.data.paylas.facebook == true)
-        && (!request.resource.data.linkedin
+        && (request.resource.data.linkedin == ''
             || request.resource.data.paylas.linkedin == true)
         /* tip ve uzunluk doğrulaması (arayüz/HTML güvenliği) */
         && request.resource.data.ad is string
@@ -204,6 +220,12 @@ service cloud.firestore {
         && request.resource.data.linkedin.size() <= 160
         && request.resource.data.katildi is int
         && request.resource.data.gorevli is int
+        /* SAYAÇ ŞİŞİRME: bu sayılar profilde başkalarına gösterilir;
+           plan büyüklüğünü geçemez (public/ ile aynı sınır). */
+        && request.resource.data.katildi >= 0
+        && request.resource.data.gorevli >= 0
+        && request.resource.data.katildi <= planSayisi()
+        && request.resource.data.gorevli <= planSayisi()
         && request.resource.data.guncelleAt == request.time;
 
       allow delete: if adminMi() || (girisYapildi() && request.auth.uid == uid);
@@ -267,12 +289,6 @@ service cloud.firestore {
         && request.resource.data.gorevli >= 0
         && request.resource.data.katildi <= planSayisi()
         && request.resource.data.gorevli <= planSayisi();
-    }
-    function planSayisi() {
-      return exists(/databases/$(database)/documents/meta/plan)
-        && get(/databases/$(database)/documents/meta/plan).data.count is int
-        ? get(/databases/$(database)/documents/meta/plan).data.count
-        : 0;
     }
 
     /* --- DUYURULAR --- */

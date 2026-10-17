@@ -1497,7 +1497,7 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.6.5 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.6.6 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -7531,9 +7531,10 @@ var MBGP = (function () {
             '</button>';
         }).join('') + '</div>' +
 
+        /* TEK çıkış yolu: "← Geri". (Eskiden "Profilime dön" ve "← Geri"
+           yan yana duruyordu; ikisi de aynı ekrana çıkıyordu.) */
         '<div class="acts">' +
           '<button type="button" data-k="vaz">← Geri</button>' +
-          '<button type="button" data-k="kapat">Profilime dön</button>' +
         '</div>';
     }
 
@@ -7547,7 +7548,7 @@ var MBGP = (function () {
       yaz();
     }
     /* Kayıt arka planda olur; kullanıcı panelde kalır, kendi zamanında
-       "Profilime dön" der. (Önceden her kayıtta profil ekranına geçiliyordu.) */
+       "← Geri" ile çıkar. (Önceden her kayıtta profil ekranına geçiliyordu.) */
     function yaz() {
       if (kaydediliyor || !sirada) return;
       var istek = sirada;
@@ -7574,8 +7575,9 @@ var MBGP = (function () {
       var b = ev.target && ev.target.closest ? ev.target.closest('[data-k]') : null;
       if (b) {
         var t = b.getAttribute('data-k');
-        if (t === 'vaz') { gizAcik = false; close(); return; }
-        if (t === 'kapat') { gizAcik = false; profil(); return; }
+        /* TEK çıkış: "← Geri" → gelindiği profil ekranı (panel buradan
+           açıldığı için önceki ekran budur; ⨯ modalı kapatır). */
+        if (t === 'vaz') { gizAcik = false; profil(); return; }
         return;
       }
       var kap = ev.target && ev.target.closest ? ev.target.closest('.gz-sec') : null;
@@ -8564,6 +8566,36 @@ var KVKK = (function () {
   function ilerlemeMetni() {
     return okunanSayisi() + ' / ' + METIN.length + ' belge okundu';
   }
+  /* Rıza verilmemişken "Onaya dön": onay adımını açar, onaylanınca
+     sunucuya yazılır ve gelindiği yere dönülür (metinler okunduktan
+     sonra onaylanabilsin diye). */
+  function rizaAdimiCagir(geriFn, donus) {
+    var bitis = function () {
+      if (donus) donus();
+      else if (geriFn) geriFn();
+    };
+    rizaAdimi(function (kayit) {
+      if (window.MBGFB && MBGFB.rizaYaz) { try { MBGFB.rizaYaz(kayit); } catch (e) {} }
+      toast('✓ Açık rızan kaydedildi.', 4500);
+      bitis();
+    }, bitis);
+  }
+
+  /* Alt düğme, neyin "geri"si olduğuna göre değişir:
+     - Üyelik onay akışındaysak (rizaFn) → "← Onaya dön" (gerçekten adım var)
+     - Rıza VERİLMİŞSE → yalnızca "← Geri" (gelindiği panele dönüş).
+       Kullanıcı zaten onayladıysa "Onaya dön" düğmesi anlamsızdı, kaldırıldı.
+     - Rıza verilmemişse → "✍️ Onaya dön" (onay adımını açar) + "← Geri"
+     - Geri çağrısı yoksa (⋮ menüsünden doğrudan) hiç çizilmez. */
+  function altDugmeler(geriFn, rizaFn) {
+    if (rizaFn) return '<div class="acts"><button type="button" data-m="riza">← Onaya dön</button></div>';
+    if (!geriFn) return '';
+    if (onayliMi()) return '<div class="acts"><button type="button" data-m="geri">← Geri</button></div>';
+    return '<div class="acts">' +
+      '<button type="button" class="pri" data-m="onayaDon">✍️ Onaya dön</button>' +
+      '<button type="button" data-m="geri">← Geri</button></div>';
+  }
+
   /* 4.1 metin listesi (⋮ menüsünden ve giriş ekranından açılır) */
   function listeEkrani(geriFn, rizaFn) {
     var m = q('#modal');
@@ -8593,9 +8625,7 @@ var KVKK = (function () {
         '</div>' +
       '</div>' +
       '<div class="kvkk-belge-alt">Metinler herkese açıktır; hesap açmadan da okunabilir.</div>' +
-      (rizaFn
-        ? '<div class="acts"><button type="button" data-m="riza">← Onaya dön</button></div>'
-        : (geriFn ? '<div class="acts"><button type="button" data-m="geri">← Onaya dön</button></div>' : ''));
+      altDugmeler(geriFn, rizaFn);
 
     m.innerHTML = html;
     m.onclick = function (ev) {
@@ -8603,6 +8633,11 @@ var KVKK = (function () {
       if (!b) return;
       var id = b.getAttribute('data-m');
       if (id === 'riza' && rizaFn) { rizaFn(); return; }
+      /* Vazgeçte metin listesine, onaydan sonra panele dönülür */
+      if (id === 'onayaDon') {
+        rizaAdimiCagir(geriFn, function () { listeEkrani(geriFn); });
+        return;
+      }
       if (id === 'geri') { geriFn(); return; }
       belgeEkrani(id, function () { listeEkrani(geriFn, rizaFn); }, rizaFn);
     };
@@ -8630,7 +8665,12 @@ function belgeEkrani(id, geriFn, rizaFn) {
       '</div>' +
       '<div class="kvkk-belge" id="kvkkBelge">' + t.govde + '</div>' +
       '<div class="acts">' +
-        (rizaFn ? '<button type="button" data-m="riza">← Onaya dön</button>' : '') +
+        (rizaFn
+          ? '<button type="button" data-m="riza">← Onaya dön</button>'
+          /* Onay akışında değil ama rıza da yok → onay adımına geçilebilir */
+          : (!onayliMi() && geriFn
+            ? '<button type="button" class="pri" data-m="onayaDon">✍️ Onaya dön</button>'
+            : '')) +
         '<button type="button" data-m="liste">← Tüm metinler</button>' +
         '<button type="button" data-m="yaz">Yazdır / PDF al</button>' +
       '</div>';
@@ -8639,6 +8679,10 @@ function belgeEkrani(id, geriFn, rizaFn) {
       if (!b) return;
       var a = b.getAttribute('data-m');
       if (a === 'riza' && rizaFn) { rizaFn(); return; }
+      if (a === 'onayaDon') {
+        rizaAdimiCagir(geriFn, function () { listeEkrani(geriFn); });
+        return;
+      }
       if (a === 'liste') { listeEkrani(geriFn, rizaFn); return; }
       if (a === 'yaz') { yazdir(t); return; }
     };
@@ -9457,6 +9501,28 @@ var DERS = (function () {
   ];
   var LS = 'akumgb_ders_v1';
   var LS_SON = 'akumgb_ders_son_v1';
+  /* Ders programı HESAP BAŞINADIR: yerelde de kullanıcı başına saklanır.
+     (Eskiden tek anahtar vardı; hesap değiştirince önceki hesabın programı
+     görünüyordu — mahremiyet hatası.) */
+  var sonUid = null;
+  function kimin() {
+    try {
+      if (window.MBGFB && MBGFB.user && MBGFB.user()) return MBGFB.user().uid;
+    } catch (e) {}
+    return '';
+  }
+  function anahtarYerel() { return LS + '_' + (kimin() || 'yok'); }
+  function anahtarSon() { return LS_SON + '_' + (kimin() || 'yok'); }
+  function eskiYerelTemizle() {
+    /* tek seferlik: hesaplar arası sızan genel anahtarlar silinir */
+    try {
+      if (!localStorage.getItem(LS + '_goc')) {
+        localStorage.removeItem(LS);
+        localStorage.removeItem(LS_SON);
+        localStorage.setItem(LS + '_goc', '1');
+      }
+    } catch (e) {}
+  }
   var veri = {};            /* "gun-saat" -> {g,s,d,h,c,r} */
   var sonDers = [];         /* son 2 ders (şablon) */
   var duzenleme = false;
@@ -9479,8 +9545,8 @@ var DERS = (function () {
 
   function kaydetYerel() {
     try {
-      localStorage.setItem(LS, JSON.stringify(veri));
-      localStorage.setItem(LS_SON, JSON.stringify(sonDers.slice(0, 2)));
+      localStorage.setItem(anahtarYerel(), JSON.stringify(veri));
+      localStorage.setItem(anahtarSon(), JSON.stringify(sonDers.slice(0, 2)));
     } catch (e) {}
   }
   /* Kaldırılan saat dilimleri (örn. eski 17:00) yüklenirken düşürülür */
@@ -9500,9 +9566,10 @@ var DERS = (function () {
   }
   function okuYerel() {
     try {
-      var t = JSON.parse(localStorage.getItem(LS) || '{}');
+      eskiYerelTemizle();
+      var t = JSON.parse(localStorage.getItem(anahtarYerel()) || '{}');
       if (t && typeof t === 'object') veri = gecerliVeri(t);
-      var s2 = JSON.parse(localStorage.getItem(LS_SON) || '[]');
+      var s2 = JSON.parse(localStorage.getItem(anahtarSon()) || '[]');
       if (s2 && s2.length) sonDers = s2;
     } catch (e) { veri = {}; }
   }
@@ -9524,7 +9591,10 @@ var DERS = (function () {
   function sunucudanOku() {
     if (!window.MBGFB || !MBGFB.dersOku) return Promise.resolve(null);
     return MBGFB.dersOku().then(function (l) {
-      if (!l || !l.length) return null;
+      /* l null: çevrimdışı/misafir → yereldeki durur.
+         l dizi (boş bile): sunucu gerçeği benimsenir — başka hesabın
+         verisi ekranda kalmaz. */
+      if (!l) return null;
       var yeni = {};
       for (var i = 0; i < l.length; i++) {
         var d = l[i];
@@ -9841,6 +9911,12 @@ var DERS = (function () {
       el.duzenBtn = q('#dpDuzen');
       el.haftaBtn = q('#dpHafta');
       el.ipucu = q('#dpIpucu');
+      /* Hesap değiştiyse önceki hesabın verisi BELLEKTE de kalmaz */
+      var simdi = kimin();
+      if (sonUid !== simdi) {
+        sonUid = simdi;
+        veri = {}; sonDers = []; duzenleme = false;
+      }
       okuYerel();
       /* şablon listesini mevcut programdan da doldur (başka cihazdan gelen
          veride de "son yazdığın dersler" görünsün) */
