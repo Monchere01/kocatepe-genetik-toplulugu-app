@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.6.6)
+   Firestore güvenlik kuralları  (v3.14)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -509,7 +509,19 @@ service cloud.firestore {
       allow delete: if adminMi()
         || (girisYapildi()
             && (resource == null || resource.data.uid == request.auth.uid));
-      allow update: if adminMi();
+      /* Üye kendi kaydını YENİDEN yazabilir (aynı etkinlik için ikinci kez
+         "Katılacağım" demek): değişen tek şey zaman damgası olabilir,
+         kimlik (uid/ev) değiştirilemez. Önceden update yalnızca yöneticiye
+         açıktı → üyenin ikinci dokunuşu sessizce reddediliyordu. */
+      allow update: if adminMi()
+        || (girisYapildi()
+            && dogrulandiMi()
+            && resource.data.uid == request.auth.uid
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.ev == resource.data.ev
+            && request.resource.data.keys().hasOnly(['at', 'ev', 'uid'])
+            && request.resource.data.ev is string
+            && request.resource.data.at == request.time);
     }
     match /ud/{uid}/{document=**} {
       allow read, write: if false;

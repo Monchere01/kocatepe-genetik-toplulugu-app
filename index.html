@@ -44,7 +44,10 @@
     --topbar-pad:11px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
+  /* BELGE ASLA KAYMAZ: iOS'ta sayfa bir an kayınca sabit üst menü
+     yukarı kaçıyor ve altta boşluk kalıyordu. Kaydırma yalnızca
+     kendi kapları içinde (takvim listesi, paneller) olmalı. */
+  html{scroll-behavior:smooth; overflow:hidden; height:100%}
   body{
     font-family:"Segoe UI Variable","Segoe UI",system-ui,-apple-system,Inter,Roboto,Arial,sans-serif;
     background:var(--bg); color:var(--text);
@@ -304,6 +307,21 @@
     z-index:-1;pointer-events:none;
     background:radial-gradient(ellipse 36px 50% at 50% 50%, rgba(3,5,10,.62), transparent 70%)}
   #railCv{display:block;width:34px;height:100%;cursor:pointer;touch-action:none}
+  /* ---------------- AÇILIŞ PERDESİ ----------------
+     Sayfa ilk açılışta sarmal ortada belirip sonra "en başa" zıplıyordu
+     (plan yüklenince). Perde, uçuş başlayana kadar sahneyi gizler:
+     ekran boş bir sahne üzerinde açılır, sonra sarmal en başından
+     doğru belirip bugüne iner. */
+  #acilis{position:fixed;left:0;right:0;top:var(--tbh,43px);bottom:0;z-index:42;
+    background:linear-gradient(180deg,#0a0f1c 0%,#080c17 55%,#060911 100%);
+    opacity:1;transition:opacity .3s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;
+    /* EMNIYET: betik bir sebeple calismazsa perde 5.5 sn sonra kendiliğinden
+       kalkar (sayfa tamamen kara kalmaz). JS perdeyi once kaldirir. */
+    animation:perdeEmniyet 5.5s forwards}
+  #acilis.perdeGitti{opacity:0}
+  @keyframes perdeEmniyet{0%,97%{opacity:1}100%{opacity:0;visibility:hidden}}
+  @media (prefers-reduced-motion: reduce){#acilis{transition:none}}
   /* sürüm rozeti: sol alt köşede, tıklanınca güncelleme kontrolü yapar */
   #hint{position:fixed;left:10px;bottom:10px;z-index:28;font-size:.62rem;
     letter-spacing:.04em;line-height:1}
@@ -1497,7 +1515,8 @@
   </div>
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.6.6 · çekirdek</button></div>
+<div id="acilis" aria-hidden="true"></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.14 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -2161,6 +2180,15 @@ var DNA3D = (function () {
       onPick = null, evSig = '';
   /* rozet ölçüleri: relayout hesaplar, yeni rozet de aynısını alır */
   var REL = { gw: 0.6, ch2: 0.23, carp: 1.7 };
+  /* kartlar arası dikey açıklık (px): komşu kartlar üst üste binmesin */
+  var CD_GAP = 12;
+  /* kartin GORSEL yarim yuksekligi = olculen boy / 2 * pay.
+     Pay 1.10: aktif kart nabızla buyuyor (x1.05) ve 3B egim izducosumu
+     birkac piksel ekler; pay olmazsa kartlar uc uca degip "hafif cakisma"
+     gorunuyordu. */
+  var CD_PAY = 1.10;
+  /* kart yerleşim geçici tablosu (her karede çakışma çözümü yapılır) */
+  var cdLay = [];
   var _wp = null, _lm = null, _q = null, _qt = null, _qi = null;
   var _UP = null, _AX = null, _ndc = null, _ray = null;
 
@@ -2255,10 +2283,13 @@ var DNA3D = (function () {
     var acc = SEMHEX[ev.sem] || '#38bdf8';
     var R = 22;
     /* yumusak cam govde */
+    /* Kart zemini: "cam" görünümü korunur ama ARKASINDAKİ DNA ve
+       tarih rozetleri KART İÇİNDEN OKUNMAMALI (iOS'ta "12 Eki" kartın
+       içinden geçiyordu). Opaklığa %99'a çekildi. */
     var grd = g.createLinearGradient(0, 0, CW * 0.45, CH);
-    grd.addColorStop(0, 'rgba(30,41,66,0.86)');
-    grd.addColorStop(0.55, 'rgba(13,20,36,0.88)');
-    grd.addColorStop(1, 'rgba(9,13,25,0.90)');
+    grd.addColorStop(0, 'rgba(30,41,66,0.975)');
+    grd.addColorStop(0.55, 'rgba(13,20,36,0.985)');
+    grd.addColorStop(1, 'rgba(9,13,25,0.99)');
     g.fillStyle = grd;
     rr(g, 2, 2, CW - 4, CH - 4, R); g.fill();
     /* sol ustte donem renginde yumusak isik */
@@ -2328,9 +2359,9 @@ var DNA3D = (function () {
     var acc = SEMHEX[ev.sem] || '#38bdf8';
     var R = 24;
     var grd = g.createLinearGradient(0, 0, DCW * 0.45, DCH);
-    grd.addColorStop(0, 'rgba(30,41,66,0.88)');
-    grd.addColorStop(0.55, 'rgba(13,20,36,0.90)');
-    grd.addColorStop(1, 'rgba(9,13,25,0.92)');
+    grd.addColorStop(0, 'rgba(30,41,66,0.975)');
+    grd.addColorStop(0.55, 'rgba(13,20,36,0.985)');
+    grd.addColorStop(1, 'rgba(9,13,25,0.99)');
     g.fillStyle = grd;
     rr(g, 2, 2, DCW - 4, DCH - 4, R); g.fill();
     var gl = g.createRadialGradient(70, 18, 6, 70, 18, 230);
@@ -2390,8 +2421,16 @@ var DNA3D = (function () {
     g.fillText('Etkinlik sayfasına gitmek için tıklayın, çıkmak için kaydırın', 28, DCH - 16);
     return cv;
   }
-  /* günlük tarih rozeti: 256x96 */
+  /* günlük tarih rozeti: 256x96
+     ⚠ PERFORMANS: pencere kaydıkça rozetler silinip yeniden üretiliyordu.
+     Her üretim = canvas çizimi + GPU'ya doku yüklemesi. Kaydırmada saniyede
+     10-18 kez oluyordu; zayıf cihazlarda (iPhone) her biri kare düşürdüğü
+     için görüntü "takılı takılı" ilerliyordu. ÇÖZÜM: gün başına doku
+     ÖNBELLEĞİ — aynı gün ikinci kez üretilmez, yalnızca cache'ten alınır. */
+  var _chipCache = {};
   function chipCanvas(day) {
+    var anahtar = day + '|' + (day === todayDay ? 1 : 0) + '|' + QLOW;
+    if (_chipCache[anahtar]) return _chipCache[anahtar];
     var bugun = (day === todayDay);
     var CW = bugun ? 320 : 256, CH = bugun ? 132 : 96;
     if (QLOW) { CW = Math.round(CW / 2); CH = Math.round(CH / 2); }
@@ -2416,7 +2455,15 @@ var DNA3D = (function () {
       g.font = '800 46px "Segoe UI", system-ui, sans-serif';
       g.fillText(fmtK(isoOf(day)), CW / 2, CH / 2 + 3);
     }
+    _chipCache[anahtar] = cv;
     return cv;
+  }
+  /* yeni rozet dokusu alırken cache'i de kullan (yoksa yeniden çizer) */
+  function chipTexture(day) {
+    var cv = chipCanvas(day);
+    var t = new T.CanvasTexture(cv);
+    t.anisotropy = QLOW ? 1 : 4;
+    return t;
   }
   function ensureTmp() {
     if (_wp) return;
@@ -2456,6 +2503,35 @@ var DNA3D = (function () {
       o.push({ gun: c2.day, bugundenGun: d1, cekme: +kay.toFixed(3) });
     }
     return { bugun: todayDay, cekilen: o };
+  }
+  /* rozet (tarih etiketi) ekran konumu ölçümü — konsoldan test amaçlı.
+     Bugün rozeti diğerlerine göre kayıyor mu diye bakılır. */
+  function chipOlcum() {
+    var o = [], i, c, v;
+    if (!camera || !renderer) return { chips: [] };
+    var _cozV = new T.Vector3();
+    var g = renderer.domElement.getBoundingClientRect();
+    /* kamera render() içinde güncelleniyor; ölçüm kare dışında olduğu
+       için matrisleri tazele (yoksa bayat projeksiyon geliyor) */
+    camera.updateMatrixWorld(true);
+    camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
+    for (i = 0; i < chips.length; i++) {
+      c = chips[i];
+      if (!c || !c.grp) continue;
+      /* chip'ler deck altında ve bugün rozeti kaydırılmış: GÖRÜNEN merkez
+       mesh'in dünya konumu üzerinden ölçülmeli */
+      v = c.mesh.getWorldPosition(_cozV);
+      v.project(camera);
+      o.push({
+        gun: c.day,
+        bugun: (c.day === todayDay),
+        x: Math.round((v.x * 0.5 + 0.5) * g.width),
+        y: Math.round((-v.y * 0.5 + 0.5) * g.height),
+        w: Math.round(c.w * 1000) / 1000
+      });
+    }
+    o.sort(function (a, b) { return a.y - b.y; });
+    return { bugunGun: todayDay, en: Math.round(g.width / 2), chips: o };
   }
   function relayoutCards() {
     if (!deck) return;
@@ -2514,6 +2590,7 @@ var DNA3D = (function () {
          ile belirginliği korunur. TÜM rozetler sığar: bugün rozeti,
          en sıkışık iki rozet aralığına kelepçelenir (komşu gizlenmez). */
       var bugunMu = (chips[i].day === todayDay) && !gununEtkinligiVar(chips[i].day);
+      chips[i].bugunMu = bugunMu;
       chips[i].w = bugunMu ? gw * REL.carp : gw;
       chips[i].h = bugunMu ? ch2 * REL.carp : ch2;
     }
@@ -2652,7 +2729,8 @@ var DNA3D = (function () {
       g.add(mesh);
       deck.add(g);
       cards[idx] = { grp: g, mesh: mesh, mat: front, tex: tex, day: edn,
-                     dim: !!ev.dim, w: 2, h: 0.76 };
+                     dim: !!ev.dim, w: 2, h: 0.76,
+                     by: g.position.y, oy: 0 };   /* by: taban yer, oy: kayma (px) */
     });
 
     /* ROCZET PENCERESI: yalnizca odagin cevresindeki gunler uretilir.
@@ -2792,8 +2870,7 @@ var DNA3D = (function () {
     g2.position.set(Frd.C[0] * WS + Frd.X[0] * CHIP_R,
                     Frd.C[1] * WS,
                     Frd.C[2] * WS + Frd.X[2] * CHIP_R);
-    var t2 = new T.CanvasTexture(chipCanvas(day));
-    t2.anisotropy = QLOW ? 1 : 4;
+    var t2 = chipTexture(day);
     var m2 = new T.MeshBasicMaterial({ map: t2, transparent: true,
       depthWrite: false, depthTest: false });
     var ms2 = new T.Mesh(G.plate, m2);
@@ -2802,7 +2879,7 @@ var DNA3D = (function () {
     deck.add(g2);
     /* ölçü relayout ile aynı (bugün rozeti çarpanlı) */
     var bugMu = (day === todayDay) && !gununEtkinligiVar(day);
-    var c = { grp: g2, mesh: ms2, mat: m2, tex: t2, day: day,
+    var c = { grp: g2, mesh: ms2, mat: m2, tex: t2, day: day, bugunMu: bugMu,
       w: bugMu ? REL.gw * REL.carp : REL.gw,
       h: bugMu ? REL.ch2 * REL.carp : REL.ch2 };
     chips.push(c);
@@ -2822,15 +2899,9 @@ var DNA3D = (function () {
     if (!zorla && !disinda && (simdi - chipSonIs) < 500) return;
     chipMerkez = merkez; chipSonIs = simdi;
     var i, c, ddn, day, varMi;
-    for (i = chips.length - 1; i >= 0; i--) {
-      c = chips[i];
-      if (!c) continue;
-      if (Math.abs(c.day - merkez) <= CHIP_WIN) continue;
-      try { deck.remove(c.grp); } catch (e) {}
-      try { c.tex.dispose(); } catch (e2) {}
-      try { c.mat.dispose(); } catch (e3) {}
-      chips.splice(i, 1);
-    }
+    /* 1) GİRMEK İSTEKLENENLERİ ÜRET (dokular cache'ten gelir, bedava).
+       Silme sonra yapılır: önce silip sonra üretmek, aradaki karede
+       ekranı boş bırakıyor ve zayıf cihazlarda "takılma" yapıyordu. */
     for (ddn in chipData.frames) {
       day = +ddn;
       if (Math.abs(day - merkez) > CHIP_WIN) continue;
@@ -2842,9 +2913,23 @@ var DNA3D = (function () {
       if (varMi) continue;
       try { chipEkle(day, chipData.frames[day].F); } catch (e4) {}
     }
+    /* 2) pencere disinda kalanlari at */
+    for (i = chips.length - 1; i >= 0; i--) {
+      c = chips[i];
+      if (!c) continue;
+      if (Math.abs(c.day - merkez) <= CHIP_WIN) continue;
+      try { deck.remove(c.grp); } catch (e) {}
+      /* dokuyu dispose ETME: cache'te duruyor, yeniden kullanilacak */
+      try { c.mat.dispose(); } catch (e3) {}
+      chips.splice(i, 1);
+    }
   }
   function chipYenile(day) {
     var i;
+    /* gun degisti: bu gunun iki varyantini (bugun/olagan) dusur ki
+       yeni "Bugün" rozeti dogru sekilde yeniden cizilsin */
+    delete _chipCache[day + '|0|' + QLOW];
+    delete _chipCache[day + '|1|' + QLOW];
     for (i = 0; i < chips.length; i++) {
       if (!chips[i] || chips[i].day !== day) continue;
       chips[i].tex.image = chipCanvas(day);
@@ -2940,8 +3025,14 @@ var DNA3D = (function () {
   }
 
   /* --- dongu ---------------------------------------------------------- */
+  var _fc = 0;
+  /* kendi rAF döngüsü kapalı: kareler app.js'in döngüsünden tick() ile gelir.
+     ?dongu=1 ile geri açılabilir (denetim/hata ayıklama için). */
+  var OZEL_DONGUSU = (typeof location !== 'undefined') &&
+    /(?:\?|&)dongu=1/.test(String(location.search || ''));
   function frame(ts) {
     raf = 0;
+    _fc++;
     if (!renderer || ctxKayip) return;
     var dt = tPrev ? Math.min(80, ts - tPrev) : 16;
     tPrev = ts;
@@ -2954,27 +3045,63 @@ var DNA3D = (function () {
          Dagilim homojen oldugu icin donus yumusak bir devinim verir. */
       if (nucleus) nucleus.rotation.y = helix.rotation.y * NUCROT;
       if (deck) {
-        var yP = yAt(P), lim = H * 0.62, ii, cd, cp, dyy, vs, kk, actY, minGap;
+        var yP = yAt(P), lim = H * 0.62, ii, cd, cp, dyy, vs, kk, actY;
         pickables.length = 0;
-        /* aktif kartin ekrandaki y'si: yakininda baska kart varsa gizlenir
-           (Excel'de ardisik haftalar 1 gun farkla yer alabiliyor) */
+        /* aktif kartin ekrandaki y'si */
         actY = (ACT >= 0 && cards[ACT]) ? (yAt(cards[ACT].day) - yP) * KPX : 1e9;
         /* buyuk kart aciksa referans boy odur (yoksa normal kart) */
         var refH = (EXP >= 0 && cards[EXP] && cards[EXP].expH) ? cards[EXP].expH
                  : (cards[0] ? cards[0].h : 1.2);
-        /* komsu kart/rozet gizleme GERCEK capraz kesisime gore:
-           once kartin yarim yuksekligi + rozetin yarisi. Eski deger tam
-           yuksekligi kullaniyordu -> telefonda 2-3 tarih rozeti gereksiz
-           yere kayboluyordu. */
         var chipHpx = (chips[0] ? chips[0].h : 0.2) * KPX;   /* rozet yuksekligi (px) */
-        minGap = refH * KPX * 0.75 + chipHpx * 0.5 + 18;
+        /* v3.6.9 — ÇAKISAN KART ARTIK GİZLENMEZ, KAYDIRILIR.
+           Odak noktasina yakin gun basina yalnizca ~46 px duser (kart 82 px),
+           yani komsu kart ust uste biniyordu ve eski kod onu gizliyordu.
+           Artik kartlar dikey olarak acilir (merdiven). AKTIF KART KILITLI:
+           hic kaymaz -> hangi gun oldugu her zaman belli. */
+        for (ii = 0; ii < cards.length; ii++) {
+          cd = cards[ii];
+          cdLay[ii] = null;
+          if (!cd) continue;
+          dyy = (yAt(cd.day) - yP) * KPX;
+          if (Math.abs(dyy) >= lim) continue;
+          var hh2 = ((ii === EXP && cd.expH) ? cd.expH : cd.h) * KPX * 0.5 * CD_PAY;
+          cdLay[ii] = { d: dyy, o: 0, h: hh2, kilit: (ii === ACT || ii === EXP) };
+        }
+        /* uc gecisli gevseme: cakisan kartlar birbirini iter (aktif sabit).
+           DIKKAT: sarmalda gün ilerledikce dunya Y'si AZALIR (ekranda
+           aşağı doğru). Bu yuzden itme yönü mevcut farkın yönüyle aynı
+           olmalı; ters yönde itilirse kart merkeze doğru gelir. */
+        for (var gec1 = 0; gec1 < 3; gec1++) {
+          for (var a1 = 0; a1 < cdLay.length; a1++) {
+            var A1 = cdLay[a1];
+            if (!A1) continue;
+            for (var b1 = a1 + 1; b1 < cdLay.length; b1++) {
+              var B1 = cdLay[b1];
+              if (!B1) continue;
+              var fark1 = (B1.d + B1.o) - (A1.d + A1.o);
+              var gerek1 = A1.h + B1.h + CD_GAP;
+              if (Math.abs(fark1) >= gerek1) continue;
+              var it1 = (gerek1 - Math.abs(fark1)) * (fark1 >= 0 ? 1 : -1);
+              if (A1.kilit) B1.o += it1;
+              else if (B1.kilit) A1.o -= it1;
+              else { A1.o -= it1 / 2; B1.o += it1 / 2; }
+            }
+          }
+        }
         for (ii = 0; ii < cards.length; ii++) {
           cd = cards[ii];
           if (!cd) continue;
-          dyy = (yAt(cd.day) - yP) * KPX;
-          vs = Math.abs(dyy) < lim && (ii === ACT || ii === EXP || Math.abs(dyy - actY) > minGap);
+          var G1 = cdLay[ii];
+          if (!G1) { cd.grp.visible = false; continue; }
+          /* kayma yumusatilir (ani ziplama olmasin) */
+          var sy2 = cd.oy || 0;
+          cd.oy = sy2 + (G1.o - sy2) * Math.min(1, dt / 110);
+          cd.hedef = G1.o;
+          dyy = G1.d;
+          vs = Math.abs(dyy + cd.oy) < lim;
           cd.grp.visible = vs;
           if (!vs) continue;
+          cd.grp.position.y = cd.by + cd.oy / KPX;
           faceCam(cd.grp, ii === EXP ? 0 : TILT_CARD);
           kk = 1;
           if (ii === ACT) kk = 1.05 + 0.006 * Math.sin(pulseT * 3.4);
@@ -3004,6 +3131,11 @@ var DNA3D = (function () {
           if (!vs) continue;
           faceCam(cp.grp, TILT_CHIP);
           cp.mesh.scale.set(cp.w, cp.h, 0.05);
+          /* Bugün rozeti büyük olduğu için zincirin DIŞINA taşıyordu
+             ("diğerlerine göre sağda kalmış" diye). Genişlik farkının
+             yarısı kadar sola kaydır: sol/sağ kenarları komşu rozetlerle
+             aynı hizaya gelir, etiket zincirin içinde kalır. */
+          cp.mesh.position.x = cp.bugunMu ? (REL.gw - cp.w) / 2 : 0;
         }
       }
       /* BUGÜN rengi: renk yeniden kuruldugunda (arama, veri degisimi) silinir;
@@ -3061,7 +3193,10 @@ var DNA3D = (function () {
         mc.magY += (hedef - mc.magY) * Math.min(1, dt / 170);
         if (Math.abs(mc.magY) < 0.0008) mc.magY = 0;
         if (mc.baseY === undefined) mc.baseY = mc.grp.position.y;
-        mc.grp.position.y = mc.baseY + mc.magY;
+        /* DIKKAT: yerlesim kaymasi (mc.oy) DA eklenir. Eskiden yalnizca
+           baseY + magY yaziliyordu -> cakisma cozumunun kaydirdigi kart
+           her karede eski yerine donuyordu. */
+        mc.grp.position.y = mc.baseY + mc.magY + (mc.oy || 0) / KPX;
       }
       for (mi = 0; mi < chips.length; mi++) {
         var mp = chips[mi];
@@ -3133,11 +3268,17 @@ var DNA3D = (function () {
         else if (avg < 19 && prIdx < prCap) { prIdx++; prApply(); prCool = 6; }
       }
     }
-    /* sekme/pano arka plandayken kare isteme: isi, pil ve bellek yeridir */
-    if (!document.hidden) raf = requestAnimationFrame(frame);
+    /* TEK DÖNGÜ: kare çizimi app.js'in döngüsünden DNA3D.tick() ile gelir.
+       Kendi rAF'imizi KULLANMIYORUZ — iki bağımsız döngü zayıf cihazda
+       (iPhone) birbirini yetiştiremediği için sahne takılı-takılı
+       ilerliyordu. Sekme gizliyken hiç kare istenmez. */
+    if (!document.hidden && OZEL_DONGUSU) raf = requestAnimationFrame(frame);
     else raf = 0;
   }
   function start() {
+    /* ÖZEL DÖNGÜ kapalıyken kareler app.js'in döngüsünden tick() ile gelir;
+       burada kendi rAF'ini başlatmayız. */
+    if (!OZEL_DONGUSU) { raf = 0; return; }
     if (!raf && renderer && !ctxKayip) raf = requestAnimationFrame(frame);
   }
 
@@ -3301,6 +3442,18 @@ return {
       return -1;
     },
     setProgress: function (p) { P = +p || 0; },
+    /* DIŞARIDAN KARE: app.js'in kendi döngüsü konumu günceller, DNA
+       ise AYRI bir rAF ile çiziyordu. İki bağımsız döngü zayıf cihazda
+       (iPhone) birbirine yetişemiyor, sahne "takılı takılı" ilerliyordu.
+       Ana döngü artık konumu set edip DNA'ya "şimdi çiz" diyor; DNA
+       kendi rAF'ini o an için iptal eder (tek kare, tek döngü). */
+    tick: function (ts) {
+      if (!renderer || ctxKayip) return false;
+      if (!raf && on) { raf = 0; }
+      /* raf sifirlandiysa bu kare bizim: elle ciz */
+      frame(typeof ts === 'number' ? ts : (typeof performance !== 'undefined' ? performance.now() : 0));
+      return true;
+    },
 
     setActive: function (i) {
       var ni = (typeof i === 'number') ? i : -1;
@@ -3332,6 +3485,7 @@ return {
     resize: resize,
     setTopInset: setTopInset,
     magOlcum: magOlcum,
+    chipOlcum: chipOlcum,
     setToday: setToday,
     isOn: function () { return on; },
     toggle: function (v) {
@@ -3392,6 +3546,21 @@ return {
                 visCards: (function () { var n2 = 0;
                   for (var i2 = 0; i2 < cards.length; i2++) if (cards[i2] && cards[i2].grp.visible) n2++;
                   return n2; })(),
+                /* denetim: görünen kartların ekran Y'si, yüksekliği ve kayması
+                   (çakışma/kaydırma doğrulaması için) */
+                cardYs: (function () { var a3 = [];
+                  for (var j3 = 0; j3 < cards.length; j3++) {
+                    var c3 = cards[j3];
+                    if (!c3 || !c3.grp.visible) continue;
+                    ensureTmp();
+                    _wp.copy(c3.grp.position).applyQuaternion(helix.quaternion).add(helix.position);
+                    _wp.project(camera);
+                    a3.push({ i: j3, gun: c3.day - Math.round(P),
+                      y: Math.round((-_wp.y * 0.5 + 0.5) * H),
+                      h: Math.round(c3.sh * KPX),
+                      kayma: Math.round(c3.oy || 0) });
+                  }
+                  return a3; })(),
                 visChips: (function () { var n3 = 0;
                   for (var j2 = 0; j2 < chips.length; j2++) if (chips[j2] && chips[j2].grp.visible) n3++;
                   return n3; })(),
@@ -3401,7 +3570,7 @@ return {
                     if (chips[k2] && chips[k2].grp.visible) a2.push(chips[k2].day - f2);
                   }
                   return a2; })(),
-               turn: 10.5, radius: 2.5, cam: CAMZ, inset: TOPIN, today: todayDay,
+               turn: 10.5, radius: 2.5, cam: CAMZ, inset: TOPIN, today: todayDay, fc: _fc,
                 pr: prNow(), prCap: PR_STEPS[prCap] || 1, texQ: Math.round(texQ * 100) / 100,
                 /* denetim: bugunun baz ciftinin gercek renkleri (0-255) */
                 todayRGB: pairRGB(todayDay),
@@ -6374,7 +6543,9 @@ var MBGM = (function () {
       if (be) {
         var euid = be.getAttribute('data-e');
         var eu = (ls || []).filter(function (x) { return x.uid === euid; })[0];
-        if (eu && window.MBGP && MBGP.katilimForm) MBGP.katilimForm(euid, eu.name || eu.email || euid);
+        if (eu && window.MBGP && MBGP.katilimForm) {
+          MBGP.katilimForm(euid, eu.name || eu.email || euid, geriFn);
+        }
         return;
       }
       var pu = ev.target && ev.target.closest ? ev.target.closest('[data-pu]') : null;
@@ -6780,7 +6951,10 @@ var MBGM = (function () {
       if (uy) {
         var uid2 = uy.getAttribute('data-uy');
         var yazi = (uy.getAttribute('data-ad') || '').trim();
-        if (window.MBGP && MBGP.katilimForm) MBGP.katilimForm(uid2, yazi || uid2);
+        /* "← Geri" katılım PANELİNE döner (eskiden Üyeler'e atlıyordu) */
+        if (window.MBGP && MBGP.katilimForm) {
+          MBGP.katilimForm(uid2, yazi || uid2, function () { katilimPaneli(); });
+        }
         return;
       }
       var b = olay.target && olay.target.closest ? olay.target.closest('[data-a]') : null;
@@ -7874,7 +8048,10 @@ var MBGP = (function () {
      Profilde herkese açık bir "Katılımı düzenle" düğmesi YOKTUR;
      üyeler kendi katılımını yalnızca QR kod okutarak kaydeder.
      ------------------------------------------------------------------ */
-  function katilimForm(uid, ad) {
+  /* geriFn: bu ekran HANGİ panelden açıldıysa "← Geri" oraya döner
+     (Katılım panelinden açıldıysa Katılım'a, Üyeler'den açıldıysa
+     Üyeler'e — eskiden hep Üyeler'e atıyordu). */
+  function katilimForm(uid, ad, geriFn) {
     if (!MBGFB.isAdmin()) { toast('Bu işlem yöneticiye özel.', 3500); return; }
     if (!uid) return;
     var m = q('#modal');
@@ -7945,6 +8122,7 @@ var MBGP = (function () {
     MBGFB.katilimUidOku(uid).then(function (k) { hedef = k || {}; ciz(); });
 
     function geri() {
+      if (typeof geriFn === 'function') { geriFn(); return; }
       if (window.MBGM && MBGM.uyeler) MBGM.uyeler();
       else close();
     }
@@ -10075,6 +10253,11 @@ var ETK = (function () {
     if (!MBGFB.user()) return Promise.reject(new Error('Önce giriş yapmalısın.'));
     if (!MBGFB.verified()) return Promise.reject(new Error('E-posta adresini doğrulamadan katılım kaydedilemez.'));
     return MBGFB.katilanYaz(evId, anahtar).then(function () {
+      /* Katıldıysan "Katılacağım" niyeti düşer: yoksa yönetici listesinde
+         hem katılacak hem katılmış görünürsün. */
+      if (MBGFB.katilacakYaz) {
+        try { MBGFB.katilacakYaz(evId, false).catch(function () {}); } catch (e) {}
+      }
       return katilanOku(evId);
     });
   }
@@ -11302,11 +11485,120 @@ var MBGO = (function () {
     return (m >= 9 && m <= 12) ? 'guz' : (m >= 1 && m <= 6) ? 'bahar' : 'ozel';
   }
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function simdi() {
+    return (typeof performance !== 'undefined') ? performance.now() : (new Date()).getTime();
+  }
+  /* AÇILIŞ PERDESİ: uçuş başlayana kadar sahne gizli (sarmal ortada
+   belirip sonra zıplamasın). Kullanıcı dokunursa veya uçuş kurulamazsa
+   hemen kalkar — hiçbir koşulda ekran kilitli kalmaz. */
+  function perdeKapat() {
+    var p = document.getElementById('acilis');
+    if (!p) return;
+    /* CSS geçişi animasyon kaldırılınca tetiklenmediği için sönüm
+       kare kare elle yürütülür (her koşulda yumuşak). */
+    p.style.animation = 'none';
+    p.style.transition = 'none';
+    var t0 = simdi(), D = 320;
+    (function adim() {
+      var k = (simdi() - t0) / D;
+      if (k >= 1) {
+        p.style.opacity = '0';
+        try { if (p && p.parentNode) p.parentNode.removeChild(p); } catch (e) {}
+        return;
+      }
+      p.style.opacity = String(1 - k);
+      requestAnimationFrame(adim);
+    })();
+  }
   /* kullanici girdisi -> manyet gecerliligini sifirla + uçuşu kes */
   function touched() {
+    perdeKapat();
     intro.aktif = false;     /* açılış/Bugün kayışı dokununca kesilir */
-    lastInput = (typeof performance !== 'undefined') ? performance.now() : (new Date()).getTime();
+    lastInput = sonGirdi = simdi();
     snapDay = null;
+  }
+  /* --- kaydirma yardimcilari (fizik motoru) ------------------------
+     konum (prog) DÜNYADA GÖRÜLEN yerdir; girdiyle birebir izlenir.
+     Hedef/ara hedef YALNIZCA düğme-ok yolculuğunda kullanılır. */
+  function sinirAlt() { return D0 - 6; }
+  function sinirUst() { return D1 + 6; }
+  /* sınır dışına taşarken direnç (lastik): sonsuz kaymayı engeller.
+     Küçük pay LASTIK_BOSLUK kadar parmakla birebir gider (kenar
+     "esner" hissi); ötesinde ağır direnç. Sınırdaki salınımın ikinci
+     sebebiydi: lastik sınırsız kaçabildiği için her sürükleme olayı
+     konumu dışarı fırlatıyor, tık onu geri çekiyordu. */
+  function lastikli(v) {
+    var a = sinirAlt(), u = sinirUst(), pay = KAY.LASTIK_BOSLUK;
+    if (v < a) {
+      var d = a - v;
+      if (d <= pay) return v;
+      return a - (pay + (d - pay) * KAY.LASTIK);
+    }
+    if (v > u) {
+      var e = v - u;
+      if (e <= pay) return v;
+      return u + pay + (e - pay) * KAY.LASTIK;
+    }
+    return v;
+  }
+  /* ===================================================================
+     KULLANICI GİRDİSİ — TEK MODEL (v3.11)
+     -------------------------------------------------------------------
+     ⚠ SADELESTİRME: Tıklamalar artık HEDEF üretmez. Her girdi yalnızca
+     HIZA katkı verir; konum her kare bu hızın integralı olarak ilerler.
+     Neden: "hedef + yay" modelinde her tık yeni bir hedef kuruyor,
+     yay her seferinde sıfırdan hızlanıp hedefte duruyordu. Tıklar arası
+     o duraklama "gün gün seke seke" ilerlemeye yol açıyordu.
+     Hız tabanlı modelde akış KESİLMEZ: tıklar üst üste gelir, hız
+     birikir, kaydırma tek parça akış gibi sürer.
+     Sürükleme (1:1) de aynı hattın parçasıdır, sadece girdi doğrudan
+     konuma da yazılır.
+     =================================================================== */
+  function itme(gun, ms) {
+    perdeKapat();          /* kullanıcı kaydırmaya başladı: perde kalkar */
+    intro.aktif = false;
+    snapDay = null;
+    aramaHedef = null;
+    yumHedef = null;       /* hedef modeli kalktı */
+    lastInput = sonGirdi = simdi();
+    if (gun > 0) gezYon = 1; else if (gun < 0) gezYon = -1;
+    /* GİRDİ TİPİ: parmak/trackpad olayları sık (8-20 ms), fare tekerleği
+       tıkları seyrek (55-160 ms). Kip el hareketi boyunca kilitli: yalnız
+       belirgin kopuşta (>150 ms) veya çok sıkışık akışta (<25 ms) değişir.
+     Böylece aralık dalgalanması kipi salındırmıyor (titreme kaynağıydı). */
+    if (ms > 150) surekli = (ms < 45) ? 1 : 0;
+    else if (ms < 25) surekli = 1;
+    else if (ms > 110) surekli = 0;
+    sonSurekli = surekli >= 1;
+    if (surekli >= 1) {
+      /* SÜRÜKLEME: parmak/tekerlek birebir. Hız da ölçülür ki bırakınca
+         momentum doğal devam etsin. */
+      var yeni = lastikli(prog + gun);
+      var gecti = yeni - prog;
+      prog = yeni;
+      if (ms > 0 && gecti !== 0) {
+        hiz = hiz * 0.45 + (gecti / ms * 1000) * 0.55;
+        hiz = clamp(hiz, -KAY.IVME_TAVAN, KAY.IVME_TAVAN);
+      }
+    } else {
+      /* TEKERLEK TIKI: sadece hıza katkı. Konum bir sonraki karelerde
+         hızdan entegre edilir → pürüzsüz, tek parça akış.
+         Hız ölçeği tekerleğin çevirme hızına göre değişir. */
+      var itkiCarpan = clamp(KAY.TIK_ARA / Math.max(45, ms), KAY.TIK_YAVAS, KAY.TIK_HIZLI);
+      hiz = hiz * KAY.TIK_BIRIKIM + gun * KAY.TIK_IVME * itkiCarpan;
+      hiz = clamp(hiz, -KAY.IVME_TAVAN, KAY.IVME_TAVAN);
+    }
+    kip = 'sur';
+  }
+  /* düğme/ok/araç: hedefe yumuşak yolculuk (ease-out) */
+  function aramaya(hedef) {
+    if (!EV.length) return;
+    hedef = clamp(hedef, sinirAlt(), sinirUst());
+    var mesafe = Math.abs(hedef - prog);
+    if (mesafe < 0.02) { prog = hedef; kip = 'dur'; hiz = 0; return; }
+    aramaA = prog; aramaHedef = hedef; aramaT0 = simdi();
+    kip = 'arama'; hiz = 0;
+    try { DNA3D.setExpanded(-1); } catch (e) {}
   }
 
   /* ------------------------------------------------------------------
@@ -11321,6 +11613,11 @@ var MBGO = (function () {
     EMBEDDED = { events: list, source: src || 'plan' };
     PLAN_SRC = src || 'plan';
     merge(); render();
+    /* Sunucu planı geldi → açılış uçuşu artık kesin hedefle başlar */
+    if (PLAN_SRC === 'sunucu' && !introYapildi) {
+      introPlanBekleniyor = false;
+      try { introBaslat(); } catch (e) {}
+    }
     return true;
   }
   function merge() {
@@ -11344,22 +11641,143 @@ var MBGO = (function () {
   /* ------------------------------------------------------------------
      4) Sahne ilerlemesi (P: olay endeksi uzayında kayan konum)
      ------------------------------------------------------------------ */
-  var prog = 0, progT = 0, activeIdx = -1;
+  var prog = 0, activeIdx = -1;   /* prog = görünen konum (gecikmesiz) */
   /* açılış animasyonu: dönemin ilk günü → bugün (hızlanarak) */
   var intro = { aktif: false, t0: 0, a: 0, b: 0, ms: 0 };
   var introYapildi = false;
+  /* Acilis ucusu SUNUCU plani gelene kadar bekler: gomulu plandan
+     hesaplanan hedef bayat kaliyor ve "Bugun" rozeti merkeze oturmuyordu. */
+  var introPlanBekleniyor = true;
   var hitList = null;          /* arama sonucu (true = eslesen) */
   var hovI = -1, mvX = -1, mvY = -1, mvNeed = false;
   var lastInput = -1e9;      /* son kullanici girdisi (manyet icin) */
   var snapDay = null;       /* BUGÜN: kilitlenen gercek gun */
   var _lastToday = null, _lastSync = 0;
-  /* --- manyet ayarlari: yumuşak, orta menzilli, zayıf çekim ---------
-     Boş sarmalda kalınmaz: sessizlikte en yakın etkinlik günü mutlaka
-     (zayıfça) kendine çeker; inceleme yine serbesttir. */
-  var MAGNET_MS = 210;       /* bu kadar sessizlik sonraysa çekim başlar */
-  var MAGNET_RANGE = 4.5;    /* bu kadar gün içinde etki eder (menzil) */
-  var MAGNET_SOFT = 0.42;    /* en yakında çekim şiddeti (0..1) */
-  var gezYon = 0;            /* son sürükleme yönü: +1 ileri, -1 geri (yönlü mıknatıs) */
+  var _sayacGun = null;       /* sayaçta gösterilen gün (canlı güncelleme için) */
+
+  /* ===================================================================
+     KAYDIRMA FİZİĞİ (v3.7.0)
+     -------------------------------------------------------------------
+     ESKİ MODEL: "hedef konum (progT) + 95 ms üstel takip + durunca
+     mıknatıs". Üç ayrı gecikme üst üste biniyordu:
+       • parmak bırakınca ANINDA duruyordu (momentum/inertia yok),
+       • sahne girişe ~95 ms gecikmeyle uyuyordu (yapışık his),
+       • 210 ms sonra mıknatıs kullanıcıyla savaşıyordu.
+     YENİ MODEL — tek motor, dört durum:
+       SURUKLE  : giriş geliyorsa konum birebir parmağı/tekerleği izler
+       MOMENTUM : girdi durdu, hız sürtünmeyle doğal biçimde söner
+       ARAMA    : düğme/ok/araç → hedefe yumuşak yolculuk (ease-out)
+       BIRAKILDI: hız sıfır + bekleme → mıknatıs SADECE yumuşak oturur
+     Hissin değişeceği tek yer burasıdır: KAY nesnesi.
+     =================================================================== */
+  var KAY = {
+    /* ===================================================================
+   KAYDIRMA AYARLARI (v3.13 — TEK YÖRÜNGE + TEK OTURTMA)
+   -------------------------------------------------------------------
+   ESKİ YAPININ SORUNU: dört ayrı mekanizma (integral + fren + lastik
+   + mıknatıs) konumu ayrı ayrı değiştiriyordu. Hangisinin ne zaman
+   baskın olduğu belirsizdi; sonuç "seke seke", sonra "kart tutmuyor",
+   sonra "geçip gidiyor" gibi birbirini götüren yakınmalar oldu.
+
+   YENİ MİMARİ:
+     • Konum TEK bir yörüngeden gelir: momentum + hafif fren.
+     • Yörüngenin doğal bitişi bir NOKTADIR (kart/bugün).
+       Oturtma sonradan "çekme" değil, yörüngenin kendi sonucu.
+     • Sonuç: seke yok, kart kaçmaz, her şey tek fikirden doğar.
+   -------------------------------------------------------------------
+   HİSSİN DEĞİŞECEĞİ TEK YER: burası. */
+    TEKERLEK: 0.0085,   /* gün/piksel — fare tekerleği (1 tık ~0.85 gün) */
+    DOKUNMA: 0.0250,    /* gün/piksel — parmak sürükleme          */
+    IVME_TAVAN: 30,     /* gün/s — aşırı savrulmayı keser          */
+
+    /* --- GİRDİ: tık hıza katkı verir, konum yörüngeden akar --- */
+    TIK_IVME: 2.2,      /* gün/s per gün — bir tıkın hız katkısı   */
+    TIK_BIRIKIM: 0.9,   /* tıklar arası hız korunumu (akış bölünmez)*/
+    TIK_ARA: 150,       /* ms — referans tık aralığı               */
+    TIK_YAVAS: 0.6,     /* yavaş tekerik → az itki                 */
+    TIK_HIZLI: 2.4,     /* hızlı tekerik → çok itki                */
+    SURUKLE_BEKLE: 170, /* ms — tıklar bu süre "akıyor" sayılır    */
+
+    /* --- YÖRÜNGE: momentum doğal sönümü (tek exponential) --- */
+    /* SURLENME: momentum sönümü — dokunulmadı (kullanıcı bu hızı
+       beğendi). Bekleme sorunu BURADA değil, aşağıdaki oturtmanın
+       başlama koşulunda: mıknatıs kip='dur' olmayı bekliyordu, yani
+       momentum bitene kadar. Çözüm: tahmini durma noktası (aşağıda). */
+    SURLENME: 2.6,      /* 1/s — momentum sönümü                    */
+    HIZ_ESIK: 0.05,     /* gün/s — altı durmuş sayılır             */
+
+    /* --- OTURMA: yalnız kartlar + bugün --- */
+    /* Fren yörüngeyi YAVAŞLATIR ama yönü değiştirmez: momentum
+       noktanın üstünden sekmez, ona yakalanır. "Geçip gidiyor"
+       sorusunun çözümü budur. */
+    FREN_MENZIL: 3.0,   /* gün — noktadan bu kadar uzaktayken fren  */
+    FREN_GUC: 4.0,      /* 1/s — noktaya yaklaştıkça ek sürtünme   */
+    MANYET_MENZIL: 1.6, /* gün — oturtmanın tam gücünde olduğu mesafe */
+    /* Çekiş mesafeyle AZALIR (yumuşak kademe):
+       MANYET_MIN = noktaya YAKINKEN (mesafe→0) çekiş tabanı.
+       MANYET_GUC = UZAKKEN ek çekiş. Böylece uzaktan belirgin
+       yakalar, yaklaştıkça sönümlenir; momentum bozulmaz. */
+    MANYET_MIN: 2.0,    /* 1/s — yakındaki taban çekiş             */
+    MANYET_GUC: 6.0,    /* 1/s — uzaktaki ek çekiş                 */
+    MANYET_HIZ: 3.0,    /* gün/s — oturtma tavan hızı (sertlik)     */
+    MANYET_KILIT: 0.01, /* gün — bu kadar yakınken TAM ortada kilit*/
+    MANYET_BEKLE: 160,  /* ms — durduktan sonra oturtma başlangıcı */
+    /* MANYET_TAHMIN (önceki istek: "etkiye BAŞLAMA süresi" kısalsın):
+       Mıknatıs eskiden yalnız kip='dur' olunca çalışıyordu, yani
+       momentum TAMAMEN bitene kadar bekliyordu → kart "bir süre
+       geçtikten sonra" tutuyordu. Oysa momentum üstel söner:
+       v(t) = v0·e^(-SURLENME·t) → toplam yol = v0 / SURLENME.
+       Yani "momentum bitmeden" TAHMİN EDİLEBİLİR nereye varacağı.
+       Bu tahmin bir noktaya yakınsa oturtma HEMEN başlar.
+       Sonuç: momentum HİÇ değişmez (aynı sönüm, aynı hız), yalnız
+       oturtma daha erken devreye girer → bekleme hissi kaybolur. */
+    MANYET_TAHMIN: 1.0, /* gün — tahmin ile nokta arası tolerans    */
+    UZAK: 0.42,         /* UZAK: menzil dışı nazik sürüklenme      */
+
+    ARAMA_MIN: 260, ARAMA_MAX: 900,  /* düğme/ok yolculuğu            */
+
+    /* --- SINIRLAR: lastik (yalnız sınırda, kaydırmayı bozmaz) --- */
+    LASTIK: 0.45,       /* sınır dışı direnç (0..1)                */
+    LASTIK_BOSLUK: 0.5, /* gün — sınırdan sonra "esneme" payı      */
+    GERI_DONUS: 150,    /* ms — sınırdan bırakılınca dönüş          */
+    TERS_YASAK: 0       /* kullanılmıyor: yön kuralı artık süresiz */
+  };
+  /* FREN (kayarken) — YÖN KURALI BURADA GEÇERLİ:
+     Momentum AKARKEN yalnız ÖNÜMÜZDEKİ noktaya yavaşlar, ARKAMIZDAKİ
+     kart asla tutmaz. Aşağı giderken yukarıdaki kart, yukarı giderken
+     aşağıdaki kart tutmaz → kaydırma akışı bozulmaz, momentum aynen
+     sürer (daha fazlası aşağıda: art arda iki kural).
+     Fren YÖN DEĞİŞTİRMEZ, sadece hızı söndürür.
+     Durunca oturtma (blok 5) HER YÖNDEN çeker. */
+  function frenKatsayisi() {
+    if (!EV.length) return 0;
+    var yon = (hiz > 0.01) ? 1 : ((hiz < -0.01) ? -1 : 0);
+    if (!yon) yon = (gezYon || 1);
+    if (!yon) return 0;
+    var i, gun, fark, enYakin = Infinity;
+    var aday = [eDay(nearestIdx(prog)) - CARD_OFF];
+    var bugunG = DNA3D.dayOf(todayISO());
+    if (bugunG != null) aday.push(bugunG);
+    for (i = 0; i < aday.length; i++) {
+      gun = aday[i];
+      if (gun == null) continue;
+      fark = (gun - prog) * yon;          /* yalnız ÖNÜMÜZDEKİ noktalar */
+      if (fark < 0 || fark > KAY.FREN_MENZIL) continue;
+      if (fark < enYakin) enYakin = fark;
+    }
+    if (enYakin === Infinity) return 0;
+    return clamp(1 - enYakin / KAY.FREN_MENZIL, 0, 1);
+  }
+  /* hareket durumu */
+  var hiz = 0;            /* gün/s */
+  var kip = 'dur';        /* 'sur' | 'mom' | 'arama' | 'dur' */
+  var aramaA = 0, aramaHedef = 0, aramaT0 = 0;
+  var yumHedef = null;   /* (artık kullanılmıyor: hedef modeli kalktı) */
+  var sonSurekli = false;  /* son girdi fırlatma mıydı (bilgi amaçlı) */
+  /* son olayın kipi — el hareketi boyunca SABİT tutulur (salınım olmasın) */
+  var surekli = 0;
+  var sonGirdi = -1e9;    /* son girdi zamanı (fizik için) */
+  var gezYon = 0;         /* son sürükleme yönü: +1 ileri, -1 geri (yönlü mıknatıs) */
   /* kart iki baz cifti arasinda duruyor (ölçülen yerinde);
      manyet bu yüzden olay gününün yarım gün öncesine oturur, böylece
      kart ekranın tam merkezine düşer. 0.5 = yarım riss / 3.28 Å riss */
@@ -11397,7 +11815,7 @@ var MBGO = (function () {
   }
 
   var rail = (function () {
-    var cv = null, gx = null, meta = [], W = 40, H = 300, dpr = 1, onJump = null;
+    var cv = null, gx = null, meta = [], W = 40, H = 300, dpr = 1, onJump = null, onEnd = null;
     /* son cizilen konum: tuval yeniden boyutlaninca (ekran donmesi, yazi
        tipi, ara cubuk sarmasi) icerik silindigi icin hemen tekrar cizilir */
     var lastFrac = 0, lastPhase = 0;
@@ -11505,14 +11923,14 @@ var MBGO = (function () {
       if (onJump) onJump(f);
     }
     return {
-      init: function (canvas, cb) {
-        cv = canvas; gx = cv.getContext("2d"); onJump = cb;
+      init: function (canvas, cb, bitti) {
+        cv = canvas; gx = cv.getContext("2d"); onJump = cb; onEnd = bitti;
         size();
         var drag = false;
         cv.addEventListener("pointerdown", function (e) { drag = true; try { cv.setPointerCapture(e.pointerId); } catch (err) {} jumpAt(e.clientY); e.preventDefault(); });
         cv.addEventListener("pointermove", function (e) { if (drag) jumpAt(e.clientY); });
-        cv.addEventListener("pointerup", function () { drag = false; });
-        cv.addEventListener("pointercancel", function () { drag = false; });
+        cv.addEventListener("pointerup", function () { drag = false; if (onEnd) onEnd(); });
+        cv.addEventListener("pointercancel", function () { drag = false; if (onEnd) onEnd(); });
       },
       setEvents: function (arr) { meta = arr || []; try { draw(lastFrac, lastPhase); } catch (e) {} },
       setRange: function (a, b) { rD0 = a; rD1 = b; try { draw(lastFrac, lastPhase); } catch (e) {} },
@@ -11540,7 +11958,7 @@ var MBGO = (function () {
     if (!EV.length) {
       stage.appendChild(el('div', 'empty',
         'Gösterilecek etkinlik yok. <b>＋ Etkinlik</b> ile kendi etkinliğini ekleyebilirsin.'));
-      prog = progT = 0; activeIdx = -1;
+      prog = 0; hiz = 0; kip = 'dur'; activeIdx = -1;
       syncDnaEvents();
       updateCounter();
       renderCal();
@@ -11557,8 +11975,7 @@ var MBGO = (function () {
     rail.setRange(D0, D1);
     rail.resize();
     if (!prog) prog = D0;
-    if (!progT) progT = D0;
-    prog = clampP(prog); progT = clampP(progT);
+    prog = clampP(prog); hiz = 0; kip = 'dur';
     syncDnaEvents();
     setActive(nearestIdx(prog));
     try { rail.draw(D1 > D0 ? (prog - D0) / (D1 - D0) : 0, prog); } catch (e9) {}
@@ -12115,48 +12532,135 @@ var MBGO = (function () {
       }
     }
     if (!EV.length) return;
+    /* Sunucu planı hiç gelmezse (çevrimdışı) uçuş 2.6 sn sonra yine başlar */
+    if (!introYapildi && introPlanBekleniyor && t > 2600) {
+      introPlanBekleniyor = false;
+      try { introBaslat(); } catch (e13) {}
+    }
+    /* güvenlik ağı: hiçbir koşulda perde ekranda kalmasın */
+    if (t > 6500) perdeKapat();
     /* açılış animasyonu önceliklidir; kullanıcı dokunursa kesilir */
     if (intro.aktif && (t - lastInput > 260)) { if (introIsle(t)) return; }
-    progT = clampP(progT);
-    /* --- manyet: kaydirma durunca en yakin etkinlige yavasca otur ---
-       yakinlastikca hizlanir: klavye/ray gibi hedefi olan girdiler zaten tam gunde */
-    if (snapDay != null && Math.abs(snapDay - progT) > 25) snapDay = null;
-    if (t - lastInput > MAGNET_MS) {
-      var snapTgt = (snapDay != null) ? snapDay : (eDay(nearestIdx(progT)) - CARD_OFF);
-      var mDiff = snapTgt - progT;
-      var mA = Math.abs(mDiff);
-      /* YÖNLÜ MIKNATIS: durduktan sonraki 1.2 sn içinde, gidilen yöne TERS
-         çekiş bastırılır (hızlı kaydırınca geri savrulma hissi vermez).
-         Süre dolunca her yöne serbestçe oturur. Ek yük: 2 karşılaştırma. */
-      var yon = (t - lastInput < 1200) ? gezYon : 0;
-      var tersYon = yon !== 0 && (mDiff > 0 ? 1 : -1) !== yon;
-      if (mA > 0.002 && mA < MAGNET_RANGE && !tersYon) {
-        /* yaklaştıkça güçlenir (yumuşak his), sonunda TAM oturur:
-           sorun eskiden 1.2 gün kaydırmada 0.46 gün kalmasıydı,
-           yani kart hiçbir zaman yerine oturmuyordu. */
-        var near = 1 - mA / MAGNET_RANGE;
-        var pull = 5.5 * MAGNET_SOFT * (0.55 + 0.45 * near) * dt / 1000;
-        progT = clampP(progT + mDiff * (1 - Math.exp(-pull)));
-        /* son kademe: 0.04 gün içinde birebir otur */
-        if (Math.abs(snapTgt - progT) < 0.05) progT = clampP(snapTgt);
-      } else if (mA >= MAGNET_RANGE && !tersYon) {
-        /* UZAK ÇEKİM: menzil dışında (ara tatil boşluğu, sarmal başı/sonu)
-           çok zayıf sürüklenme — boş sarmalda donuk kalınmaz. Menzile
-           girince yukarıdaki asıl mıknatıs devralır ve tam oturtur. */
-        var uPull = 0.22 * dt / 1000;
-        progT = clampP(progT + mDiff * (1 - Math.exp(-uPull)));
+    /* =================================================================
+       HAREKET MOTORU (v3.7.0) — giriş yoksa burada konum kendiliğinden
+       ilerler. Gecikme YOK: konum = gördüğünüz yer.
+       ================================================================= */
+    var ds = dt / 1000;
+    /* 1) girdi mi geliyor? */
+    if (kip === 'sur' && (t - sonGirdi) > KAY.SURUKLE_BEKLE) {
+      kip = (Math.abs(hiz) > KAY.HIZ_ESIK) ? 'mom' : 'dur';
+    }
+    /* 1b) KAYDIRMA: konum = hızın integralı (tek parça, pürüzsüz akış).
+       Tıklar yalnız hıza katkı verir; burada konum o hızla ilerler ve
+       sürtünmeyle doğal yavaşlar. Tıklar arasında HİÇBİR duraklama
+       olmadığı için "gün gün seke seke" ilerleme yoktur. */
+    if (kip === 'sur' || kip === 'mom') {
+      /* ⚠ SEKE SEKENİN GERÇEK KÖKÜ: sürtünme her kare çalışınca hız
+         tıklardan arasında eriyor, sonraki tıkte tekrar zıplıyordu
+         (ölçüm: 0.97 → 0.49 → 0.97 → 0.49 … tam periyot salınım).
+         ÇÖZÜM: tıklar SÜRERKEN sürtünme HİÇ çalışmaz; hız korunur,
+         akış tek parça akar. Tıklar durunca (SURUKLE_BEKLE kadar
+         sessizlik) sürtünme devreye girer ve momentum doğal söner. */
+      prog += hiz * ds;
+      var tikAktif = (t - sonGirdi) <= KAY.SURUKLE_BEKLE;
+      if (!tikAktif) {
+        /* FREN: noktaya yaklaşırken ek sürtünme → yumuşak yakalanma */
+        hiz -= hiz * (KAY.SURLENME + frenKatsayisi() * KAY.FREN_GUC) * ds;
+        if (Math.abs(hiz) <= KAY.HIZ_ESIK) { hiz = 0; kip = 'dur'; }
+      }
+      /* duvara çarpmadan dur (sınır aşımı zıplama yapıyordu) */
+      var aI = sinirAlt(), uI = sinirUst();
+      if (prog < aI) { prog = aI; if (hiz < 0) hiz = 0; }
+      else if (prog > uI) { prog = uI; if (hiz > 0) hiz = 0; }
+    }
+    /* 2) düğme/ok yolculuğu (ease-out) */
+    if (kip === 'arama') {
+      var mesafe = Math.abs(aramaHedef - aramaA);
+      var sure = clamp(KAY.ARAMA_MIN + mesafe * 26, KAY.ARAMA_MIN, KAY.ARAMA_MAX);
+      var k = Math.min(1, (t - aramaT0) / sure);
+      var e = 1 - Math.pow(1 - k, 3);
+      prog = aramaA + (aramaHedef - aramaA) * e;
+      if (k >= 1) { prog = aramaHedef; kip = 'dur'; hiz = 0; sonGirdi = t; }
+    }
+    /* 3) momentum: bırakınca hız sürtünmeyle doğal sönümlenir */
+    /* 3) MOMENTUM bitti: artık hareket 1b'de bütünleşti (tek integral). */
+    /* 4) lastik: sınır dışına taşma ve bırakınca geri dönüş */
+    var aS = sinirAlt(), uS = sinirUst();
+    if (prog < aS || prog > uS) {
+      if (kip === 'mom') hiz *= 0.55;            /* sınırda ivme kesilir */
+      if (kip !== 'sur') {
+        var hedefS = prog < aS ? aS : uS;
+        prog += (hedefS - prog) * Math.min(1, dt / KAY.GERI_DONUS);
+        if (Math.abs(hedefS - prog) < 0.002) prog = hedefS;
       }
     }
-    var d = progT - prog;
-    if (Math.abs(d) > 0.0008) {
-      prog += d * Math.min(1, dt / 95);
-      if (Math.abs(progT - prog) <= 0.0008) prog = progT;
-      rail.draw(D1 > D0 ? (prog - D0) / (D1 - D0) : 0, prog);
+    /* 5) OTURMA — YÖN DEĞİL, HAREKET HALİ ÖNCEĞLİ (v3.13.1)
+       Kullanıcı isteği:
+         • Kayarken (momentum akarken) HİÇBİR kart tutmaz — akış
+           bozulmaz, momentum kendi yolunu gider. Zaten bu blok
+           yalnız kip='dur' (durmuş) olduğunda çalışır.
+         • Durunca en yakın kart HER YÖNDEN merkeze çeker. Yani
+           kaydırıp bir kartın biraz üstünde kalırsan, o kart seni
+           aşağı çeker; tersine de aynı. (Eski "yalnız gidilen yöne"
+           kuralı kaldırıldı: durmuşken yön kuralı anlamsız.)
+         • "Çok tutmasın": çekiş mesafeyle AZALIR (yumuşak kademe).
+           Uzaktan güçlü çeker, yaklaştıkça sönümlenir → momentum
+           bozulmaz, sonra yumuşakça yerleşir. */
+    if (snapDay != null && Math.abs(snapDay - prog) > 25) snapDay = null;
+    /* BAŞLAMA KOŞULU: bekleme süresini kısaltmanın PROFESYONEL yolu.
+       Durmuşken: kısa bir bekleme (MANYET_BEKLE).
+       Momentum sürerken: üstel sönümden DURMA NOKTASI TAHMIN edilir
+       (toplam yol = hız / SURLENME). Tahmin bir kartın/bugünün
+       üstüne denk geliyorsa oturtma HEMEN devreye girer — yani
+       momentum zaten oraya varacaktı, sadece son metreleri
+       mıknatıs devralır. Momentum HİÇ değişmez, bekleme hissi
+       tamamen kaybolur. */
+    var oturmaBaslar = (kip === 'dur' && (t - sonGirdi) > KAY.MANYET_BEKLE);
+    if (!oturmaBaslar && (kip === 'mom') && Math.abs(hiz) > 0.02) {
+      var durmaTahmini = prog + hiz / KAY.SURLENME;
+      var adayTahmin = eDay(nearestIdx(durmaTahmini)) - CARD_OFF;
+      var bugunTah = DNA3D.dayOf(todayISO());
+      if (bugunTah != null && Math.abs(bugunTah - durmaTahmini) <
+          Math.abs(adayTahmin - durmaTahmini)) adayTahmin = bugunTah;
+      /* ⚠ YÖN ŞARTI YOK: burada ölçülen şey "nereye varacağı", yani
+         momentumun DOĞAL bitişi. Hızlı kaydırırken tahmin uzaktadır →
+         oturtma devreye girmez (kart tutmaz, istediğin gibi).
+         Yavaşlarken tahmin noktaya yaklaşır → son metreler mıknatısa
+         devrolur. Böylece kart "bir süre geçtikten sonra" değil,
+         momentumla BİRLİKTE yakalar. */
+      if (Math.abs(adayTahmin - durmaTahmini) < KAY.MANYET_TAHMIN) {
+        oturmaBaslar = true;
+      }
     }
+    if (oturmaBaslar) {
+      var snapTgt = (snapDay != null) ? snapDay : (eDay(nearestIdx(prog)) - CARD_OFF);
+      var mDiff = snapTgt - prog;
+      var mA = Math.abs(mDiff);
+      /* mesafeyle AZALAN çekiş: uzakta belirgin, yakında sönümlü.
+         (tüm yönlerde aynı — durmuşken yön kuralı uygulanmaz) */
+      if (mA > KAY.MANYET_KILIT) {
+        var oran = 1 - clamp(mA / KAY.MANYET_MENZIL, 0, 1);   /* 1=uzak, 0=yakın */
+        var cekis = (KAY.MANYET_MIN + oran * KAY.MANYET_GUC) * mA;
+        cekis = Math.min(cekis, KAY.MANYET_HIZ);
+        var adim = Math.min(cekis * ds, mA);
+        prog += (mDiff > 0 ? adim : -adim);
+      } else {
+        /* KİLİT: noktaya tam geldik → mükempel merkez */
+        prog = snapTgt;
+      }
+    }
+    rail.draw(D1 > D0 ? (prog - D0) / (D1 - D0) : 0, prog);
     var ai = nearestIdx(prog);
     if (ai !== activeIdx) setActive(ai);
+    /* Basliktaki gun yazisi da canli olsun: ucus sirasinda sayac
+       bayat kaliyor ve "Bugun"e gelindiginde yanlis tarih yaziyordu. */
+    if (_sayacGun !== Math.round(prog)) { _sayacGun = Math.round(prog); updateCounter(); }
     if (t - _lastSync > 20000) { _lastSync = t; syncToday(); }
     try { if (typeof DNA3D !== 'undefined') DNA3D.setProgress(prog); } catch (e) {}
+    /* DNA kendi karesini BURADA çiz: iki ayrı rAF döngüsü zayıf cihazda
+       (iPhone) birbirini yetiştiremiyor, sahne takılı-takılı ilerliyordu.
+       Tek döngü: konum burada hesaplanır, sahne hemen çizilir. */
+    try { if (typeof DNA3D !== 'undefined' && DNA3D.tick) DNA3D.tick(t); } catch (e5) {}
   }
 
   /* ------------------------------------------------------------------
@@ -12201,13 +12705,19 @@ var MBGO = (function () {
     if (!EV.length) return;
     i = clamp(i, 0, maxI());
     var hedef = eDay(i);
-    if (hedef > progT) gezYon = 1; else if (hedef < progT) gezYon = -1;
-    progT = hedef;
-    if (instant) { prog = progT; setActive(i); }
+    if (hedef > prog) gezYon = 1; else if (hedef < prog) gezYon = -1;
+    if (instant) {
+      prog = hedef; hiz = 0; kip = 'dur';
+      lastInput = sonGirdi = simdi(); snapDay = null;
+      setActive(i);
+      return;
+    }
+    aramaya(hedef);
+    setActive(i);
   }
   function step(d) {
     if (!EV.length) return;
-    goTo(clamp(nearestIdx(progT) + d, 0, maxI()));
+    goTo(clamp(nearestIdx(prog) + d, 0, maxI()));
   }
   /* BUGÜN: en yakın etkinliğe değil, takvimdeki gerçek güne gidilir.
      O günde etkinlik yoksa bile manyetik o güne kilitlenir. */
@@ -12217,14 +12727,23 @@ var MBGO = (function () {
      noktaya (en yakın etkinlik kartı) gider. Yoksa uçuş bitince yumuşatma
      kartı bir kademe daha aşağı kaydırıyordu (arada kalmış hissi). */
   function introBaslat() {
-    if (introYapildi || REDUCED || !EV.length) return;
+    if (introYapildi || REDUCED || !EV.length) { perdeKapat(); return; }
+    /* Sunucu planı hâlâ bekleniyorsa uçma: gömülü plan farklı
+       (hedef bayat kalır, "Bugün" rozeti merkeze düşmez). */
+    if (introPlanBekleniyor) return;
     introYapildi = true;
     var bugun = DNA3D.dayOf(todayISO());
-    if (bugun == null) return;
+    if (bugun == null) { perdeKapat(); return; }
     var hedef = clampP(hedefGun(bugun));
-    var mesafe = Math.abs(hedef - D0);
-    if (mesafe < 2.5) return;                 /* zaten başındayız */
-    intro = { aktif: true, t0: 0, a: D0, b: hedef,
+    var bas = sinirAlt();          /* sarmalın EN BAŞI (ilk etkinlik değil) */
+    var mesafe = Math.abs(hedef - bas);
+    if (mesafe < 2.5) { perdeKapat(); return; }   /* zaten başındayız */
+    /* Uçuş sarmalın en başından başlar: planın ilk günü değil, en
+       üstteki görünür nokta (ilk etkinliğin 6 gün üstü) — açılışta
+       zaman çizelgesinin baştan görünmesi isteniyordu. */
+    prog = bas; hiz = 0; kip = 'dur';
+    perdeKapat();                 /* perde uçuşla birlikte yumuşakça açılır */
+    intro = { aktif: true, t0: 0, a: bas, b: hedef,
       ms: Math.min(4600, 900 + mesafe * 30) };
   }
   function introIsle(ts) {
@@ -12243,17 +12762,35 @@ var MBGO = (function () {
       e = P1 + (1 - P1) * (1 - (1 - x) * (1 - x) * (1 - x));
     }
     prog = intro.a + (intro.b - intro.a) * e;
-    progT = prog;
+    hiz = 0; kip = 'dur';            /* uçuş sırasında fizik devrede değil */
     try { rail.draw(D1 > D0 ? (prog - D0) / (D1 - D0) : 0, prog); } catch (e1) {}
     var ai2 = nearestIdx(prog);
     if (ai2 !== activeIdx) setActive(ai2);
     try { if (typeof DNA3D !== 'undefined') DNA3D.setProgress(prog); } catch (e2) {}
+    /* ⚠ UÇUŞ SAHNESİ DE ÇİZİLMELİ: introIsle loop'u return ile bitirdiği
+       için loop sonundaki DNA3D.tick() buraya ULAŞAMIYORDU → sahne hiç
+       güncellenmiyor, ekran donuyordu ve açılış animasyonu görünmüyordu. */
+    try { if (typeof DNA3D !== 'undefined' && DNA3D.tick) DNA3D.tick(ts); } catch (e6) {}
     if (k >= 1) {
       intro.aktif = false;
-      /* kartın tam merkezde durması için hedef gün en yakın etkinliğe alınır */
-      progT = clampP(hedefGun(intro.b));
-      snapDay = progT;
+      /* Uçuş HEDEFİ değil, gününü yeniden hesapla: uçuş sırasında plan
+         değişse bile (sunucu planı geç geldi) "Bugün" rozeti merkezde
+         oturur. Günde etkinlik yoksa en yakın etkinliğe kayar. */
+      var bugun2 = DNA3D.dayOf(todayISO());
+      prog = clampP(hedefGun(bugun2 == null ? intro.b : bugun2));
+      snapDay = prog;
+      hiz = 0; kip = 'dur';
+      sonGirdi = simdi();
       try { DNA3D.setExpanded(-1); } catch (e3) {}
+      /* SON konum (bugün) de çizilsin: yukarıdaki tick, uçuş eğrisinin
+         bu son kareden bir önceki konumunu çizdi. */
+      try {
+        if (typeof DNA3D !== 'undefined') DNA3D.setProgress(prog);
+        if (DNA3D && DNA3D.tick) DNA3D.tick(ts);
+      } catch (e7) {}
+      try {
+        if (_sayacGun !== Math.round(prog)) { _sayacGun = Math.round(prog); updateCounter(); }
+      } catch (e8) {}
     }
     return true;
   }
@@ -12276,13 +12813,13 @@ var MBGO = (function () {
     touched();
     try { DNA3D.setExpanded(-1); } catch (e0) {}
     if (REDUCED || !EV.length) {
-      progT = clampP(hedef); prog = progT;
+      prog = clampP(hedef); hiz = 0; kip = 'dur';
       snapDay = clampP(hedefGun(hedef));
       setActive(nearestIdx(prog));
     } else {
       var mesafe = Math.abs(clampP(hedef) - prog);
       if (mesafe < 0.5) {
-        progT = clampP(hedef);
+        prog = clampP(hedef); hiz = 0; kip = 'dur';
         snapDay = clampP(hedefGun(hedef));
         setActive(nearestIdx(prog));
       } else {
@@ -12304,13 +12841,13 @@ var MBGO = (function () {
     for (k = 0; k < EV.length; k++) { if (EV[k].date === today) ysn.push(EV[k].title); }
     try { DNA3D.setToday(tdn); } catch (e) {}
     if (tdn == null || tdn < D0) {
-      touched(); snapDay = null; progT = D0;
+      touched(); snapDay = null; prog = D0; hiz = 0; kip = 'dur';
       toast('Bugün ' + fmtDate(today) + ' — plan ' + fmtDate(EV[0].date) +
         ' tarihinde başlıyor, en başa gidildi.', 5000);
       return;
     }
     if (tdn > D1) {
-      touched(); snapDay = null; progT = D1;
+      touched(); snapDay = null; prog = D1; hiz = 0; kip = 'dur';
       toast('Bugün ' + fmtDate(today) + ' — plan ' + fmtDate(EV[maxI()].date) +
         ' tarihinde bitti, sona gidildi.', 5000);
       return;
@@ -12414,14 +12951,21 @@ var MBGO = (function () {
     loadNotes();
     eskiYerelTemizle();
     merge();
+    /* RAY: sürükleme birebir (lastikli), hız ölçülür → bırakınca kayar */
+    var rayF = null, rayT = 0;
     rail.init($('#railCv'), function (frac) {
       if (!EV.length) return;
-      touched();
+      if (frac === rayF) return;
+      var sy = simdi();
+      var ms = rayT ? Math.max(8, Math.min(240, sy - rayT)) : 240;
+      rayT = sy;
+      rayF = frac;
+      var hedef = lastikli(D0 + frac * (D1 - D0));
+      var gecti = hedef - prog;
+      itme(hedef - prog, ms);
       DNA3D.setExpanded(-1);
-      /* surekli surukleme: snap YOK, magnet birakinca karta oturtur */
-      var hedef = clampP(D0 + frac * (D1 - D0));
-      if (hedef > progT) gezYon = 1; else if (hedef < progT) gezYon = -1;
-      progT = hedef;
+    }, function () {          /* ray bırakıldı: kısa kayma için ivme kalsın */
+      rayT = 0;
     });
     if (DNA3D.attach($('#dna')) === false) {
       document.body.classList.add('no-dna');
@@ -12526,32 +13070,39 @@ var MBGO = (function () {
       return null;
     }
 
-    /* tekerlek → sahne ilerlemesi (modal açıksa sayfa sürülmez) */
+    /* tekerlek → sahne ilerlemesi (modal açıksa sayfa sürülmez)
+       Hız ölçülür: hızlı tekerlek vuruşları NATÜRAL biçimde kayar. */
+    var tekerT = 0;
     window.addEventListener('wheel', function (e) {
       if (kaydirilabilir(e.target)) return;      /* o kap kendi kaydırsın */
       e.preventDefault();
       var dy = e.deltaY * (e.deltaMode === 1 ? 16 : 1);
-      touched();
-      if (dy > 0) gezYon = 1; else if (dy < 0) gezYon = -1;
+      var sy = simdi();
+      /* İlk olay (ya da uzun bir boşluktan sonraki ilk olay) KESİKTİR:
+         240 ms → ivme kısılır, fare tıklaması 3 kat yol gitmez.
+         Ardışık olaylar gerçek aralıkla ölçülür (trackpad/sürükleme). */
+      var ms = tekerT ? Math.max(8, Math.min(240, sy - tekerT)) : 240;
+      tekerT = sy;
       DNA3D.setExpanded(-1);
-      progT = clampP(progT + dy * 0.020);
+      itme(dy * KAY.TEKERLEK, ms);
     }, { passive: false });
 
-    /* dokunmatik sürükleme */
-    var touchY = -1;
+    /* dokunmatik sürükleme: konum parmağı BİREBİR izler,
+       bırakınca momentum devreye girer (doğal denizlik). */
+    var touchY = -1, touchT = 0;
     window.addEventListener('touchstart', function (e) {
-      if (e.touches && e.touches.length) touchY = e.touches[0].clientY;
+      if (e.touches && e.touches.length) { touchY = e.touches[0].clientY; touchT = simdi(); }
     }, { passive: true });
     window.addEventListener('touchmove', function (e) {
       if (touchY < 0 || !e.touches || !e.touches.length) return;
       if (kaydirilabilir(e.target)) { touchY = -1; return; }   /* o kap kendi kaydırsın */
       e.preventDefault();
       var y = e.touches[0].clientY;
-      touched();
-      var fark = touchY - y;
-      if (fark > 0) gezYon = 1; else if (fark < 0) gezYon = -1;
+      var sy = simdi();
+      var ms = Math.max(8, Math.min(90, sy - touchT));
+      touchT = sy;
       DNA3D.setExpanded(-1);
-      progT = clampP(progT + fark * 0.030);
+      itme((touchY - y) * KAY.DOKUNMA, ms);
       touchY = y;
     }, { passive: false });
     window.addEventListener('touchend', function () { touchY = -1; }, { passive: true });
@@ -12959,7 +13510,10 @@ var MBGO = (function () {
       bugBody: bugBody,
       today: function () { return todayISO(); },
       events: function () { return EV; },
-      progress: function () { return { p: prog, t: progT, snap: snapDay }; },
+      progress: function () {
+        return { p: prog, t: prog, snap: snapDay, hiz: hiz, kip: kip,
+          intro: intro.aktif, introA: intro.a, introB: intro.b };
+      },
       /* --- uyelik / yonetim yardimcilari (member.js bunlari kullanir) --- */
       applyPlan: applyPlan,
       importExcel: function (f) {
@@ -13055,7 +13609,7 @@ var MBGO = (function () {
           return liste.length;
         });
       },
-      offset: function (d) { progT = clampP(progT + (+d || 0)); return progT; }
+      offset: function (d) { itme(+d || 0, 16); return prog; }
     };
     /* uyelik katmani (Firebase varsa); yoksa sessizce devre disi */
     try { if (window.MBGM) MBGM.init(window.MBG); } catch (e11) {}
