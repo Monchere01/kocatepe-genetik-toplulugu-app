@@ -589,6 +589,13 @@
   .onay-kutu input:focus-visible + .onay-kutu-kutu{outline:2px solid rgba(56,189,248,.7);outline-offset:2px}
   .onay-kutu-yazi{font-size:.92rem;line-height:1.5;color:#d7e4f5}
   .onay-ipucu{margin-top:12px;font-size:.82rem;color:#9db3d1;text-align:center}
+  /* Onay maddesi olmayan bilgi notu (madde listesinin altında) */
+  .onay-not{margin:14px 0 0;padding:11px 13px;border-radius:12px;font-size:.84rem;
+    line-height:1.5;color:#c3d4ea;background:rgba(86,119,255,.09);
+    border:1px solid rgba(120,170,255,.22)}
+  .onay-not p{margin:0}
+  .onay-not p + p{margin-top:7px}
+  .onay-not b{color:#dce9fb}
   /* --- ETKİNLİK DURUMU: uyarılar, yönetim bloğu, katılım listeleri --- */
   .etp-uyari{margin:0 0 14px;padding:11px 13px;border-radius:12px;font-size:.87rem;line-height:1.5;
     color:#ffd9a8;background:rgba(251,191,36,.1);border-left:3px solid rgba(251,191,36,.55)}
@@ -599,7 +606,13 @@
     padding:13px 15px;border-radius:14px;background:rgba(86,119,255,.09);
     border:1px solid rgba(120,170,255,.24)}
   .etp-yonetim-not{flex:1 1 220px;font-size:.88rem;line-height:1.5;color:#cfe2ff}
+  .etp-yonetim-not2{color:#9fb6d8;font-size:.84rem}
+  .etp-yonetim-dugme{display:flex;gap:9px;flex-wrap:wrap;flex:0 0 auto}
+  .etp-yonetim-dugme button{min-height:44px;padding:11px 17px;border-radius:12px;font-weight:600;
+    font-size:.9rem;cursor:pointer}
   .etp-yonetim .pri{min-height:46px;padding:12px 20px;border-radius:12px;font-weight:600}
+  .etp-yonetim-dugme .pri{background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;
+    border:1px solid rgba(140,170,255,.5);box-shadow:0 6px 18px rgba(59,130,246,.28)}
   .etp-katilacak-liste.liste-iyi .etp-kuluper{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.28)}
   .etp-katilacak-liste.liste-kotu .etp-kuluper{background:rgba(251,146,60,.08);border-color:rgba(251,146,60,.3)}
   /* Onay kutusu düğmeleri: daha büyük ve okunaklı */
@@ -1209,7 +1222,12 @@
     background:rgba(56,189,248,.14);border:1px solid rgba(56,189,248,.4);color:#bae6fd;
     font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:.15s}
   .etp-not .etp-okut:hover:not(:disabled){background:rgba(56,189,248,.24);transform:translateY(-1px)}
-  .etp-not .etp-okut:disabled{opacity:.85;cursor:default;
+  /* pasif (başlamadı / bitti / üye değil) — nötr gri */
+  .etp-not .etp-okut:disabled{opacity:.8;cursor:default;
+    background:rgba(148,178,220,.1);border-color:rgba(148,178,220,.26);color:#9fb4d2;
+    transform:none}
+  /* katılım kaydedildi — yeşil (başarı) */
+  .etp-not .etp-okut.basarili:disabled{opacity:.95;cursor:default;
     background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.4);color:#6ee7b7}
   @media (max-width:560px){.etp-not{flex-wrap:wrap}.etp-not .etp-okut{margin:10px 0 0;width:100%}}
   .etp-kart{background:rgba(148,178,220,.05);border:1px solid rgba(148,178,220,.15);border-radius:15px;
@@ -1294,6 +1312,10 @@
   .pz-onay-dugmeler .pz-onayla-kirmizi{border-color:rgba(255,120,120,.6);background:rgba(255,90,90,.2);
     color:#ffc9c9}
   .es-blok{margin-top:16px;padding-top:14px;border-top:1px solid rgba(148,178,220,.14)}
+  /* Durum bloğu en üstte, vurgulu (yönetici ilk bunu görsün) */
+  .es-durum-blok{margin-top:14px;padding:14px 15px;border-radius:14px;
+    border:1px solid rgba(120,170,255,.26);background:rgba(86,119,255,.08)}
+  .es-durum-blok h3{margin:0 0 10px;color:#cfe2ff}
   .es-blok h3{font-size:.74rem;letter-spacing:.05em;color:#9fb4d2;margin:0 0 8px}
   .es-blok h3 em{font-style:normal;background:rgba(148,178,220,.16);border-radius:20px;
     padding:1px 8px;font-size:.64rem;margin-left:6px;color:#e6edf7}
@@ -1618,7 +1640,7 @@
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
 <div id="acilis" aria-hidden="true"></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.19 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.27</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -4358,7 +4380,7 @@ var MBGFB = (function () {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
     return ready().then(function () {
       var temiz = {};
-      ['title', 'date', 'month', 'mi', 'desc', 'sem', 'tag'].forEach(function (k) {
+      ['title', 'date', 'month', 'mi', 'desc', 'sem', 'tag', 'week', 'weekLabel'].forEach(function (k) {
         if (yama && yama[k] !== undefined) temiz[k] = yama[k];
       });
       temiz.guncelle = ts();
@@ -5635,7 +5657,7 @@ var MBGM = (function () {
       hata: 'Ad soyad yalnızca harf ve boşluktan oluşabilir (rakam, @ yazılamaz).'
     },
     no: {
-      id: 'fNo', etiket: 'Öğrenci No', yer: 'Örn. 202612345 · yalnızca rakam',
+      id: 'fNo', etiket: 'Öğrenci No', yer: 'Örn. 202612345',
       tip: 'rakam', max: 20, oto: 'off',
       hata: 'Öğrenci numarası yalnızca rakamlardan oluşur (örn. 202612345).'
     },
@@ -5645,7 +5667,7 @@ var MBGM = (function () {
       hata: 'Bölüm adı rakamla başlayamaz.'
     },
     girisYili: {
-      id: 'fYil', etiket: 'Üniversiteye giriş yılı', yer: 'Örn. 2021 · yalnızca yıl',
+      id: 'fYil', etiket: 'Üniversiteye giriş yılı', yer: 'Örn. 2021',
       tip: 'yil', max: 4, oto: 'off',
       hata: 'Üniversiteye giriş yılı yalnızca 4 haneli bir yıl olmalı (örn. 2021).'
     }
@@ -5764,12 +5786,11 @@ var MBGM = (function () {
         '<input id="fPw" type="password" autocomplete="' +
         (kayit ? 'new-password' : 'current-password') + '" minlength="6"' +
         ' value="' + esc(String(v0.pw || '')) + '"' +
-        ' placeholder="' + (kayit ? 'En az 6 karakter (örn. aku2026)' : 'Şifren') + '"></div>' +
-      (kayit ? '<div class="sub">Kutuya uygun veriyi gir: öğrenci no ve sınıf ' +
-        'yalnızca rakam kabul eder.</div>' : '') +
-      (kayit ? '<div class="sub">Üye olmadan önce <a href="#" data-x="kvkk">KVKK ' +
-        'Aydınlatma Metni</a> ile <a href="#" data-x="kvkk">Açık Rıza Metni</a> metinlerini okuyup ' +
-        'rıza vermen gerekir (isteğe bağlı alanlar boş kalabilir).</div>' : '') +
+        ' placeholder="' + (kayit ? 'En az 6 karakter' : 'Şifren') + '"></div>' +
+      (kayit ? '<div class="sub">Öğrenci numarası ve sınıf alanları yalnızca rakam kabul eder.</div>' : '') +
+      (kayit ? '<div class="sub">Üyelik öncesinde <a href="#" data-x="kvkk">KVKK ' +
+        'Aydınlatma Metni</a> ve <a href="#" data-x="kvkk">Açık Rıza Metni</a> okunup onay verilmelidir. ' +
+        'İsteğe bağlı alanlar boş bırakılabilir.</div>' : '') +
       profil + kodAlan +
       '<div class="acts">' +
         '<button type="button" data-x="vaz">Vazgeç</button>' +
@@ -5909,8 +5930,8 @@ var MBGM = (function () {
     }
 
     ic.innerHTML =
-      '<div class="sub">Kayıtlı e-posta adresini yaz; sana bir kurtarma bağlantısı ' +
-        'gönderelim. Bağlantı bu uygulamayı açar ve yeni şifreyi burada belirlersin.</div>' +
+      '<div class="sub">Kayıtlı e-posta adresini gir. Gönderilen bağlantı uygulamayı açarak ' +
+        'yeni şifrenin belirlenmesini sağlar.</div>' +
       '<div class="field"><label>E-posta *</label>' +
         '<input id="skMail" type="email" inputmode="email" autocomplete="email" ' +
         ' placeholder="Örn. elif.yilmaz@aku.edu.tr"></div>';
@@ -6049,7 +6070,7 @@ var MBGM = (function () {
       baslik: 'Çıkış yap',
       ikon: '🚪',
       mesaj: 'Oturumun kapatılacak.',
-      not: 'Bu cihazdaki kişisel not ve görevlerin silinmez.',
+      not: 'Bu cihazdaki kişisel notların ve görevlerin silinmez.',
       onayMetni: 'Evet, çıkış yap'
     }).then(function (ok) { if (ok) yap(); });
   }
@@ -6059,7 +6080,7 @@ var MBGM = (function () {
     if (btn) { btn.disabled = true; btn.textContent = 'Gönderiliyor…'; }
     MBGFB.sendVerify().then(function (r) {
       if (r === 'zaten') toast('E-posta adresin zaten doğrulanmış.', 4000);
-      else toast('Doğrulama e-postası gönderildi — gelen kutusu ve spam klasörüne bak.', 5200);
+      else toast('Doğrulama e-postası gönderildi. Gelen kutusuna ve spam klasörüne bakın.', 5200);
     }).catch(function (e) {
       toast(err(e), 7000);
     }).then(function () {
@@ -6115,13 +6136,13 @@ var MBGM = (function () {
     if (MBGFB.verified()) { toast('E-posta adresin zaten doğrulanmış.', 4000); return; }
     m.innerHTML =
       '<h2>E-posta doğrulama</h2>' +
-      '<div class="sub">Üye olmak için <b>' + esc(u.email || '') + '</b> adresini doğrulaman gerekiyor.</div>' +
+      '<div class="sub">Üyelik için <b>' + esc(u.email || '') + '</b> adresinin doğrulanması gerekir.</div>' +
       '<div class="inst">' +
-        '<p><b>1.</b> Gelen kutunu aç: Firebase tarafından gönderilen <b>doğrulama e-postası</b> orada.</p>' +
-        '<p><b>2.</b> Spam / önemsiz klasörünü de kontrol et.</p>' +
-        '<p><b>3.</b> E-postadaki bağlantıya dokun.</p>' +
-        '<p><b>4.</b> Buraya dön ve <b>Doğruladım, kontrol et</b> düğmesine bas.</p>' +
-        '<p class="dim">Gmail uygulamasında açmadıysan aynı bağlantıyı tarayıcıya yapıştırabilirsin.</p>' +
+        '<p><b>1.</b> Gelen kutunuzu açın. Firebase tarafından gönderilen <b>doğrulama e-postası</b> oradadır.</p>' +
+        '<p><b>2.</b> Spam veya önemsiz klasörünü de kontrol edin.</p>' +
+        '<p><b>3.</b> E-postadaki bağlantıya tıklayın.</p>' +
+        '<p><b>4.</b> Bu ekrana dönüp <b>Doğruladım, kontrol et</b> düğmesine tıklayın.</p>' +
+        '<p class="dim">Gmail uygulamasında açılmadıysa aynı bağlantıyı tarayıcı adres çubuğuna yapıştırabilirsiniz.</p>' +
       '</div>' +
       '<div class="acts">' +
         '<button type="button" data-x="tekrar">E-postayı tekrar gönder</button>' +
@@ -6138,13 +6159,13 @@ var MBGM = (function () {
       MBGFB.dogrulamaTamamla().then(function (ok) {
         if (ok) {
           close();
-          toast('✓ E-posta doğrulandı — artık tam üyesin. Kişisel verilerin kaydedildi.', 6500);
+          toast('✓ E-posta doğrulandı. Kişisel verilerin kaydedildi.', 6500);
           syncUI();
           diziniBagla();
           kisiselCek();
         } else {
           b.disabled = false; b.textContent = 'Doğruladım, kontrol et';
-          toast('Henüz doğrulanmamış görünüyor. E-postadaki bağlantıya dokunup tekrar dene.', 6500);
+          toast('Henüz doğrulanmamış görünüyor. E-postadaki bağlantıya tıklayıp tekrar deneyin.', 6500);
         }
       }).catch(function (e) {
         b.disabled = false; b.textContent = 'Doğruladım, kontrol et';
@@ -6178,8 +6199,8 @@ var MBGM = (function () {
 
     m.innerHTML =
       '<h2>Hoş geldin' + (ad ? ', ' + esc(ad) : '') + '!</h2>' +
-      '<div class="sub">Üye kaydın tamamlandı. Plan ve duyurulara hemen erişebilirsin; ' +
-      'not ve yapılacaklar yalnızca senin hesabında saklanır.</div>' +
+      '<div class="sub">Üyelik kaydın tamamlandı. Plan ve duyurulara erişebilirsin; ' +
+      'not ve yapılacaklar hesabında saklanır.</div>' +
       '<div class="sub">✉ ' + durum + '</div>' +
       '<div class="sub pf-uyari">⚠ <b>Doğrulamadan önce üye sayılmazsın.</b><br>' +
         'E-posta adresini doğrulayana kadar kişisel verilerin kaydedilmez. ' +
@@ -6207,7 +6228,7 @@ var MBGM = (function () {
     var mac = /Mac/i.test(navigator.platform || '') && !android;
     kutu.innerHTML =
       '<h2>Uygulamayı kur</h2>' +
-      '<div class="sub">Bu takvim bir web uygulamasıdır; kurulunca tam ekran açılır, çevrimdışı çalışır ve ana ekrandaki simgeden açılır.</div>' +
+      '<div class="sub">Uygulama kurulduğunda tam ekran açılır, çevrimdışı çalışır ve ana ekrandaki simgeden açılır.</div>' +
       '<div class="inst">' +
         (android
           ? '<p><b>1.</b> Sağ üstteki <b>⋮</b> menüsüne dokun.</p>' +
@@ -6293,7 +6314,7 @@ var MBGM = (function () {
       uyari: true,
       ikon: '⚠',
       mesaj: '<b>' + esc(u.email || 'Hesabın') + '</b> kalıcı olarak silinecek.',
-      not: 'Profil bilgilerin, notların ve yapılacakların tamamen gider. ' +
+      not: 'Profil bilgilerin, notların ve yapılacakların kalıcı olarak silinir. ' +
            'Bu işlem geri alınamaz.',
       onayMetni: 'Evet, hesabımı sil'
     }).then(function (ok) { if (ok) yap(); });
@@ -6404,7 +6425,7 @@ var MBGM = (function () {
       baslik: 'Planı veritabanına yükle',
       ikon: '⬆',
       mesaj: 'Gömülü yıllık planı <b>veritabanına</b> yüklenecek.',
-      not: 'Bundan sonra takvim yalnızca veritabanındaki kayıtlardan çalışır. Aynı işlemi birden çok kez yapmak veritabanındaki planı yeniden yazar.',
+      not: 'Sonrasında takvim yalnızca veritabanındaki kayıtlardan çalışır. İşlem tekrarlanırsa veritabanındaki plan yeniden yazılır.',
       onayMetni: 'Evet, yükle',
       geri: function () { if (window.MBGM) MBGM.adminPanel(); }
     }).then(function (ok) {
@@ -6494,10 +6515,10 @@ var MBGM = (function () {
     var hata = tur === 'hata';
     var baslik = hata ? 'Hata bildir' : 'Öneri / görüş bildir';
     var ipucu = hata
-      ? 'Ne oldu? Yazdığın bilgiler gönderim anındaki uygulama kayıtlarıyla birlikte yöneticiye ulaşır.'
-      : 'Takvimi nasıl geliştirelim? Görüşünü yaz; yönetici panelinde görünecek.';
+      ? 'Yazdığın bilgiler, gönderim anındaki uygulama kayıtlarıyla birlikte yöneticiye iletilir.'
+      : 'Takvimi nasıl geliştirelim? Görüşün yönetici panelinde görüntülenir.';
     var yer = hata
-      ? 'Örn. iPhone üzerinde bir etkinliğe dokununca kart açılmıyor.'
+      ? 'Örn. iPhone üzerinde etkinliğe dokununca kart açılmıyor.'
       : 'Örn. Etkinlik kartına katılıp katılmama seçeneği eklenebilir.';
     m.innerHTML =
       '<h2>' + baslik + '</h2>' +
@@ -6534,13 +6555,13 @@ var MBGM = (function () {
       islem.then(function () {
         close();
         toast(hata
-          ? '✓ Hata bildirimin kaydedildi. Teşekkürler!'
-          : '✓ Görüşün kaydedildi. Teşekkürler!', 5000);
+          ? '✓ Hata bildirimin kaydedildi.'
+          : '✓ Görüşün kaydedildi.', 5000);
       }).catch(function (e) {
         btn.disabled = false; btn.textContent = 'Gönder';
         var kod = (e && e.code) || '';
         if (kod === 'permission-denied') {
-          toast('Veritabanına yazılamadı (kuralları güncelle). E-postayla göndermek için "Bilgiyi kopyala".', 8000);
+          toast('Veritabanına yazılamadı. E-postayla göndermek için Bilgiyi kopyala düğmesini kullanın.', 8000);
         } else if (kod === 'unavailable') {
           toast('İnternet yok. Bağlanınca tekrar dene.', 5000);
         } else {
@@ -6558,7 +6579,7 @@ var MBGM = (function () {
     m.className = 'modal genis';
     m.innerHTML =
       '<h2>KVKK talepleri</h2>' +
-      '<div class="sub">Üyelerin veri silme / erişim talepleri. KVKK md.11 uyarınca ' +
+      '<div class="sub">Üyelerin veri silme ve erişim talepleri. KVKK md. 11 uyarınca ' +
         'en geç <b>30 gün</b> içinde sonuçlandırılmalıdır.</div>' +
       '<div id="kvkkTalepList" class="kaydirma" style="max-height:52vh;overflow:auto"></div>' +
       '<div class="acts"><button type="button" data-k="geri">← Admin Paneli</button>' +
@@ -6729,7 +6750,7 @@ var MBGM = (function () {
         uyari: true,
         ikon: '⚠',
         mesaj: '<b>' + esc(baslik) + '</b> listeden silinecek.',
-        not: (fmt(e.date) || '') + ' · Etkinlik sayfası, katılım kayıtları ve görevliler de silinir.',
+        not: (fmt(e.date) || '') + '. Etkinlik sayfası, katılım kayıtları ve görevliler de silinir.',
         onayMetni: 'Evet, sil',
         geri: adminPanel          /* vazgeçte liste arama/duğmeleri canlı döner */
       }).then(function (ok) {
@@ -6818,7 +6839,7 @@ var MBGM = (function () {
           kutu: kutuSec,
           liste: ls,
           ilk: ara || '',
-          ipucu: 'Üye ara: ad, e-posta, öğrenci no, bölüm',
+          ipucu: 'Ad, e-posta, öğrenci no veya bölüm',
           alan: function (u) {
             return [u.name, u.email, u.no, u.dept, u.girisYili].filter(function (x) { return x; }).join(' ');
           },
@@ -6886,8 +6907,8 @@ var MBGM = (function () {
         ikon: '⚠',
         mesaj: '<b>' + esc(kim) + '</b> üye listesinden silinecek.',
         not: 'Üyelik kaydı, herkese açık istatistik satırı, paylaşılan profil, ' +
-          'rıza kaydı ve katılacak niyetleri birlikte silinir; ' +
-          'giriş hesabı Firebase Auth içinde kalır.',
+          'rıza kaydı ve katılacak niyetleri birlikte silinir. ' +
+          'Giriş hesabı Firebase Auth içinde kalır.',
         onayMetni: 'Evet, sil',
         geri: function () { if (geriFn) geriFn(); }
       }).then(function (ok) {
@@ -6977,7 +6998,7 @@ var MBGM = (function () {
     if (!m) return;
     m.innerHTML =
       '<h2>Duyuru ekle</h2>' +
-      '<div class="sub">Üyeler açılışta bildirim olarak görür; arşivde her zaman bulunur</div>' +
+      '<div class="sub">Duyurular üyeler açılışta bildirim olarak görünür ve arşivde saklanır.</div>' +
       '<div class="field"><label>Başlık</label><input id="anT" maxlength="120"></div>' +
       '<div class="field"><label>Metin</label><textarea id="anB" maxlength="1200"></textarea></div>' +
       '<div class="acts"><button type="button" data-a="v">Vazgeç</button>' +
@@ -7196,7 +7217,7 @@ var MBGM = (function () {
       MBGO.uyeAra({
         kutu: kutuSec,
         liste: liste,
-        ipucu: 'Ara: ad veya soyad',
+        ipucu: 'Ad veya soyad',
         alan: function (u) { return u.ad + ' ' + u.soyad; },
         ciz: function (goster) {
           return goster.map(function (u) {
@@ -7227,9 +7248,9 @@ var MBGM = (function () {
     m.className = 'modal genis';
     m.innerHTML =
       '<h2>👥 Üyeler</h2>' +
-      '<div class="sub">Üyeye dokun: profilini <b>yönetici olarak</b> aç ve düzenle ' +
-        '(ad, öğrenci no, bölüm, giriş yılı, telefon, e-posta, rol). ' +
-        '<b>Sil</b> ile üye kaydını kaldır.</div>' +
+      '<div class="sub">Üyeye dokunarak profili <b>yönetici olarak</b> açıp düzenleyebilirsin ' +
+        '(ad, öğrenci numarası, bölüm, giriş yılı, telefon, e-posta, rol). ' +
+        '<b>Sil</b> ile üye kaydı kaldırılır.</div>' +
       '<div id="uyYonetim"></div>' +
       '<div class="acts" style="justify-content:flex-end">' +
         '<button type="button" data-a="kapat">← Admin Paneli</button></div>';
@@ -7254,7 +7275,7 @@ var MBGM = (function () {
     m.innerHTML =
       '<h2>📊 Katılım</h2>' +
       '<div class="sub">Katılım sayıları güncel takvime göredir (' +
-        evList.length + ' etkinlik). Üyeye dokun: katılım ve görev düzenleme sayfası açılır.</div>' +
+        evList.length + ' etkinlik). Üyeye dokunarak katılım ve görev ekranı açılır.</div>' +
       '<div class="acts" style="justify-content:flex-start;flex-wrap:wrap">' +
         '<button type="button" class="pri" data-a="yenile">🔄 İstatistikleri yeniden hesapla</button></div>' +
       '<div id="katKamu" style="margin-top:12px"></div>' +
@@ -7307,7 +7328,7 @@ var MBGM = (function () {
       KVKK.duyuruKapat();
       var r = KVKK.rizaOku();
       if (r && MBGFB.rizaYaz) { try { MBGFB.rizaYaz(r); } catch (e) {} }
-      toast('✓ KVKK metinleri onaylandı. Teşekkürler!', 4500);
+      toast('✓ KVKK metinleri onaylandı.', 4500);
     }, function () { KVKK.duyuruKapat(); });
   }
   function init(app) {
@@ -7397,7 +7418,7 @@ var MBGM = (function () {
         KVKK.duyuruKapat();
         var r = KVKK.rizaOku();
         if (r && MBGFB.rizaYaz) { try { MBGFB.rizaYaz(r); } catch (e) {} }
-        toast('✓ KVKK metinleri onaylandı. Teşekkürler!', 4500);
+        toast('✓ KVKK metinleri onaylandı.', 4500);
       }, function () { KVKK.duyuruKapat(); });
     },
     /* Eski üyeler için tek seferlik hatırlatma (yinelenen tanım kaldırıldı) */
@@ -7596,14 +7617,14 @@ var MBGP = (function () {
     m.className = 'modal';
     m.innerHTML =
       '<h2>KVKK ve Gizlilik</h2>' +
-      '<div class="sub">Kişisel verilerinin nasıl işlendiğini öğren, rızanı yönet.</div>' +
+      '<div class="sub">Kişisel verilerinin işlenme koşullarını inceleyebilir, rızanı yönetebilirsin.</div>' +
       '<div class="kvkk-durum ' + (onayli ? 'tamam' : 'bekliyor') + '">' +
       (onayli
         ? '<b>✓ Açık rızan kayıtlı</b><br>Metin sürümü <b>' + esc(String(d.surum || KVKK.SURUM)) +
           '</b> · Onay tarihi <b>' + esc(KVKK.rizaTarih()) + '</b><br>' +
           (d.bulten ? 'E-posta duyuruları: <b>açık</b>' : 'E-posta duyuruları: <b>kapalı</b>')
         : '<b>⚠ Henüz onaylanmadı</b><br>Metinleri okuyup açık rızanı verebilirsin. ' +
-          'Rıza vermek zorunlu değildir; vermezsen yalnızca takvimi görüntüleyebilirsin.') +
+          'Rıza vermek zorunlu değildir; vermezsen yalnızca takvim görüntülenebilir.') +
       '</div>' +
       '<div class="kvkk-eylem">' +
         '<button type="button" data-kv="metinler">📄 KVKK metinlerini oku</button>' +
@@ -7760,14 +7781,14 @@ var MBGP = (function () {
       if (!MBGFB.verified()) {
         html = '<div class="sub pf-uyari"><b>⚠ E-posta adresin henüz doğrulanmadı.</b><br>' +
           'Doğrulamadan sonra kişisel bilgilerin kaydedilir ve profilin çalışır. ' +
-          'Şu an yalnızca bu cihazda tutuluyor: cihazı değiştirirsen kaybolur.</div>' + html;
+          'Şu an yalnızca bu cihazda saklanıyor; cihaz değişirse kaybolur.</div>' + html;
       }
       html += altBar();
-      html += '<div class="sub pf-ipucu">Kişisel bilgilerin ayda bir kez güncellenebilir.</div>' +
+      html += '<div class="sub pf-ipucu">Profil bilgileri ayda bir kez güncellenebilir.</div>' +
       '<div class="sub pf-ipucu">' +
         (MBGFB.user()
-          ? 'Katılım, görev, not ve tamamlanan görevler yalnızca senin hesabında saklanır; ' +
-            'telefon ya da tarayıcı değişse de korunur.'
+          ? 'Katılım, görev ve not kayıtları hesabına bağlıdır; ' +
+            'cihaz değişse de korunur.'
           : 'Şu an giriş yapmamışsın: notlar ve görevler yalnızca <b>bu cihazda</b> kayıtlı. ' +
             'Hesabına giriş yaparsan bulutta saklanır ve cihaz değişse de korunur. ' +
             'Katılım ve görev bilgisi yalnızca giriş yapınca kullanılabilir.') +
@@ -7901,7 +7922,7 @@ var MBGP = (function () {
       '<h2>Hesap bilgilerim</h2>' +
       '<div class="field"><label>E-posta adresi</label>' +
         '<input value="' + esc(u.email || '') + '" disabled></div>' +
-      '<div class="sub pf-ipucu">E-posta adresi değiştirilemez: kulüp kaydın ve doğrulama ' +
+      '<div class="sub pf-ipucu">E-posta adresi değiştirilemez. Üyelik kaydın ve doğrulama ' +
         'bu adrese bağlıdır.</div>' +
       '<div class="es-blok"><h3>Şifre değiştir</h3>' +
       '<div class="' + (kilitli ? 'pf-uyari' : 'pf-ok') + '">' +
@@ -7987,10 +8008,9 @@ var MBGP = (function () {
       var sadeceBen = durum.gizlilik === 'ben';
       m.innerHTML =
         '<h2>Profil gizliliği</h2>' +
-        '<div class="pf-blok"><p class="pf-ipucu">Profilinin görünürlüğünü ve ' +
-        'paylaşabileceğin bilgileri <b>sen</b> belirlersin. Yönetici, kulüp işleri ' +
-        '(VERBİS kaydı, etkinlik organizasyonu) için profil bilgilerine erişir; ' +
-        'bu erişimi istemiyorsan bize bildirebilirsin.</p></div>' +
+        '<div class="pf-blok"><p class="pf-ipucu">Görünürlüğünü ve paylaşabileceğin bilgileri ' +
+        '<b>sen</b> belirlersin. Yönetici, kulüp işleri (VERBİS kaydı, etkinlik ' +
+        'organizasyonu) kapsamında profil bilgilerine erişir.</p></div>' +
 
         '<div class="pf-blok"><h3>Profilim kimler görebilir?</h3>' +
         GIZ_SECENEK.map(function (o) {
@@ -8274,7 +8294,7 @@ var MBGP = (function () {
 
     m.innerHTML =
       '<h2>Kişisel ve İletişim Bilgilerim</h2>' +
-      '<div class="sub">Ad, öğrenci numarası, bölüm ve üniversiteye giriş yılın</div>' +
+      '<div class="sub">Ad, öğrenci numarası, bölüm ve üniversiteye giriş yılı bilgilerin</div>' +
       '<div class="sub ' + (kilitli ? 'pf-uyari' : 'pf-ok') + '">' + uyar + '</div>' +
       '<div class="field"><label>İsim soyisim *</label>' +
         '<input id="pAd" maxlength="60" data-t="harf" data-alan="ad" placeholder="Örn. Elif Yılmaz" value="' +
@@ -8413,8 +8433,8 @@ var MBGP = (function () {
       }).join('');
       m.innerHTML =
         '<h2>Katılım ve görevler — ' + esc(kim) + '</h2>' +
-        '<div class="sub">Bu kayıt yalnızca <b>' + esc(kim) + '</b> içindir; başka üyeler göremez. ' +
-          'Üye kendi katılımını QR kod okutarak kaydeder; buradaki işaretler yönetici içindir.</div>' +
+        '<div class="sub">Bu kayıt yalnızca <b>' + esc(kim) + '</b> kişisine aittir; başka üyeler göremez. ' +
+          'Üye, katılımını QR kod okutarak kaydeder; işaretler yönetici içindir.</div>' +
         (l.length
           ? '<div class="pf-tab pf-form"><table>' + satirlar + '</table></div>'
           : '<div class="pf-bos">Takvimde etkinlik yok.</div>') +
@@ -8485,9 +8505,9 @@ var MBGP = (function () {
     m.className = 'modal genis';
     m.innerHTML =
       '<h2>👤 Üye profili (yönetici)</h2>' +
-      '<div class="sub">Tam yetki: ad, öğrenci no, bölüm, giriş yılı, telefon, ' +
+      '<div class="sub">Tam yetki: ad, öğrenci numarası, bölüm, giriş yılı, telefon, ' +
         'e-posta ve rol düzenlenebilir. E-posta yalnızca kayıttaki adrestir; ' +
-        'giriş adresi değişmez.</div>' +
+        'giriş adresi değiştirilemez.</div>' +
       '<div class="field"><label>İsim soyisim *</label>' +
         '<input id="yAd" maxlength="60" autocomplete="off" value="' + esc(o.name || '') + '"></div>' +
       '<div class="field"><label>Öğrenci numarası</label>' +
@@ -9121,8 +9141,7 @@ var KVKK = (function () {
         ' · Veri sorumlusu: ' + KURUM.ad + '</div>' +
       '<div class="kvkk-belge-ust">' +
         '<span class="kvkk-ilerleme" id="kvkkListeIlerleme">' + ilerlemeMetni() + '</span>' +
-        (geriFn ? '<span class="kvkk-ilerleme ipucu">Üyelik onayı için hepsini sonuna kadar ' +
-          'kaydırarak oku</span>' : '') +
+        (geriFn ? '<span class="kvkk-ilerleme ipucu">Onay için metnin tamamını okuyun.</span>' : '') +
       '</div>' +
       '<div class="kvkk-liste">';
     METIN.forEach(function (t) {
@@ -9778,7 +9797,7 @@ var QR = (function () {
     m.className = 'modal dar';
     m.innerHTML =
       '<h2>QR Kodu Okut</h2>' +
-      '<div class="sub">Kodu çerçeveye getir; okununca otomatik kaydedilir.</div>' +
+      '<div class="sub">Kodu çerçeve içine getirin. Okunduğunda katılım otomatik kaydedilir.</div>' +
       '<div class="tarama"><video id="tarVideo" playsinline muted autoplay></video>' +
         '<div class="tar-cerceve"></div>' +
         /* FENER: kameranin icinde, minik daire tus (ayri buton degil) */
@@ -9797,10 +9816,10 @@ var QR = (function () {
         '<input id="tarElle" placeholder="A7B9C2" maxlength="6" inputmode="text"' +
           'autocapitalize="characters" autocomplete="off" spellcheck="false">' +
         '<div class="tar-onayla"><button type="button" class="pri" data-t="onayla">Kodu doğrula</button></div>' +
-        '<div class="tar-ipucu"><b>Kod nerede?</b> Yönetiminin ekranında <b>Katılım QR kodu</b> yazısının yanında, ' +
-          'QR kodunun sağında duran <b>6 harf ve rakam</b> (örn. <b>A7B9C2</b>).' +
-          '<br>• Bu ekrandaki etkinliğin kodu; başka etkinliğinki olmaz.' +
-          '<br>• Yönetiminin paylaştığı <b>bağlantının tamamını</b> da yapıştırabilirsin.' +
+        '<div class="tar-ipucu"><b>Kod nereden alınır?</b> Yönetim ekranındaki <b>Katılım QR kodu</b> ' +
+          'bölümünde, QR kodunun sağındaki 6 karakterlik ifadedir (örn. <b>A7B9C2</b>).' +
+          '<br>• Her etkinliğin kodu farklıdır.' +
+          '<br>• Paylaşılan <b>bağlantının tamamını</b> da yapıştırabilirsin.' +
         '</div>' +
       '</div>' +
       /* ⚠ "Elle gir" ARTIK HİÇBİR ZAMAN GİZLİ DEĞİL: kamera açıkken
@@ -10614,6 +10633,20 @@ var ETK = (function () {
   var YENILE_MS = 10000;
 
   function q(s) { return document.querySelector(s); }
+  /* Zamanı milisaniyeye çevirir. Gelen veri biçimleri:
+     - Firestore Timestamp  → .toDate()   (normal durum)
+     - Date                 → .getTime()
+     - sayı (ms)            → doğrudan
+     - null/undefined       → 0
+     Sunucu/istemci saat farkı karşılaştırmayı bozmasın diye tek
+     noktadan okunur. */
+  function zamanMs(v) {
+    if (v == null) return 0;
+    if (typeof v.toDate === 'function') { var d = v.toDate(); return d ? d.getTime() : 0; }
+    if (v instanceof Date) return v.getTime();
+    if (typeof v === 'number') return v;
+    return 0;
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -10636,6 +10669,33 @@ var ETK = (function () {
     var l = evler(), k;
     for (k = 0; k < l.length; k++) if (String(l[k].id) === String(id)) return l[k];
     return null;
+  }
+
+  /* Hafta bilgisi: plandaki diğer etkinliklerden her haftanın tarih
+     aralığı çıkarılır. Bir etkinlik başka bir güne taşınırsa hafta
+     etiketi de tutarlı kalsın diye kullanılır.
+     DÖNER: { week, weekLabel } ya da null (haftası olmayan özel
+     etkinlikler / eşleşen hafta bulunamazsa). */
+  function haftaBilgisi(tarih) {
+    var l = evler(), aralik = {}, i, e, wk, anahtar, adet = 0, sonuc = null;
+    if (!tarih) return null;
+    for (i = 0; i < l.length; i++) {
+      e = l[i];
+      if (!e || !e.date || !e.week) continue;   /* haftası olmayanlar hariç */
+      wk = String(e.week);
+      if (!aralik[wk]) { aralik[wk] = { bas: e.date, bit: e.date, lbl: e.weekLabel || '', no: e.week }; adet++; }
+      if (e.date < aralik[wk].bas) aralik[wk].bas = e.date;
+      if (e.date > aralik[wk].bit) aralik[wk].bit = e.date;
+    }
+    if (!adet) return null;
+    for (anahtar in aralik) {
+      if (!Object.prototype.hasOwnProperty.call(aralik, anahtar)) continue;
+      if (tarih >= aralik[anahtar].bas && tarih <= aralik[anahtar].bit) {
+        sonuc = { week: aralik[anahtar].no, weekLabel: aralik[anahtar].lbl };
+        break;
+      }
+    }
+    return sonuc;
   }
 
   /* ---------------- kod üretimi ---------------- */
@@ -10725,6 +10785,20 @@ var ETK = (function () {
     if (!m) return;
     m.className = 'modal genis';
     var ev = evBul(evId);
+    /* ⚠ CANLI ETKİNLİK: "ev" modal açılırken bir kez alınan BAYAT bir
+       kopyadır. Tarih değiştirilip kaydedildiğinde form eski tarihi
+       geri gösteriyordu ("tarih güncellenemiyor" izlenimi). Bu yüzden
+       form her çizimde güncel kaydı yeniden okur. */
+    var evCanli = function () { return evBul(evId) || ev; };
+    /* Yerel listedeki kaydı güncelle: sunucu dinleyicisi gelene kadar
+       arayüz (ve form) bayat kalmamasın. */
+    var evYerelGuncelle = function (yama) {
+      var e2 = evBul(evId);
+      if (!e2) return;
+      Object.keys(yama).forEach(function (k) {
+        if (yama[k] !== undefined) e2[k] = yama[k];
+      });
+    };
     var d = { katilanlar: [], gorevli: [], sayfa: {}, kasa: {}, sayac: null, zamanAsimi: null, ara: '' };
 
     function kapat() {
@@ -10733,9 +10807,13 @@ var ETK = (function () {
       d.sayac = null; d.zamanAsimi = null;
     }
 
-    m.innerHTML = '<h2>' + esc(ev ? ev.title : 'Etkinlik') + '</h2>' +
-      '<div class="sub">' + esc(ev ? fmt(ev.date) : '') + (ev && ev.weekLabel ? ' · ' + esc(ev.weekLabel) : '') + '</div>' +
+    m.innerHTML = '<h2 id="esBaslikBas">' + esc(ev ? ev.title : 'Etkinlik') + '</h2>' +
+      '<div class="sub" id="esAltBas">' + esc(ev ? fmt(ev.date) : '') + (ev && ev.weekLabel ? ' · ' + esc(ev.weekLabel) : '') + '</div>' +
       '<div class="sub">Etkinlik sayfası içeriği, katılım QR kodu ve görevliler</div>' +
+      /* ⚠ Durum bloğu AYRI kutu içinde: QR kodu 10 sn'de bir yenilendiğinde
+         #esGovde baştan çizilir. Durum bloğu burada olsaydı düğmeler
+         tıklanma anında yok olurdu (tıklama yutulurdu). */
+      '<div id="esDurum"></div>' +
       '<div id="esGovde"><div class="pf-bos">yükleniyor…</div></div>' +
       '<div class="acts"><button type="button" data-es="kapat">&larr; Geri</button></div>';
 
@@ -10759,31 +10837,53 @@ var ETK = (function () {
           sem: MBGO.donemBul(tarih),
           tag: etiket ? { lbl: etiket } : null
         };
-        if (window.MBG && MBG.ayAd && tarih !== (ev ? ev.date : '')) {
+        /* ⚠ TARİH DEĞİŞTİYSE ay ve ay numarası da güncellenmeli
+           (takvim kartı ay bazında konumlanır) */
+        var eskiTarih = (evCanli() || {}).date || '';
+        if (window.MBG && MBG.ayAd && tarih !== eskiTarih) {
           yama.month = MBG.ayAd(+tarih.slice(5, 7));
           yama.mi = +tarih.slice(5, 7);
+          /* hafta etiketi de tutarlı olsun (başka haftaya taşındıysa) */
+          var hb = haftaBilgisi(tarih);
+          if (hb) { yama.week = hb.week; yama.weekLabel = hb.weekLabel; }
         }
-        /* sayfa belgesi baştan yazılır: eski ayrı 'aciklama' alanı düşer,
-           not artık plan belgesindedir (tek açıklama). */
-        Promise.all([
-          MBGFB.eventYama(evId, yama),
+        /* ⚠ ÜÇ YAZMA BİRBİRİNDEN BAĞIMSIZ: önceden Promise.all kullanılıyordu;
+           biri hata verince (ör. yetki/bağlantı) diğerleri de iptal ediliyor
+           ve "tarih kaydedilmedi" izlenimi doğuyordu. Artık her yazma kendi
+           hatasını yönetir; hangisi yazıldıysa o kaydedilmiş sayılır. */
+        var yaz = [
+          MBGFB.eventYama(evId, yama).then(function () {
+            evYerelGuncelle(yama);   /* plan yazıldı → yerel kayıt güncellendi */
+            return 'plan';
+          }),
           sayfaYaz(evId, {
             konu: (q('#esKonu').value || '').trim(),
             konuk: (q('#esKonuk').value || '').trim(),
             saat: (q('#esSaat').value || '').trim(),
             yer: (q('#esYer').value || '').trim()
-          }),
+          }).then(function () { return 'sayfa'; }),
           /* önceden belirlenmiş başlangıç saati gerçek zaman damgası olarak
              yazılır → Firestore kuralları "başlangıçtan 2 saat önce bildirim
-             kapalı" kuralını sunucuda da uygulayabilir */
+             kapalı" kuralını sunucuda da uygulayabilir.
+             ⚠ Tarih DEĞİŞTİYSE yeni güne göre hesaplanır. */
           (MBGFB.evPlanBaslangicYaz
-            ? MBGFB.evPlanBaslangicYaz(evId, saatTarihi(ev ? ev.date : '', (q('#esSaat').value || '').trim()))
-            : Promise.resolve())
-        ]).then(function () {
+            ? MBGFB.evPlanBaslangicYaz(evId, saatTarihi(tarih, (q('#esSaat').value || '').trim()))
+              .then(function () { return 'baslangic'; })
+            : Promise.resolve('baslangic'))
+        ];
+        Promise.all(yaz.map(function (p) {
+          return p.then(function (v) { return { ok: true, v: v }; },
+            function (e) { return { ok: false, e: e }; });
+        })).then(function (sonuclar) {
           d.taslak = null;   /* kaydedildi: taslak temizlenir */
-          toast('✓ Etkinlik bilgileri kaydedildi.', 4000);
+          var bozuk = sonuclar.filter(function (x) { return !x.ok; });
+          if (bozuk.length) {
+            toast('Kısmen kaydedildi: ' + MBGM.err(bozuk[0].e), 7000);
+          } else {
+            toast('✓ Etkinlik bilgileri kaydedildi.', 4000);
+          }
           yenile();
-        }).catch(function (x) { toast(MBGM.err(x), 6500); });
+        });
         return;
       }
       if (a === 'yenileKod') {
@@ -10793,6 +10893,46 @@ var ETK = (function () {
           ciz();
           toast('Yeni kod üretildi.', 2500);
         }).catch(function (x) { toast(MBGM.err(x), 6500); });
+        return;
+      }
+      /* --- YÖNETİCİ: etkinliği başlat / bitir / sıfırla
+         (yalnızca ADMIN PANELİNDEKİ etkinlik ekranı) ---
+         NOT: Ekran yeniden yüklenmez (kullanıcının yazdığı form
+         kaybolmasın). Durum yerelde güncellenir, durum bloğu
+         yeniden çizilir; bitişte listeler sessizce tazelenir. */
+      if (a === 'evbaslat') {
+        b.disabled = true;
+        MBGFB.evBaslat(evId).then(function () {
+          toast('✓ Etkinlik başlatıldı. Katılım bildirimleri kapandı.', 4500);
+          d.durum = { baslangic: Date.now(), bitis: null };
+          durumCiz();
+        }).catch(function (x) { b.disabled = false; toast(MBGM.err(x), 6500); });
+        return;
+      }
+      if (a === 'evbitir') {
+        b.disabled = true;
+        MBGFB.evBitir(evId).then(function () {
+          toast('✓ Etkinlik sonlandırıldı. Katılım listeleri aşağıda.', 4500);
+          d.durum = { baslangic: (d.durum || {}).baslangic || null, bitis: Date.now() };
+          durumCiz();
+          /* listeleri sessizce tazele (ekranı boşaltmadan) */
+          Promise.all([katilanOku(evId),
+            MBGFB.katilacakListe ? MBGFB.katilacakListe(evId) : []])
+            .then(function (r) {
+              d.katilanlar = r[0] || [];
+              d.katilacakListe = r[1] || [];
+              ciz();
+            }).catch(function () { });
+        }).catch(function (x) { b.disabled = false; toast(MBGM.err(x), 6500); });
+        return;
+      }
+      if (a === 'evsifirla') {
+        b.disabled = true;
+        MBGFB.evDurumTemizle(evId).then(function () {
+          toast('✓ Etkinlik durumu sıfırlandı.', 4000);
+          d.durum = { baslangic: null, bitis: null };
+          durumCiz();
+        }).catch(function (x) { b.disabled = false; toast(MBGM.err(x), 6500); });
         return;
       }
       if (a === 'kopyala') {
@@ -10815,7 +10955,7 @@ var ETK = (function () {
           uyari: true,
           ikon: '⚠',
           mesaj: '<b>' + esc(kim) + '</b> bu etkinliğin görevli listesinden çıkarılacak.',
-          not: 'Katılımı varsa silinmez; yalnızca görevli kaydı kaldırılır.',
+          not: 'Katılım kayıtları silinmez; yalnızca görevli kaydı kaldırılır.',
           onayMetni: 'Evet, çıkar',
           geri: function () { etkinlikSayfasi(evId); }
         }).then(function (ok) {
@@ -10858,14 +10998,19 @@ var ETK = (function () {
             '<div class="acts pf-acts"><button type="button" class="pri" data-es="tekrar">Tekrar dene</button></div></div>';
         }
       }, 9000);
-      Promise.all([sayfaOku(evId), kodOku(evId), katilanOku(evId), gorevliOku(evId)])
+      Promise.all([sayfaOku(evId), kodOku(evId), katilanOku(evId), gorevliOku(evId),
+        MBGFB.evDurumOku ? MBGFB.evDurumOku(evId) : null,
+        MBGFB.katilacakListe ? MBGFB.katilacakListe(evId) : []])
         .then(function (r) {
           if (d.zamanAsimi) clearTimeout(d.zamanAsimi);
           d.sayfa = r[0] || {};
           d.kasa = r[1] || {};
           d.katilanlar = r[2] || [];
           d.gorevli = r[3] || [];
+          d.durum = r[4] || {};          /* başlangıç / bitiş */
+          d.katilacakListe = r[5] || [];  /* "Katılacağım" diyenler */
           ciz();
+          durumCiz();
           var yas = Date.now() - (d.kasa.uretilme || 0);
           if (!d.kasa.anahtar || yas >= YENILE_MS) {
             kodYenile(evId, true).then(function (yeni) {
@@ -10906,6 +11051,14 @@ var ETK = (function () {
       if (Object.keys(once).length) d.taslak = once;
       var t3 = d.taslak || {};
       var val = function (id, sunucu) { return t3[id] !== undefined ? t3[id] : sunucu; };
+      /* ⚠ Form güncel etkinlik kaydından beslenir (bayat kopya değil) */
+      var evF = evCanli() || {};
+      /* Modal başlığındaki tarih de güncel kalmalı (tarih taşındığında) */
+      var hBas = q('#esBaslikBas'), hAlt = q('#esAltBas');
+      if (hBas && evF.title) hBas.textContent = evF.title;
+      if (hAlt && evF.date) {
+        hAlt.textContent = fmt(evF.date) + (evF.weekLabel ? ' · ' + evF.weekLabel : '');
+      }
       var s = d.sayfa || {};
       var ara = MBGO.duz(d.ara || '');
       var gList = ara ? d.gorevli.filter(function (x) {
@@ -10920,14 +11073,14 @@ var ETK = (function () {
 
       g.innerHTML =
         '<div class="es-blok"><h3>Etkinlik bilgileri</h3>' +
-        '<div class="field"><label>Başlık *</label><input id="esBaslik" maxlength="120" value="' + esc(val('esBaslik', ev ? ev.title : '')) + '"></div>' +
-        '<div class="field"><label>Tarih *</label><input id="esTarih" type="date" value="' + esc(val('esTarih', ev ? ev.date : '')) + '"></div>' +
+        '<div class="field"><label>Başlık *</label><input id="esBaslik" maxlength="120" value="' + esc(val('esBaslik', evF.title || '')) + '"></div>' +
+        '<div class="field"><label>Tarih *</label><input id="esTarih" type="date" value="' + esc(val('esTarih', evF.date || '')) + '"></div>' +
         '<div class="field"><label>Dönem</label>' +
-          '<div class="dp-donem-bilgi" id="esDonemBilgi">' + esc(donemAd(val('esTarih', ev ? ev.date : ''))) + '</div></div>' +
+          '<div class="dp-donem-bilgi" id="esDonemBilgi">' + esc(donemAd(val('esTarih', evF.date || ''))) + '</div></div>' +
         '<div class="field"><label>Etiket (örn. Özel Gün)</label><input id="esEtiket" maxlength="40" value="' +
-          esc(val('esEtiket', (ev && ev.tag && ev.tag.lbl) || '')) + '"></div>' +
+          esc(val('esEtiket', (evF.tag && evF.tag.lbl) || '')) + '"></div>' +
         '<div class="field"><label>📌 Program Notu</label><textarea id="esNot" maxlength="600">' +
-          esc(val('esNot', s.aciklama || (ev ? ev.desc : '') || '')) + '</textarea></div>' +
+          esc(val('esNot', s.aciklama || evF.desc || '')) + '</textarea></div>' +
         '</div>' +
         '<div class="es-blok"><h3>Etkinlik sayfası içeriği</h3>' +
         '<div class="field"><label>Konu</label><input id="esKonu" maxlength="140" placeholder="Örn. CRISPR ve gen düzenleme" value="' + esc(val('esKonu', s.konu || '')) + '"></div>' +
@@ -10939,8 +11092,7 @@ var ETK = (function () {
         '<div class="es-blok"><h3>Katılım QR kodu <em>' + Math.ceil(kalan / 1000) + ' sn</em></h3>' +
         '<div class="es-qr"><canvas id="esQr"></canvas><div>' +
         '<div class="es-kod">' + esc(d.kasa.anahtar || 'üretiliyor…') + '</div>' +
-        '<div class="pf-ipucu">Üyeler bu kodu telefon kamerasıyla okutur. Kod ' + (YENILE_MS / 1000) +
-        ' saniyede bir yenilenir; önceki kod işe yaramaz.</div>' +
+        '<div class="pf-ipucu">Katılım, güncel kodu telefon kamerasıyla okutarak yapılır. Kod ' + (YENILE_MS / 1000) + ' saniyede bir yenilenir.</div>' +
         '<div class="acts pf-acts">' +
         '<button type="button" data-es="yenileKod">Kodu şimdi yenile</button>' +
         '<button type="button" data-es="kopyala">Bağlantıyı kopyala</button>' +
@@ -10971,7 +11123,47 @@ var ETK = (function () {
           : (d.katilanlar.length
               ? '<div class="pf-bos">Aramana uyan katılım yok.</div>'
               : '<div class="pf-bos">Henüz katılım kaydedilmedi. QR\'ı okutan üyeler burada görünür.</div>')) +
-        '</div>';
+        '</div>' +
+
+        /* --- ÖDÜL / CEZA LİSTELERİ (en altta) ---
+           1) "Katılacağım" deyip KATILANLAR
+           2) "Katılacağım" deyip KATILMAYANLAR
+           (ikincisi bir sonraki etkinlikte bildirim yapamaz) */
+        (function () {
+          var katilacakL = d.katilacakListe || [];
+          if (!katilacakL.length) return '';
+          var katildiSet = {}, k, u;
+          for (k = 0; k < (d.katilanlar || []).length; k++) {
+            katildiSet[String(d.katilanlar[k].uid)] = 1;
+          }
+          var gelen = [], gelmeyen = [];
+          for (k = 0; k < katilacakL.length; k++) {
+            u = katilacakL[k];
+            if (katildiSet[String(u.uid)]) gelen.push(u);
+            else gelmeyen.push(u);
+          }
+          var liste = function (baslik, arr, sinif) {
+            if (!arr.length) {
+              return '<div class="etp-baslik">' + baslik + ' (0)</div>' +
+                '<div class="pf-bos">Kimse yok.</div>';
+            }
+            return '<div class="etp-baslik">' + baslik + ' (' + arr.length + ')</div>' +
+              '<div class="etp-katilacak-liste ' + sinif + '">' +
+              arr.map(function (x) {
+                return '<div class="etp-kuluper"><b>' + esc(x.ad) + '</b>' +
+                  (x.no ? '<span>Öğrenci No: ' + esc(x.no) + '</span>' : '') +
+                  '</div>';
+              }).join('') + '</div>';
+          };
+          return '<div class="es-blok"><h3>Ödül / Ceza listesi</h3>' +
+            liste('Katılacağım deyip katılanlar', gelen, 'liste-iyi') +
+            liste('Katılacağım deyip katılmayanlar', gelmeyen, 'liste-kotu') +
+            (gelmeyen.length
+              ? '<div class="etp-uyari">Bu arkadaşlar bir sonraki etkinlikte ' +
+                '"Katılacağım" bildirimi yapamayacak.</div>'
+              : '') +
+            '</div>';
+        })();
 
       /* QR çizimi (hata olursa sayfa bozulmaz) */
       var cv = q('#esQr');
@@ -11022,6 +11214,34 @@ var ETK = (function () {
         }
       }, 1000);
     }
+
+    /* ⚠ ETKİNLİK DURUMU BLOĞU — ayrı kutu (#esDurum) içinde çizilir.
+       QR kodu 10 sn'de bir yenilenince #esGovde baştan çizilir; durum
+       bloğu orada olsaydı düğmeler tıklanma anında yok olur ve tıklama
+       yutulurdu. Ayrı kutu sayesinde düğmeler HER ZAMAN yerinde kalır. */
+    function durumCiz() {
+      var kap = q('#esDurum');
+      if (!kap) return;
+      var dr = d.durum || {};
+      var basladiMi = !!(dr.baslangic);
+      var bittiMi = !!(dr.bitis);
+      var ne = bittiMi
+        ? 'Etkinlik <b>sonlandı</b>. Katılım kaydedilemez; bildirim vermiş olup katılmayanlar listede.'
+        : (basladiMi
+          ? 'Etkinlik <b>başladı</b>. Artık yalnızca QR kodu okutarak katılım alınır.'
+          : 'Etkinlik <b>başlamadı</b>. Başlatınca "Katılacağım" bildirimleri kapanır, QR ile katılım açılır.');
+      kap.innerHTML = '<div class="es-blok es-durum-blok"><h3>Etkinlik durumu</h3>' +
+        '<div class="etp-yonetim"><div class="etp-yonetim-not">' + ne +
+        '</div><div class="etp-yonetim-dugme">' +
+        (bittiMi
+          ? '<button type="button" class="pri" data-es="evbaslat">Yeniden Başlat</button>' +
+            '<button type="button" data-es="evsifirla">Sıfırla</button>'
+          : (basladiMi
+            ? '<button type="button" class="pri" data-es="evbitir">Etkinliği Bitir</button>' +
+              '<button type="button" data-es="evsifirla">Sıfırla</button>'
+            : '<button type="button" class="pri" data-es="evbaslat">Etkinliği Başlat</button>')) +
+        '</div></div></div>';
+    }
   }
 /* görevli seçme (yalnızca yönetici) — arama çubuklu üye listesi */
   function gorevliEkle(evId) {
@@ -11032,7 +11252,7 @@ var ETK = (function () {
     var secili = '', seciliAd = '';
 
     m.innerHTML = '<h2>Görevli ekle</h2>' +
-      '<div class="sub">Listeden üyeyi seç, görevini yaz ve kaydet</div>' +
+      '<div class="sub">Listeden üyeyi seçin, görevini belirleyin ve kaydedin.</div>' +
       '<div class="field"><label>Görev</label><select id="geGorev">' +
         MBGP.GOREV.map(function (g) { return '<option>' + esc(g) + '</option>'; }).join('') +
       '</select></div>' +
@@ -11068,7 +11288,7 @@ var ETK = (function () {
       MBGO.uyeAra({
         kutu: '#geKutu',
         liste: ls,
-        ipucu: 'Üye ara: ad, e-posta, öğrenci no, bölüm',
+        ipucu: 'Ad, e-posta, öğrenci no veya bölüm',
         alan: function (u) {
           return [u.name, u.email, u.no, u.dept, u.girisYili]
             .filter(function (x) { return x; }).join(' ');
@@ -11254,6 +11474,10 @@ var ETK = (function () {
      eziyordu ("Başlat" tıklanmış olmasına rağmen "başlamadı" yazıyordu).
      Sayaç ile yalnız EN SON istek çizilir. */
   var evYuklemeNo = 0;
+  /* ⚠ DURUM İZLEME SAYACI: sayfa açıkken yönetici etkinliği başlatıp
+     bitirdiğinde QR düğmesi kendiliğinden açılıp kapanmalı; kullanıcı
+     sayfayı yenilemek zorunda kalmamalı. Sayfa kapanınca sayaç durur. */
+  var evDurumSayac = null;
 
   function etkinlikGoruntule(evId) {
     var m = q('#modal');
@@ -11262,6 +11486,8 @@ var ETK = (function () {
     var ev = evBul(evId);
     if (!ev) { toast('Etkinlik bulunamadı.', 4000); return; }
     var yuklemeNo = ++evYuklemeNo;
+    /* önceki etkinlik sayfasının izleme sayacını durdur */
+    if (evDurumSayac) { clearInterval(evDurumSayac); evDurumSayac = null; }
 
     var hafta = new Date(ev.date + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'long' });
     /* Başlık kartı: ad + etiketler. Katılım bandı kartın ALTINDA,
@@ -11346,31 +11572,8 @@ var ETK = (function () {
         gidecekOnayAc(evId, evBul(evId), gidecek.benim);
         return;
       }
-      /* --- YÖNETİCİ: etkinliği başlat / bitir --- */
-      if (ob && ob.getAttribute('data-et') === 'evbaslat') {
-        ob.disabled = true;
-        MBGFB.evBaslat(evId).then(function () {
-          toast('✓ Etkinlik başlatıldı. Katılım bildirimleri kapandı.', 4500);
-          etkinlikGoruntule(evId);
-        }).catch(function (x) { ob.disabled = false; toast(MBGM.err(x), 6500); });
-        return;
-      }
-      if (ob && ob.getAttribute('data-et') === 'evbitir') {
-        ob.disabled = true;
-        MBGFB.evBitir(evId).then(function () {
-          toast('✓ Etkinlik sonlandırıldı. Katılım listeleri aşağıda.', 4500);
-          etkinlikGoruntule(evId);
-        }).catch(function (x) { ob.disabled = false; toast(MBGM.err(x), 6500); });
-        return;
-      }
-      if (ob && ob.getAttribute('data-et') === 'evsifirla') {
-        ob.disabled = true;
-        MBGFB.evDurumTemizle(evId).then(function () {
-          toast('✓ Etkinlik durumu sıfırlandı.', 4000);
-          etkinlikGoruntule(evId);
-        }).catch(function (x) { ob.disabled = false; toast(MBGM.err(x), 6500); });
-        return;
-      }
+      /* "Etkinliği Başlat/Bitir" işleyicileri GENEL etkinlik sayfasında
+         DEGIL — yalnizca ADMIN PANELINDEKI etkinlik ekraninda (data-es). */
       if (ob && ob.getAttribute('data-et') === 'okut') {
         if (!MBGFB.user()) {
           toast(KATILMA_KISIT.UYE_DEGIL, 5200);
@@ -11386,7 +11589,7 @@ var ETK = (function () {
       if (b && b.getAttribute('data-x') === 'qr') {
         var k = (q('#etQrKod') || {}).textContent;
         if (k && window.location.origin.indexOf('localhost') < 0) {
-          toast('Katılımı QR kodunu okutarak kaydedersin.', 4200);
+          toast('Katılım, QR kod okutarak kaydedilir.', 4200);
         }
       }
     };
@@ -11395,6 +11598,8 @@ var ETK = (function () {
     /* geri: nereden gelindiyse oraya */
     var geldigi = window.MBG && MBG.gunPaneliAc ? MBG.gunPaneliAc : null;
     function geri() {
+      /* durum izleme sayacını durdur (sayfa kapanıyor) */
+      if (evDurumSayac) { clearInterval(evDurumSayac); evDurumSayac = null; }
       if (geldigi) geldigi();
       else close();
     }
@@ -11426,11 +11631,40 @@ var ETK = (function () {
         evDurum = r[6] || {};
         cezali = !!r[7];
         ciz();
+        durumIzleBaslat();
       })
       .catch(function (x) {
         var k = q('#etSayfa');
         if (k) k.innerHTML = '<div class="pf-bos">Sayfa yüklenemedi: ' + esc(MBGM.err(x)) + '</div>';
       });
+
+    /* ⚠ Etkinlik durumunu periyodik kontrol et: yönetici başlattığında
+       QR "Okut" düğmesi kendiliğinden açılır, bitirdiğinde kapanır.
+       Sadece DURUM DEĞİŞTİĞİNDE yeniden çizilir (ekran titremez). */
+    function durumIzleBaslat() {
+      if (!MBGFB.evDurumOku) return;
+      var imza = function (o) {
+        o = o || {};
+        return String(zamanMs(o.baslangicIstemci) || zamanMs(o.baslangic)) + '|' +
+          String(zamanMs(o.bitisIstemci) || zamanMs(o.bitis));
+      };
+      var eskiImza = imza(evDurum);
+      if (evDurumSayac) clearInterval(evDurumSayac);
+      evDurumSayac = setInterval(function () {
+        /* sayfa kapanmışsa (başka ekran açıldı) durdur */
+        if (!q('#etSayfa')) { clearInterval(evDurumSayac); evDurumSayac = null; return; }
+        if (yuklemeNo !== evYuklemeNo) { clearInterval(evDurumSayac); evDurumSayac = null; return; }
+        MBGFB.evDurumOku(evId).then(function (y) {
+          if (yuklemeNo !== evYuklemeNo) return;
+          var yeniImza = imza(y);
+          if (yeniImza !== eskiImza) {
+            eskiImza = yeniImza;
+            evDurum = y || {};
+            ciz();
+          }
+        }).catch(function () { });
+      }, 15000);
+    }
 
     function ciz() {
       var s = sayfaIceri || {};
@@ -11468,7 +11702,10 @@ var ETK = (function () {
          ⚠ DURUM MAKİNESİ:
            - başlangıç saatinin 2 saat öncesine kadar "Katılacağım" açık
            - başlangıç anından itibaren kapalı
-           - önceki etkinlikte bildirim yapıp katılmayan → kapalı (ceza) */
+           - önceki etkinlikte bildirim yapıp katılmayan → kapalı (ceza)
+         ⚠ QR OKUTMA: yalnızca etkinlik BAŞLADIKTAN SONRA açılır.
+           Başlamadan önce ve bittikten sonra pasif kalır. Durum
+           periyodik izlenir: yönetici başlattığında düğme açılır. */
       var bugun = (A && A.today) ? A.today() : '';
       var gelecekMi = !bugun || String(ev.date) >= String(bugun);
       /* --- etkinlik zaman durumu ---
@@ -11483,12 +11720,10 @@ var ETK = (function () {
       /* Kayıtlı başlangıç/bitiş: İSTEMCİ saatiyle yazılmış olanı
          kullan (istemci saatiyle karşılaştır → saat farkı sonucu
          bozmaz). Eski kayıtlarda sunucu zamanı + tolerans kullanılır. */
-      var evBasKayit = (evDurum.baslangicIstemci && evDurum.baslangicIstemci.toDate)
-        ? evDurum.baslangicIstemci.toDate()
-        : ((evDurum.baslangic && evDurum.baslangic.toDate) ? evDurum.baslangic.toDate() : null);
-      var evBit = (evDurum.bitisIstemci && evDurum.bitisIstemci.toDate)
-        ? evDurum.bitisIstemci.toDate()
-        : ((evDurum.bitis && evDurum.bitis.toDate) ? evDurum.bitis.toDate() : null);
+      var evBasKayit = zamanMs(evDurum.baslangicIstemci) || zamanMs(evDurum.baslangic);
+      evBasKayit = evBasKayit ? new Date(evBasKayit) : null;
+      var evBit = zamanMs(evDurum.bitisIstemci) || zamanMs(evDurum.bitis);
+      evBit = evBit ? new Date(evBit) : null;
       var TOL = (evDurum.baslangicIstemci || evDurum.bitisIstemci) ? 0 : 120 * 1000;
       var basladi = !!(evBasKayit && simdi.getTime() >= evBasKayit.getTime() - TOL);
       var bitti = !!(evBit && simdi.getTime() > evBit.getTime() + TOL);
@@ -11557,45 +11792,31 @@ var ETK = (function () {
           : '') +
 
         '<div class="etp-baslik">Katılım</div>' +
-        '<div class="etp-not' + (bitti ? ' pasif' : '') + '"><i>' + (kattim ? '✓' : '📱') + '</i><span>' +
+        '<div class="etp-not' + ((bitti || !basladi) ? ' pasif' : '') + '"><i>' + (kattim ? '✓' : '📱') + '</i><span>' +
           (kattim
             ? 'Katılımın kaydedildi. Yönetici listesinde görünüyorsun.'
             : (girisNotu
               ? esc(girisNotu)
               : (bitti
                 ? esc(KATILMA_KISIT.BITTI)
-                : (basladi
-                  ? 'Etkinlik başladı. Yönetiminin ekranda gösterdiği QR kodu okutman yeterli; ' +
-                    'kaydın otomatik yapılır.'
-                  : 'Etkinlik başlarken yönetiminin ekranda gösterdiği QR kodu okutman yeterli; ' +
+                : (!basladi
+                  ? esc(KATILMA_KISIT.BASLAMADI)
+                  : 'Etkinlik başladı. Yönetiminin ekranda gösterdiği QR kodu okutman yeterli; ' +
                     'kaydın otomatik yapılır.')))) +
         '</span>' +
-        '<button type="button" class="etp-okut" data-et="okut"' +
-          (kattim ? ' disabled' : (bitti || girisNotu ? ' disabled' : '')) + '>' +
+        /* ⚠ QR OKUTMA YALNIZCA ETKİNLİK BAŞLADIKTAN SONRA AÇIK.
+           Başlamadıysa ve bittiyse düğme PASİF (disabled) kalır. */
+        '<button type="button" class="etp-okut' +
+          (kattim ? ' basarili' : (((!basladi || bitti) && !girisNotu) ? ' kapali' : '')) +
+          '" data-et="okut"' +
+          (kattim ? ' disabled' : (!basladi || bitti || girisNotu ? ' disabled' : '')) + '>' +
           (kattim ? '✓ Katılım Başarılı' : '📷 QR Kodu Okut') + '</button>' +
         '</div>' +
 
-        /* --- YÖNETİCİ: etkinliği başlat / bitir --- */
-        (adminMi2
-          ? '<div class="etp-baslik">Yönetim</div>' +
-            '<div class="etp-yonetim">' +
-              '<div class="etp-yonetim-not">' +
-                (bitti
-                  ? 'Etkinlik <b>sonlandı</b>. Katılımlar aşağıda listelenmiştir.'
-                  : (basladi
-                    ? 'Etkinlik <b>başladı</b>. Katılım QR okutarak yapılır.'
-                    : 'Etkinlik henüz başlamadı. Başlatınca katılım bildirimleri kapanır.')) +
-              '</div>' +
-              (bitti
-                ? '<button type="button" data-et="evbaslat">Etkinliği Yeniden Başlat</button>' +
-                  '<button type="button" class="pri" data-et="evbitir">Etkinliği Bitir</button>' +
-                  '<button type="button" data-et="evsifirla">Durumu Sıfırla</button>'
-                : (basladi
-                  ? '<button type="button" class="pri" data-et="evbitir">Etkinliği Bitir</button>' +
-                    '<button type="button" data-et="evsifirla">Durumu Sıfırla</button>'
-                  : '<button type="button" class="pri" data-et="evbaslat">Etkinliği Başlat</button>')) +
-            '</div>'
-          : '') +
+        /* ⚠ YÖNETİCİ DÜĞMELERİ BURADA DEĞİL: "Etkinliği Başlat/Bitir"
+           yalnızca ADMIN PANELİNDEKİ etkinlik ekranında var. Genel
+           etkinlik sayfası katılımcıya aittir; orada yalnızca
+           "Katılacağım" bildirimi ve QR okutma bulunur. */
 
         (adminMi2 && katilacakL.length
           ? '<div class="etp-baslik">Katılacağını belirten üyeler (' + katilacakL.length + ')</div>' +
@@ -11608,41 +11829,9 @@ var ETK = (function () {
             '</div>'
           : '') +
 
-        /* --- YÖNETİCİ: etkinlik bitti → iki liste (ödül/ceza için) ---
-           1) "Katılacağım" deyip KATILANLAR
-           2) "Katılacağım" deyip KATILMAYANLAR (bir sonraki etkinlikte
-              bildirim yapamazlar) */
-        (adminMi2 && bitti
-          ? (function () {
-              var katildiSet = {}, k;
-              for (k = 0; k < katilanlar.length; k++) katildiSet[String(katilanlar[k].uid)] = 1;
-              var gelen = [], gelmeyen = [];
-              for (k = 0; k < katilacakL.length; k++) {
-                var u = katilacakL[k];
-                if (katildiSet[String(u.uid)]) gelen.push(u);
-                else gelmeyen.push(u);
-              }
-              var liste = function (baslik, arr, sinif) {
-                if (!arr.length) {
-                  return '<div class="etp-baslik">' + baslik + ' (0)</div>' +
-                    '<div class="pf-bos">Kimse yok.</div>';
-                }
-                return '<div class="etp-baslik">' + baslik + ' (' + arr.length + ')</div>' +
-                  '<div class="etp-katilacak-liste ' + sinif + '">' +
-                  arr.map(function (u) {
-                    return '<div class="etp-kuluper"><b>' + esc(u.ad) + '</b>' +
-                      (u.no ? '<span>Öğrenci No: ' + esc(u.no) + '</span>' : '') +
-                      '</div>';
-                  }).join('') + '</div>';
-              };
-              return liste('Katılacağım deyip katılanlar', gelen, 'liste-iyi') +
-                liste('Katılacağım deyip katılmayanlar', gelmeyen, 'liste-kotu') +
-                (gelmeyen.length
-                  ? '<div class="etp-uyari">Bu arkadaşlar bir sonraki etkinlikte ' +
-                    '"Katılacağım" bildirimi yapamayacak.</div>'
-                  : '');
-            })()
-          : '') +
+        /* ⚠ İki liste (katılan / katılmayan) artık GENEL etkinlik
+           sayfasında DEĞİL — yalnızca ADMIN PANELİNDEKİ etkinlik
+           ekranının en altında (ödül/ceza için). */
 
         yorumPaneli(evId, kattim);
 
@@ -11671,6 +11860,7 @@ var ETK = (function () {
     UYE_DEGIL: 'Etkinliklere katılım bildirmek için lütfen üye olunuz.',
     DOGRULAMA: 'Katılım bildirebilmek için önce e-posta adresinizi doğrulayın.',
     BASLADI: 'Etkinlik başladı. Katılımınızı QR kodu okutarak bildirebilirsiniz.',
+    BASLAMADI: 'Etkinlik henüz başlamadı. Yönetici etkinliği başlattığında QR kod okutma açılacak.',
     YAKLASTI: 'Şuanda bu etkinliğe katılım bildirimi veremezsiniz.',
     BITTI: 'Bu etkinlik sonlandı. Katılımla ilgili bir sorun olduğunu düşünüyorsanız ' +
       'Yönetici ile iletişime geçin.',
@@ -11742,14 +11932,20 @@ var ETK = (function () {
      Düğmeye basınca açılır; "Onaylıyorum" diyenler katılacak listesine
      eklenir. Metinler TDK kurallarına göre yazılmıştır.
      ===================================================================== */
+  /* Onaylanacak maddeler (her biri tek tek işaretlenir).
+     Metinler KULLANICI AĞZINDAN (birinci şahıs) yazıldı: kullanıcı
+     kendi beyanını onaylıyor, kurum diliyle emir cümlesi değil. */
   var KATILACAK_MADDE = [
-    'Bu etkinliğe zamanında katılım sağlayabileceğinizi düşünüyorsanız işaretleyiniz.',
-    'İşaretlediğinizde etkinlik listesine otomatik olarak ekleneceksiniz.',
-    'Kontenjanı sınırlı olan etkinlikler için erken davranmanızı öneririz.',
-    'Etkinlik listesinde olup da etkinliğe katılmayan arkadaşlar, bir sonraki ' +
-      'etkinlikte düşük öncelikli olacaktır.',
-    'Etkinlik listesinde olup da etkinliğe katılan arkadaşlar, bir sonraki ' +
-      'etkinlikte yüksek öncelikli olacaktır.'
+    'Bu etkinliğe zamanında katılım sağlayacağım.',
+    'İşaretlediğimde etkinlik listesine otomatik olarak eklenirim.',
+    'Etkinlik listesinde olup da etkinliğe katılmazsam, bir sonraki ' +
+      'etkinlikte düşük öncelikli olurum.'
+  ];
+  /* NOT: onaylanan madde DEĞİL — bilgilendirme amaçlı, aşağıda durur */
+  var KATILACAK_NOT = [
+    'Kontenjanı sınırlı etkinliklerde erken bildirim yapmak avantaj sağlar.',
+    'Katılacağını bildirip etkinlik saatinde gerçekten katılım gösteren ' +
+      'arkadaşlar kontenjanlı etkinliklerde önceliklendirilecektir.'
   ];
 
   function gidecekOnayAc(evId, ev, suanVarMi) {
@@ -11769,12 +11965,15 @@ var ETK = (function () {
             '<span class="onay-kutu-kutu"></span><span class="onay-kutu-yazi">' + esc(t) + '</span></label></li>';
         }).join('') +
       '</ul>' +
+      /* NOT: onay maddesi değil — madde listesinin altında, bilgi olarak */
+      '<div class="onay-not">' + KATILACAK_NOT.map(function (n, i) {
+        return '<p>' + (i === 0 ? '<b>Not:</b> ' : '') + esc(n) + '</p>';
+      }).join('') + '</div>' +
       '<div class="acts onay-acts">' +
         '<button type="button" data-k="hayir">Onaylamıyorum</button>' +
         '<button type="button" class="pri" data-k="evet" disabled>Onaylıyorum</button>' +
       '</div>' +
-      '<div class="onay-ipucu">Devam etmek için yukarıdaki her maddeyi ' +
-        'kutucuğundan işaretleyin.</div>';
+      '<div class="onay-ipucu">Onaylamak için tüm maddeler işaretlenmelidir.</div>';
     m.oninput = null;
     q('#backdrop').classList.add('open');
 
@@ -12093,7 +12292,7 @@ var MBGO = (function () {
     var bitti = false;
     toast(opt.baslat || 'İşlem yapılıyor…', 2600);
     var yavas = setTimeout(function () {
-      if (!bitti) toast('Sunucu yanıt vermiyor — bağlantı yavaş olabilir, biraz bekle…', 5000);
+      if (!bitti) toast('Sunucu yanıt vermiyor. Bağlantı yavaş olabilir, biraz bekleyin.', 5000);
     }, opt.bekleme || 6000);
 
     function bitir(h, v) {
@@ -12132,7 +12331,7 @@ var MBGO = (function () {
       '<div class="pf-ara">' +
         '<span class="pf-ara-ikon">⌕</span>' +
         '<input type="search" id="pfArama" autocomplete="off" spellcheck="false" placeholder="' +
-          esc(opts.ipucu || 'Ara: ad, e-posta, öğrenci no, bölüm') + '">' +
+          esc(opts.ipucu || 'Ad, e-posta, öğrenci no veya bölüm') + '">' +
       '</div>' +
       '<div class="pf-ara-sonuc" id="pfAraSayi"></div>' +
       '<div class="pf-ara-liste" id="pfAraSonuc"></div>';
@@ -13166,7 +13365,7 @@ var MBGO = (function () {
     var m = $('#modal');
     m.innerHTML =
       '<h2>Telefonuna ekle</h2>' +
-      '<div class="sub">Uygulama gibi açılsın, çevrimdışı da çalışsın</div>' +
+      '<div class="sub">Uygulama cihazınıza eklenir; çevrimdışı kullanılabilir.</div>' +
       '<div class="field"><label>Adım adım</label><div class="inst">' +
         '<p><b>iPhone / iPad (Safari):</b> Paylaş ⇢ <b>Ana Ekrana Ekle</b> ⇢ Ekle.</p>' +
         '<p><b>Android (Chrome):</b> Sağ üstteki ⋮ ⇢ <b>Ana ekrana ekle</b>.</p>' +
@@ -13237,7 +13436,7 @@ var MBGO = (function () {
     var m = $('#modal');
     m.innerHTML =
       '<h2>Hata bildir</h2>' +
-      '<div class="sub">Yazdığın soru ' + HATA_MAIL + ' adresine e-postayla gider</div>' +
+      '<div class="sub">Bildiriminiz ' + HATA_MAIL + ' adresine e-postayla iletilir.</div>' +
       '<div class="field"><label>Ne oldu? / Önerin</label>' +
         '<textarea id="fBug" maxlength="1200" placeholder="Örn. iPhone\'da etkinliğe dokununca kart açılmıyor."></textarea></div>' +
       '<div class="acts">' +
@@ -13249,7 +13448,7 @@ var MBGO = (function () {
       var txt = bugBody($('#fBug').value.trim());
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(txt).then(
-          function () { toast('Bilgi kopyalandı — e-postaya yapıştırabilirsin.', 4500); },
+          function () { toast('Bilgi kopyalandı. E-postaya yapıştırabilirsin.', 4500); },
           function () { toast('Kopyalanamadı.', 3000); });
       } else toast('Kopyalanamadı.', 3000);
     };
@@ -13259,7 +13458,7 @@ var MBGO = (function () {
       var url = bugMailto(t);
       closeModal();
       window.location.href = url;
-      toast('E-posta uygulaman açıldı — açtıktan sonra Gönder düğmesine bas.', 6500);
+      toast('E-posta uygulaması açıldı. Gönder düğmesine basabilirsin.', 6500);
     };
     $('#backdrop').classList.add('open');
     setTimeout(function () { $('#fBug').focus(); }, 60);
@@ -13757,7 +13956,7 @@ var MBGO = (function () {
     });
     if (DNA3D.attach($('#dna')) === false) {
       document.body.classList.add('no-dna');
-      toast('3B görünüm açılamadı (WebGL yok); liste yine de çalışır.', 5000);
+      toast('3B görünüm açılamadı. Liste görünümü kullanılabilir.', 5000);
     }
     DNA3D.setPick(function () {});
 
@@ -13991,7 +14190,7 @@ var MBGO = (function () {
       if (!deferredPrompt) { kurulumaCagır(); return; }
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(function (ch) {
-        if (ch && ch.outcome === 'accepted') toast('Kuruldu — artık ana ekrandan açabilirsin.', 4500);
+        if (ch && ch.outcome === 'accepted') toast('Kuruldu. Artık ana ekrandan açabilirsin.', 4500);
         deferredPrompt = null; installShown(false);
       });
     };
@@ -14314,7 +14513,7 @@ var MBGO = (function () {
             baslik: 'Planı sunucuya aktar',
             ikon: '☁',
             mesaj: '<b>' + ev.length + ' etkinlik</b> okundu ve sunucuya yüklenecek.',
-            not: 'Sunucudaki mevcut kayıtların yerine geçer. İptal edersen hiçbir şey değişmez.',
+            not: 'Sunucudaki mevcut kayıtların yerine geçer. İptal edilirse hiçbir kayıt değişmez.',
             onayMetni: 'Evet, yükle',
             geri: function () { if (window.MBGM && MBGM.adminPanel) MBGM.adminPanel(); }
           }).then(function (ok) {
