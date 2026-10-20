@@ -1,7 +1,7 @@
 rules_version = '2';
 /* =====================================================================
    AKÜ Moleküler Biyoloji ve Genetik Topluluğu — DNA Takvimi
-   Firestore güvenlik kuralları  (v3.14)
+   Firestore güvenlik kuralları  (v3.19)
    ---------------------------------------------------------------------
    NASIL KULLANILIR:
    1) Firebase konsolu → Firestore Database → Rules
@@ -353,6 +353,28 @@ service cloud.firestore {
       allow delete: if adminMi();
     }
 
+    /* --- ETKİNLİK DURUMU (başlangıç / bitiş) ---
+       Herkese okunur (herkes "etkinlik başladı mı" görebilmeli),
+       yalnız YÖNETİCİ yazabilir. */
+    match /events/{eventId}/sayfa/durum {
+      allow read: if true;
+      allow write: if adminMi();
+    }
+
+    /* --- ETKİNLİK SAYACI (herkese açık, KİMLİK YOK) ---
+       Giriş yapmamış misafir etkinlik sayfasında "N kişi katıldı /
+       N görevli" sayılarını görebilmeli. KİMLİKLER (ad, öğrenci no)
+       listede kalır: "katilan" koleksiyonu girişe bağlıdır.
+       Buradaki belgede YALNIZCA rakamlar vardır. */
+    match /events/{eventId}/sayi/{doc} {
+      allow read: if true;
+      allow write: if girisYapildi() && dogrulandiMi()
+        && request.resource.data.keys().hasOnly(['katildi', 'gorevli', 'katilacak', 'guncelleAt'])
+        && request.resource.data.katildi is int
+        && request.resource.data.gorevli is int
+        && request.resource.data.katilacak is int;
+    }
+
     /* --- ETKİNLİK SAYFASI İÇERİĞİ: herkes okur, yönetici yazar --- */
     match /events/{eventId}/sayfa/{doc} {
       allow read: if true;
@@ -383,6 +405,15 @@ service cloud.firestore {
       /* Anahtar (qr) belge içinde bir süre kaldığı için okuma girişe ve
          e-posta doğrulamasına bağlandı: kimse canlı anahtarı toplayamaz. */
       allow read: if girisYapildi() && dogrulandiMi();
+      /* ⚠ SUNUCU TARAFI KISIT: etkinlik BİTTİYSE katılım alınamaz
+         (arayüzü atlayıp doğrudan belge yazan üye de engellenir). */
+      function etkinlikBittiMi(evId) {
+        /* YALNIZCA kanitlanmis yapilar: exists(), get(...).data.alan,
+           != null, >, &&  (dosyanin geri kalaniyla ayni desen) */
+        return exists(/databases/$(database)/documents/events/$(evId)/sayfa/durum)
+          && get(/databases/$(database)/documents/events/$(evId)/sayfa/durum).data.bitis != null
+          && request.time > get(/databases/$(database)/documents/events/$(evId)/sayfa/durum).data.bitis;
+      }
       /* Üye kendi kaydını QR koduyla yazar; YÖNETİCİ (kulüp adına
          düzeltme) doğrudan yazabilir — QR gerekmez. Böylece istatistik,
          profil ve yönetici paneli AYNI kayıtları görür.
@@ -391,6 +422,7 @@ service cloud.firestore {
       allow create: if adminMi()
         || (girisYapildi()
             && dogrulandiMi()
+            && !etkinlikBittiMi(eventId)
             && request.auth.uid == uid
             && request.resource.data.keys().hasOnly(['uid', 'ad', 'anahtar', 'at'])
             && request.resource.data.uid == uid
@@ -493,8 +525,23 @@ service cloud.firestore {
       /* "kaç kişi katılacak" sayacı: doğrulanmış üyeler okur (doğrulanmamış
          hesaplar üye niyetlerini toplayamaz). */
       allow read: if adminMi() || (girisYapildi() && dogrulandiMi());
+      /* ⚠ SUNUCU TARAFI KISIT: "Katılacağım" bildirimi yalnız etkinlik
+         BAŞLAMADAN yapılabilir. Arayüzü atlayıp doğrudan belge yazan bir üye
+         de engellenir (arayüz kuralı tek başına yeterli değildir).
+         • bitti  → etkinlik bittiyse bildirim alınamaz
+         • basladi → yönetici "Etkinliği Başlat" dediyse bildirim kapanır
+         • plan   → önceden belirlenmiş başlangıçtan 2 saat öncesinden itibaren */
+      function katilacagimKapatildiMi(evId) {
+        /* YALNIZCA kanitlanmis yapilar (exists/get/!=/>=/&&).
+           "Basladi" kontrolu sunucu tarafinda: etkinlik basladiktan sonra
+           "Katilacagim" bildirimi yazilamaz. */
+        return exists(/databases/$(database)/documents/events/$(evId)/sayfa/durum)
+          && get(/databases/$(database)/documents/events/$(evId)/sayfa/durum).data.baslangic != null
+          && request.time >= get(/databases/$(database)/documents/events/$(evId)/sayfa/durum).data.baslangic;
+      }
       allow create: if (girisYapildi()
             && dogrulandiMi()
+            && !katilacagimKapatildiMi(request.resource.data.ev)
             && request.resource.data.keys().hasOnly(['at', 'ev', 'uid'])
             && request.resource.data.uid == request.auth.uid
             && request.resource.data.ev is string
@@ -516,6 +563,7 @@ service cloud.firestore {
       allow update: if adminMi()
         || (girisYapildi()
             && dogrulandiMi()
+            && !katilacagimKapatildiMi(resource.data.ev)
             && resource.data.uid == request.auth.uid
             && request.resource.data.uid == request.auth.uid
             && request.resource.data.ev == resource.data.ev

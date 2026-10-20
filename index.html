@@ -571,6 +571,37 @@
     font-size:.86rem;color:#cfe2ff}
   .onay-madde{margin:0 0 6px;padding-left:20px}
   .onay-madde li{font-size:.9rem;line-height:1.55;color:#d7e4f5;margin-bottom:10px}
+  /* --- ONAY KUTUSU: her madde tek tek isaretlenmeli --- */
+  .onay-madde-onay{list-style:none;padding-left:0}
+  .onay-madde-onay li{margin-bottom:8px}
+  .onay-kutu{display:flex;gap:11px;align-items:flex-start;cursor:pointer;padding:9px 11px;
+    border:1px solid rgba(148,178,220,.16);border-radius:11px;background:rgba(148,178,220,.05);
+    transition:background .15s,border-color .15s}
+  .onay-kutu:hover{background:rgba(148,178,220,.09);border-color:rgba(148,178,220,.3)}
+  .onay-kutu input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+  .onay-kutu-kutu{flex:none;width:22px;height:22px;border-radius:7px;margin-top:1px;
+    border:2px solid rgba(148,178,220,.5);background:rgba(10,16,30,.7);
+    display:grid;place-items:center;transition:background .15s,border-color .15s}
+  .onay-kutu-kutu::after{content:"";width:11px;height:6px;border-left:2.5px solid #06210f;
+    border-bottom:2.5px solid #06210f;transform:rotate(-45deg) scale(0);transition:transform .15s}
+  .onay-kutu input:checked + .onay-kutu-kutu{background:#34d399;border-color:#34d399}
+  .onay-kutu input:checked + .onay-kutu-kutu::after{transform:rotate(-45deg) scale(1)}
+  .onay-kutu input:focus-visible + .onay-kutu-kutu{outline:2px solid rgba(56,189,248,.7);outline-offset:2px}
+  .onay-kutu-yazi{font-size:.92rem;line-height:1.5;color:#d7e4f5}
+  .onay-ipucu{margin-top:12px;font-size:.82rem;color:#9db3d1;text-align:center}
+  /* --- ETKİNLİK DURUMU: uyarılar, yönetim bloğu, katılım listeleri --- */
+  .etp-uyari{margin:0 0 14px;padding:11px 13px;border-radius:12px;font-size:.87rem;line-height:1.5;
+    color:#ffd9a8;background:rgba(251,191,36,.1);border-left:3px solid rgba(251,191,36,.55)}
+  .etp-katilband.pasif{opacity:.92}
+  .etp-gidecek.kapali,.etp-gidecek:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.35)}
+  .etp-not.pasif{opacity:.75}
+  .etp-yonetim{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:6px;
+    padding:13px 15px;border-radius:14px;background:rgba(86,119,255,.09);
+    border:1px solid rgba(120,170,255,.24)}
+  .etp-yonetim-not{flex:1 1 220px;font-size:.88rem;line-height:1.5;color:#cfe2ff}
+  .etp-yonetim .pri{min-height:46px;padding:12px 20px;border-radius:12px;font-weight:600}
+  .etp-katilacak-liste.liste-iyi .etp-kuluper{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.28)}
+  .etp-katilacak-liste.liste-kotu .etp-kuluper{background:rgba(251,146,60,.08);border-color:rgba(251,146,60,.3)}
   /* Onay kutusu düğmeleri: daha büyük ve okunaklı */
   .acts.onay-acts{gap:11px;margin-top:18px;justify-content:stretch}
   .acts.onay-acts button{flex:1 1 auto;min-height:48px;padding:13px 18px;
@@ -889,6 +920,54 @@
   .tar-ipucu{margin-top:8px;font-size:.76rem;line-height:1.5;color:#a9bbd4;background:rgba(86,119,255,.09);border-left:3px solid rgba(86,119,255,.6);padding:8px 10px;border-radius:0 8px 8px 0}
   .tar-durum{position:absolute;left:0;right:0;bottom:0;padding:9px 12px;font-size:.76rem;
     text-align:center;color:#cfe0f5;background:linear-gradient(0deg,rgba(3,6,12,.9),transparent)}
+  /* FENER: kameranin icinde, sag ustte minik daire tus */
+  .tar-fener{position:absolute;top:10px;right:10px;width:38px;height:38px;padding:0;    display:flex;align-items:center;justify-content:center;border-radius:50%;
+    background:rgba(8,13,24,.72);border:1px solid rgba(148,178,220,.32);
+    color:#cfe0f5;cursor:pointer;z-index:3;
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    transition:background .15s,color .15s,border-color .15s,box-shadow .15s}
+  .tar-fener:hover{background:rgba(20,30,50,.86);color:#fff}
+  .tar-fener:active{transform:scale(.94)}
+  .tar-fener:focus-visible{outline:2px solid rgba(56,189,248,.7);outline-offset:2px}
+  .tar-fener[disabled]{opacity:.38;cursor:default}
+  .tar-fener.acik{background:rgba(251,191,36,.92);border-color:rgba(253,230,138,.95);
+    color:#231703;box-shadow:0 0 16px rgba(251,191,36,.5)}
+  /* --- BASARI KUTUSU (katilim onayi) --- */
+  .basari-kutu{text-align:center;padding:4px 0 2px}
+  /* .modal h2 sag bosluk (kapatma dugmesi icin) veriyor; basarida baslik
+     tam ORTALI olmali -> sag bosluk kaldirilir */
+  .basari-kutu .basari-baslik{padding-right:0;margin:0 0 10px}
+  .basari-ikon{width:64px;height:64px;margin:2px auto 16px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;
+    color:#0d2b1d;background:linear-gradient(160deg,#6ee7b7,#22c55e);
+    box-shadow:0 10px 26px rgba(34,197,94,.28)}
+  .basari-baslik{font-size:1.24rem;letter-spacing:-.01em}
+  .basari-mesaj{font-size:.95rem;line-height:1.6;color:#c6d6ea;margin:0 auto;max-width:430px}
+  .basari-kutu .acts{justify-content:center;margin-top:22px}
+  .basari-kutu .acts button{min-width:140px;min-height:44px}
+  /* QR paneli: kisa kalsin ki duugmeler (Vazgeç / Elle gir) ekranin
+     altinda kalmasin. Yapışkan konum yerine kamerayi kisaltiyoruz. */
+  .tarama{aspect-ratio:16/10}
+  .tar-ipucu{margin-top:10px}
+  .tar-onayla{margin-top:12px}
+  .tar-onayla button{width:100%;min-height:46px}
+  /* kamera ile "Katılım kodunu yaz" arasında biraz nefes payı */
+  #tarElleAlan{margin-top:20px}
+  @media (max-width:520px){
+    .modal.dar{padding:22px 16px 18px}
+    .tarama{aspect-ratio:16/9}
+    .tar-ipucu{font-size:.72rem;padding:7px 9px}
+    .modal.dar .acts{gap:8px;margin-top:14px}
+    /* üye bilgi kartı: mobilde de okunaklı (özgüllük artırıldı ki
+       temel kurallar bu blogu ezmesin) */
+    .pf-tab.pf-bilgi table{font-size:.92rem}
+    .pf-tab.pf-bilgi td{padding:11px 12px}
+    .pf-tab.pf-bilgi .pf-t{font-size:.82rem;padding-right:18px}
+    .pf-ozet-kutu{padding:10px 8px}
+    .pf-ozet-sayi{font-size:1.45rem}
+    .pf-ozet-etiket{font-size:.74rem}
+    .pf-not{font-size:.82rem;padding:10px 12px}
+  }
   /* --- KVKK ve Gizlilik --- */
   .kvkk-liste{display:flex;flex-direction:column;gap:8px;margin:12px 0 4px}
   .kvkk-satir{display:flex;flex-direction:column;gap:2px;text-align:left;padding:11px 13px;
@@ -1033,6 +1112,29 @@
     cursor:pointer;font-size:.7rem;padding:2px 7px;line-height:1.4}
   .pf-s button:hover{background:rgba(255,120,120,.25)}
   .pf-bos{color:#8296b4;text-align:center;padding:12px 8px!important}
+  /* --- ÜYE BİLGİ KARTI (yönetici paneli): okunaklı + site dili --- */
+  .pf-bilgi{max-height:none;overflow:visible;border-color:rgba(148,178,220,.16);
+    border-radius:14px;background:rgba(9,14,26,.5);mask-image:none}
+  .pf-bilgi table{font-size:.95rem}
+  .pf-bilgi td{padding:12px 14px;border-bottom:1px solid rgba(148,178,220,.08);
+    line-height:1.5;color:#e8f0fb}
+  .pf-bilgi tr:last-child td{border-bottom:0}
+  .pf-bilgi .pf-t{color:#9db3d2;font-size:.86rem;font-weight:600;padding-right:26px}
+  .pf-bilgi td:not(.pf-t){font-weight:500;word-break:break-word}
+  /* sayaç kartları (Katılım / Görev) */
+  .pf-ozet{display:flex;gap:10px;margin-top:14px}
+  .pf-ozet-kutu{flex:1 1 0;min-width:0;background:linear-gradient(160deg,rgba(56,189,248,.12),rgba(56,189,248,.04));
+    border:1px solid rgba(56,189,248,.22);border-radius:14px;padding:12px 14px;text-align:center}
+  .pf-ozet-sayi{font-size:1.65rem;font-weight:800;line-height:1.1;color:#eaf6ff;
+    font-variant-numeric:tabular-nums}
+  .pf-ozet-etiket{font-size:.78rem;color:#a9c1de;margin-top:3px;letter-spacing:.02em}
+  /* bilgi notu */
+  .pf-not{margin-top:12px;padding:11px 13px;border-radius:12px;font-size:.85rem;line-height:1.55;
+    color:#b9cbe4;background:rgba(148,178,220,.07);border-left:3px solid rgba(148,178,220,.4)}
+  /* yönetici düzenle düğmesi (emojisiz, site dili) */
+  .pf-btn-admin{background:rgba(251,191,36,.12)!important;border:1px solid rgba(251,191,36,.34)!important;
+    color:#fcd77a!important}
+  .pf-btn-admin:hover{background:rgba(251,191,36,.2)!important}
   .pf-et{display:inline-block;background:rgba(120,200,255,.16);color:#a9d8ff;
     border-radius:20px;padding:0 7px;font-size:.6rem;white-space:nowrap}
   .pf-form{max-height:46vh}
@@ -1516,7 +1618,7 @@
 </section>
 <div id="rail" role="navigation" aria-label="zaman cizelgesi gezgini"><canvas id="railCv"></canvas></div>
 <div id="acilis" aria-hidden="true"></div>
-<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.14 · çekirdek</button></div>
+<div id="hint"><button type="button" class="ver ver-btn" id="verYer" title="Sürümü kontrol et">sürüm 3.19 · çekirdek</button></div>
 
 <div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast"></div>
@@ -1684,7 +1786,7 @@ var DNA3D = (function () {
   /* adaptif cozunurluk merdiveni: eski sabit 1.5 idi, telefonda (dpr 2-3)
      yari cozunurluk ve bulanik kartlar yuzunden 2.5-3e kadar cikabiliyor */
   var PR_STEPS = [1, 1.25, 1.5, 2, 2.5, 3];
-  var prIdx = 0, prCap = 0, prCool = 0, texQ = 1, prInit = false;
+  var prIdx = 0, prCap = 0, prCool = 0, texQ = 1, chipQT = 1, prInit = false;
   var PAD = 14;
   var RADII = { C: 0.32, N: 0.30, O: 0.285, P: 0.44 };
   var BASECOL = { A: [0.85, 0.36, 0.44], T: [0.25, 0.62, 0.82],
@@ -1798,9 +1900,27 @@ var DNA3D = (function () {
   function dprCapIdx() {
     var d = window.devicePixelRatio || 1, i = 0;
     for (var k = 0; k < PR_STEPS.length; k++) if (PR_STEPS[k] <= d + 0.01) i = k;
-    /* TASINABILIR TAVAN 2x: 3x DPR framebuffer'i 9 kat buyutuyordu;
-       iOS bellek sinirina deyip WebGL baglamini olduruyordu. */
-    return QLOW ? Math.min(i, 1) : Math.min(i, 3);
+    /* TASINABILIR TAVAN: 3x DPR framebuffer'i 9 kat buyutuyordu; iOS
+       bellek sinirina deyip WebGL baglamini olduruyordu.
+       v3.15: tavan 2x -> 2.5x yapildi. Telefonda 3x ekran 2x ile
+       cizilince 1.5 KAT buyutuluyordu (her sey bulanik). 2.5x ile
+       buyutme 1.2 kata iner, doku ve yazilar netlesir. Yavas cihazda
+       uyarlanabilir kalite once rozet penceresini daraltir, cozunurlugu
+       en son dusurur (prAltIdx tabani korunur). */
+    return QLOW ? Math.min(i, 1) : Math.min(i, 4);
+  }
+  /* ⚠ EN ALT ÇÖZÜNÜRLÜK TABANI (mobil bulanıklık sorunu):
+     Uyarlanabilir kalite, kare yavaşlayınca piksel oranını düşürüyordu.
+     3x ekranda pr=1'e düşünce tuval 360x640 çizilip 1080x1920'e
+     BÜYÜTÜLÜYORDU → her şey (yazılar, kartlar, DNA) 3x bulanık.
+     Bu yüzden pr asla "2 kattan fazla büyütme" sınırının altına inmez;
+     cihaz yavaşsa çözünürlük yerine SAHNE BASİTLİĞİ azaltılır. */
+  function prAltIdx() {
+    var d = window.devicePixelRatio || 1;
+    if (d >= 2.5) return 3;    /* pr >= 2   → 3x ekranda 1.5x buyutme */
+    if (d >= 1.75) return 2;   /* pr >= 1.5 */
+    if (d >= 1.3) return 1;    /* pr >= 1.25 */
+    return 0;
   }
   function prNow() { return PR_STEPS[prIdx] || 1; }
   function prApply() {
@@ -1808,11 +1928,36 @@ var DNA3D = (function () {
     try { renderer.setPixelRatio(prNow()); } catch (e) {}
     lod = prIdx <= 1;
   }
+  /* YERLEŞİM ÖLÇÜMÜ (tek kaynak): kart ve rozet boyutları buradan
+     hesaplanır. Doku çözünürlüğü de BUNU kullanır; ayrı hesaplanırsa
+     doku her zaman bir adım geride kalır (bulanık kart/rozet). */
+  function olcumYerlesim() {
+    var visW = 2 * Math.tan(FOV * Math.PI / 360) * CAMZ * Math.max(0.25, camera.aspect);
+    var narrow = camera.aspect < 0.62;
+    var wFac = narrow ? 0.78 : 0.88;
+    var RAY_PX = 34;
+    var Wpx = W || (narrow ? 390 : 1200);
+    var tavanPx = narrow ? 308 : 464;
+    var yanPay = (Wpx - RAY_PX - 22) * (narrow ? 0.94 : 0.68);
+    var cwPx = Math.min(tavanPx, yanPay, visW * KPX * wFac, (narrow ? 4.0 : 3.3) * KPX);
+    var cw = cwPx / KPX;
+    if (!isFinite(cw) || cw < 0.4) cw = 2.1;
+    var gw = Math.min(62 / KPX, visW * 0.17);
+    if (!isFinite(gw) || gw < 0.15) gw = 0.6;
+    return { cw: cw, gw: gw, ch2: gw / CHIP_ASP, visW: visW, narrow: narrow, wFac: wFac };
+  }
   /* kart dokusunun kac kat cizilecegi: ekrandaki gercek piksel / 560 */
   function cardQ() {
-    var wPx = (cards[0] ? cards[0].w : 2.6) * KPX;
+    var o = olcumYerlesim();
+    var wPx = o.cw * KPX;
     var q = wPx * prNow() / 560;
-    return Math.max(1, Math.min(2.4, q));
+    return Math.max(1, Math.min(2.6, q));
+  }
+  /* rozet dokusunun kac kat cizilecegi (ekran cozunurlugune gore) */
+  function chipQ() {
+    var o = olcumYerlesim();
+    var px = o.gw * KPX * prNow();
+    return Math.max(0.75, Math.min(3, px / 256));
   }
   function yAt(pd) {
     var d0 = Math.floor(pd), f = pd - d0;
@@ -2429,14 +2574,23 @@ var DNA3D = (function () {
      ÖNBELLEĞİ — aynı gün ikinci kez üretilmez, yalnızca cache'ten alınır. */
   var _chipCache = {};
   function chipCanvas(day) {
-    var anahtar = day + '|' + (day === todayDay ? 1 : 0) + '|' + QLOW;
+    /* ÇÖZÜNÜRLÜK: rozet dokusu ekranda kaç piksel kaplıyorsa o kadar
+       çizilir (chipQ). Sabit 256x96 idi; yüksek DPR ekranda 4 katı
+       hedeflenip bulanık gösteriliyordu (mobilde "yazılar bulanık"). */
+    var bugunMu = (day === todayDay);
+    var kalite = chipQ();
+    if (QLOW) kalite = Math.min(kalite, 1.25);
+    var anahtar = day + '|' + (bugunMu ? 1 : 0) + '|' + QLOW + '|' + Math.round(kalite * 20);
     if (_chipCache[anahtar]) return _chipCache[anahtar];
-    var bugun = (day === todayDay);
+    var bugun = bugunMu;
     var CW = bugun ? 320 : 256, CH = bugun ? 132 : 96;
     if (QLOW) { CW = Math.round(CW / 2); CH = Math.round(CH / 2); }
+    CW = Math.round(CW * kalite); CH = Math.round(CH * kalite);
     var cv = document.createElement('canvas');
     cv.width = CW; cv.height = CH;
     var g = cv.getContext('2d');
+    g.scale(kalite, kalite);        /* çizim mantıksal ölçekte kalır */
+    CW = bugun ? 320 : 256; CH = bugun ? 132 : 96;
     g.fillStyle = bugun ? 'rgba(28,18,4,0.94)' : 'rgba(6,10,19,0.82)';
     rr(g, 3, 3, CW - 6, CH - 6, bugun ? 40 : 30); g.fill();
     g.strokeStyle = bugun ? 'rgba(251,191,36,0.95)' : 'rgba(148,178,220,0.22)';
@@ -2535,24 +2689,11 @@ var DNA3D = (function () {
   }
   function relayoutCards() {
     if (!deck) return;
-    var visW = 2 * Math.tan(FOV * Math.PI / 360) * CAMZ * Math.max(0.25, camera.aspect);
-    /* kart: once piksel sabit, ama sarmalin disina tasmasin */
-    /* sadece DİK TELEFON küçük kart alır (en/boy ~0.46); tablet ve
-       yatay telefon büyük kart alır. Eskiden 0.80 eşiği tableti de
-       küçük kartta bırakıyordu. */
-    var narrow = camera.aspect < 0.62;
-    var wFac = narrow ? 0.78 : 0.88;
-    /* Sag tarafta 34 px DNA rayi duruyor; kart onun altina girmemeli
-       ( telefonda eskiden kaydirma cubuguyla cakisiyordu). */
-    var RAY_PX = 34;
-    var Wpx = W || (narrow ? 390 : 1200);
-    var tavanPx = narrow ? 308 : 464;              /* telefon kucuk, genis ekran buyuk */
-    var yanPay = (Wpx - RAY_PX - 22) * (narrow ? 0.94 : 0.68);
-    var cwPx = Math.min(tavanPx, yanPay, visW * KPX * wFac, (narrow ? 4.0 : 3.3) * KPX);
-    var cw = cwPx / KPX;
-    if (!isFinite(cw) || cw < 0.4) cw = 2.1;
-    var gw = Math.min(62 / KPX, visW * 0.17);
-    if (!isFinite(gw) || gw < 0.15) gw = 0.6;
+    /* olcum tek kaynaktan (olcumYerlesim) — doku cozunurlugu ile
+       kart/rozet boyutu ASLA birbirinden kopmaz */
+    var olc = olcumYerlesim();
+    var visW = olc.visW, narrow = olc.narrow, wFac = olc.wFac;
+    var cw = olc.cw, gw = olc.gw;
     var i, ch1 = cw / CARD_ASP, ch2 = gw / CHIP_ASP;
     /* bugün çarpanı: mobilde biraz küçük (1.4), genişte 1.7. Ardından
        SIĞMA KELEPÇESİ: en sıkışık iki rozet aralığına göre kısılır
@@ -2742,7 +2883,12 @@ var DNA3D = (function () {
       var day = +ddn;
       if (evDays[day]) continue;          /* etkinlik gununde tarih kartin icinde */
       if (Math.abs(day - baslangic) > CHIP_WIN) continue;
-      chipEkle(day, data.frames[day].F);
+      /* ⚠ HATA YUTULMAZ: bir rozet uretilemezse (donusum hatasi vs.)
+         TUM yeniden kurulum yarida kalmamali; kartlar "w:2" ile
+         kucuk kalip okunmuyordu. */
+      try { chipEkle(day, data.frames[day].F); } catch (e5) {
+        if (window.console) console.warn('DNA3D: rozet uretilemedi', day, e5);
+      }
     }
     chipMerkez = baslangic; chipSonIs = 0;
     relayoutCards();
@@ -2763,6 +2909,23 @@ var DNA3D = (function () {
         r.col = [c.r, c.g, c.b];
       });
     });
+    /* GÜVENLİK AĞI: kartlar bu satırda "w: 2" (varsayılan) ile duruyor.
+       rebuild() içinde bir istisna olursa yerleşim (relayoutCards)
+       UYGULANMAZ ve kartlar 168 px'de küçük kalır (telefonda okunmuyordu).
+       Bu yüzden yerleşim, kartların OLUŞUMUNDAN SONRA ayrıca ve
+       HATA YUTMAYARAK uygulanır. */
+    try { relayoutCards(); }
+    catch (e) {
+      if (window.console) console.error('DNA3D: yerleşim başarısız', e);
+      /* son çare: kartlara en azından okunabilir bir genişlik ver */
+      try {
+        for (var ci = 0; ci < cards.length; ci++) {
+          if (cards[ci] && !(cards[ci].w > 0.5 && cards[ci].w !== 2)) {
+            cards[ci].w = 2; cards[ci].h = 0.76;
+          }
+        }
+      } catch (e2) {}
+    }
   }
 
   /* --- animasyon: nabiz + dalga + hover ---------------------------------- */
@@ -2982,9 +3145,13 @@ var DNA3D = (function () {
   function rebuildErtele() {
     var yap = function () {
       try {
-        var q = cardQ();
-        if (cards.length && EVL.length && Math.abs(q - texQ) > 0.12) {
-          texQ = q;
+        var q = cardQ(), cq = chipQ();
+        /* Kart VE rozet dokusu guncellenmediyse yeniden kur: cozunurluk
+           degisince (ekran dondu/yukseldi, pr dustu) dokular eski
+           cozunurlukte kaliyordu → bulanik yazi. */
+        if (cards.length && EVL.length &&
+            (Math.abs(q - texQ) > 0.12 || Math.abs(cq - chipQT) > 0.15)) {
+          texQ = q; chipQT = cq;
           rebuild();
         }
       } catch (e) {}
@@ -3003,8 +3170,9 @@ var DNA3D = (function () {
     if (!renderer) return;
     W = Math.max(1, window.innerWidth); H = Math.max(1, window.innerHeight);
     prCap = dprCapIdx();
-    /* ilk acilista 2x ile basla: aninda net, yavas cihaz 3 saniyede dusuk kademeye iner */
-    if (!prInit) { prInit = true; prIdx = QLOW ? 0 : Math.min(prCap, 3); }
+    /* ilk acilista en net kademeyle basla (2.5x); yavas cihazda uyarlanabilir
+       kalite once rozet penceresini daraltir, cozunurlugu en son dusurur */
+    if (!prInit) { prInit = true; prIdx = QLOW ? 0 : Math.min(prCap, 4); }
     if (prIdx > prCap) prIdx = prCap;
     prApply();
     renderer.setSize(W, H, false);
@@ -3261,10 +3429,18 @@ var DNA3D = (function () {
       acc += dt; frames++;
       if (frames >= 60) {
         var avg = acc / frames; acc = 0; frames = 0;
-        /* yavasinsa bir kademe dus, hizliysa (telefonun ekran cozunurlugu
-           degerini kullanana kadar) bir kademe cik; salinim icin bekleme */
+        /* UYARLANABİLİR KALİTE — ÖNCELİK SIRASI:
+           1) Sahne basitligini azalt (rozet penceresi daralir) → yazi ve
+              kartlar NET kalir, sadece daha az rozet gorunur.
+           2) Ancak o da yetmezse piksel oranini dusur (tabani asla
+              gecilmez → 3x telefonda 3x bulaniklastirma olmaz).
+           Cihaz yavas oldugunda once COZUNURLUK feda edilirdi; simdi
+           once SAHNE sadelestiriliyor. */
         if (prCool > 0) prCool--;
-        else if (avg > 34 && prIdx > 0) { prIdx--; prApply(); prCool = 3; }
+        else if (avg > 34) {
+          if (CHIP_WIN > 10) { CHIP_WIN--; prCool = 4; }   /* 1) sadelestir */
+          else if (prIdx > prAltIdx()) { prIdx--; prApply(); prCool = 4; }  /* 2) son care */
+        }
         else if (avg < 19 && prIdx < prCap) { prIdx++; prApply(); prCool = 6; }
       }
     }
@@ -4767,6 +4943,89 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     });
   }
 
+  /* --- ETKİNLİK DURUMU (başlangıç / bitiş) ---
+     Yönetici etkinlik sayfasından "Etkinliği Başlat" / "Etkinliği Bitir"
+     der. Kayıt AYRI bir sayfa belgesinde tutulur (events/{evId}/sayfa/durum):
+     plan senkronu etkinlik belgesini ezebildiği için oraya yazılmaz.
+     Okuma herkese açıktır (herkes "etkinlik başladı mı" görebilmeli). */
+  function evDurumOku(evId) {
+    return ready().then(function () {
+      return evRef(evId).collection('sayfa').doc('durum').get().then(function (s) {
+        var o = s.exists ? (s.data() || {}) : {};
+        return {
+          baslangic: o.baslangic || null,
+          bitis: o.bitis || null,
+          baslangicIstemci: o.baslangicIstemci || null,
+          bitisIstemci: o.bitisIstemci || null,
+          /* SUNUCU SAATİ: başlangıç/bitiş sunucu zamanıyla yazılır;
+             karşılaştırmayı da sunucu saatine göre yapmak için
+             okuma anındaki sunucu zamanı gelir (istemci saati 1-2 dk
+             kayık olabiliyor → yanlış "başladı/bitti" hesabı olurdu). */
+          sunucuZamani: (s.readTime && s.readTime.toDate) ? s.readTime.toDate() : null
+        };
+      });
+    }).catch(function () { return {}; });
+  }
+  /* Durum belgesini GUVENLI yazar: uc zaman alani da (null olabilir)
+     HER ZAMAN yazilir -> Firestore kuralinda "alan yok" hatasi olusmaz
+     (kural fonksiyonlari saf ifade olmali; alan eksikligi kurali cokertir). */
+  function evDurumYaz(evId, yama) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      var ref = evRef(evId).collection('sayfa').doc('durum');
+      return ref.get().then(function (s) {
+        var mevcut = s.exists ? (s.data() || {}) : {};
+        var veri = {
+          baslangic: mevcut.baslangic !== undefined ? mevcut.baslangic : null,
+          baslangicIstemci: mevcut.baslangicIstemci !== undefined ? mevcut.baslangicIstemci : null,
+          bitis: mevcut.bitis !== undefined ? mevcut.bitis : null,
+          bitisIstemci: mevcut.bitisIstemci !== undefined ? mevcut.bitisIstemci : null,
+          baslangicPlan: mevcut.baslangicPlan !== undefined ? mevcut.baslangicPlan : null,
+          guncelleAt: ts()
+        };
+        Object.keys(yama || {}).forEach(function (k) { veri[k] = yama[k]; });
+        return ref.set(veri, { merge: true }).then(function () { return true; });
+      });
+    });
+  }
+  function evBaslat(evId) {
+    var veri = { baslangic: ts() };
+    try { veri.baslangicIstemci = fb.firestore.Timestamp.fromDate(new Date()); }
+    catch (e) { veri.baslangicIstemci = null; }
+    /* Yeniden baslatma bitisi de temizler (etkinlik artik surmuyor). */
+    veri.bitis = null; veri.bitisIstemci = null;
+    return evDurumYaz(evId, veri);
+  }
+  function evBitir(evId) {
+    var veri = { bitis: ts() };
+    try { veri.bitisIstemci = fb.firestore.Timestamp.fromDate(new Date()); }
+    catch (e) { veri.bitisIstemci = null; }
+    return evDurumYaz(evId, veri);
+  }
+  /* ÖNCEDEN BELİRLENMİŞ BAŞLANGIÇ SAATI (yönetici etkinlik sayfasındaki
+     "saat" alanı). Gerçek zaman damgası olarak yazılır; böylece
+     Firestore kuralları "başlangıçtan 2 saat önce bildirim kapalı"
+     kuralını SUNUCUDA da uygulayabilir. */
+  function evPlanBaslangicYaz(evId, tarih) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    var veri = { baslangicPlan: null };
+    if (tarih) {
+      try { veri.baslangicPlan = fb.firestore.Timestamp.fromDate(tarih); }
+      catch (e) { veri.baslangicPlan = null; }
+    }
+    return evDurumYaz(evId, veri);
+  }
+
+  /* Durumu sıfırla (yönetici hata yaptıysa: yanlışlıkla başlatıldı/
+     bitirildi → etkinlik tekrar "başlamadı" durumuna döner). */
+  function evDurumTemizle(evId) {
+    if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
+    return ready().then(function () {
+      return evRef(evId).collection('sayfa').doc('durum').delete()
+        .then(function () { return true; });
+    });
+  }
+
   /* katılım kodu (10 saniyede bir yenilenir) */
   function qrKodYaz(evId, anahtar) {
     if (!isAdmin()) return Promise.reject(new Error('Bu işlem için yönetici olmalısın.'));
@@ -4787,6 +5046,48 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
           zaman: o.uretilme && typeof o.uretilme.toMillis === 'function'
             ? o.uretilme.toMillis() : 0
         };
+      });
+    });
+  }
+
+  /* --- ETKİNLİK SAYACI (herkese açık, KİMLİK İÇERMEZ) ---
+     Misafir (giriş yapmamış) etkinlik sayfasında "N kişi katıldı"
+     sayısını görebilmeli; ama KİMLİKLER görünmemeli. Bu yüzden
+     sayaç ayrı bir belgeye yazılır: yalnız rakamlar var. */
+  function sayiOku(evId) {
+    return ready().then(function () {
+      return db.collection('events').doc(String(evId)).collection('sayi').doc('sayi')
+        .get().then(function (s) {
+          if (!s.exists) return null;
+          var o = s.data() || {};
+          return {
+            katildi: +o.katildi || 0, gorevli: +o.gorevli || 0, katilacak: +o.katilacak || 0
+          };
+        });
+    }).catch(function () { return null; });
+  }
+  /* Sayacı tazele: listeleri okumak giriş + dogrulama gerektirir
+     (giris yapmamis misafir sayaci yazamaz, sadece okur). */
+  function sayiYenile(evId) {
+    return ready().then(function () {
+      var ref = db.collection('events').doc(String(evId));
+      return Promise.all([
+        ref.collection('katilan').get().catch(function () { return null; }),
+        ref.collection('gorevli').get().catch(function () { return null; }),
+        /* "katılacak" koleksiyonu KÖKTE ve "ev" alanıyla filtrelenir
+           (belge kimliği: katilacak/{evId}_{uid}) */
+        db.collection('katilacak').where('ev', '==', String(evId)).get()
+          .catch(function () { return null; })
+      ]).then(function (r) {
+        var say = {
+          katildi: (r[0] && r[0].size) ? r[0].size : 0,
+          gorevli: (r[1] && r[1].size) ? r[1].size : 0,
+          katilacak: (r[2] && r[2].size) ? r[2].size : 0
+        };
+        return ref.collection('sayi').doc('sayi').set({
+          katildi: say.katildi, gorevli: say.gorevli, katilacak: say.katilacak,
+          guncelleAt: ts()
+        }).then(function () { return say; });
       });
     });
   }
@@ -5250,7 +5551,10 @@ function addReport(text) { return geriBildirim('reports', 'hata', text); }
     logTopla: logTopla, addOneri: addOneri, listOneriler: listOneriler,
     sayfaOku: sayfaOku, sayfaYaz: sayfaYaz,
     qrKodYaz: qrKodYaz, qrKodOku: qrKodOku,
+    evDurumOku: evDurumOku, evBaslat: evBaslat, evBitir: evBitir,
+    evPlanBaslangicYaz: evPlanBaslangicYaz, evDurumTemizle: evDurumTemizle,
     katilanOku: katilanOku, katilanYaz: katilanYaz,
+    sayiOku: sayiOku, sayiYenile: sayiYenile,
     rizaYaz: rizaYaz, rizaOku: rizaOku, rizaSil: rizaSil,
     talepYaz: talepYaz, talepleriOku: talepleriOku, talepIsle: talepIsle,
     yorumOku: yorumOku, yorumYaz: yorumYaz, yorumSil: yorumSil, yorumHakki: yorumHakki,
@@ -5446,7 +5750,8 @@ var MBGM = (function () {
       : '';
     var v0 = veri || {};
     var profil = kayit
-      ? alanHtml('ad', v0.ad) + alanHtml('no', v0.no) + alanHtml('bolum', v0.bolum) +
+      ? alanHtml('ad', v0.ad) + alanHtml('no', v0.no) +
+        alanHtml('bolum', (window.MBG && MBG.basHarfler) ? MBG.basHarfler(v0.bolum || '') : (v0.bolum || '')) +
         alanHtml('girisYili', v0.yil)
       : '';
     m.innerHTML =
@@ -6134,7 +6439,15 @@ var MBGM = (function () {
       bekleme: 10000,
       islem: function () {
         return MBGFB.listMembers().then(function (ls) {
-          return MBGFB.istatistikYenile(evIdleri(), ls).then(function (sayi) { return { sayi: sayi }; });
+          return MBGFB.istatistikYenile(evIdleri(), ls).then(function (sayi) {
+            /* herkese acik ETKINLIK SAYACLARI da tazelensin (misafir
+               sayilari dogru gorunsun) */
+            var ids = evIdleri() || [];
+            var isler = ids.map(function (id) {
+              return MBGFB.sayiYenile ? MBGFB.sayiYenile(id).catch(function () {}) : null;
+            });
+            return Promise.all(isler).then(function () { return { sayi: sayi }; });
+          });
         }).catch(function (x) { throw izinMetni(x); });
       },
       basarili: '✓ İstatistikler güncellendi.',
@@ -6512,7 +6825,8 @@ var MBGM = (function () {
           ciz: function (goster) {
             return goster.map(function (u) {
               var yonetici = String(u.rol || '') === 'admin';
-              var bilgi = [u.no, u.dept, u.girisYili].filter(function (x) { return x; }).join(' · ');
+              var bol = (window.MBG && MBG.basHarfler) ? MBG.basHarfler(u.dept || '') : (u.dept || '');
+              var bilgi = [u.no, bol, u.girisYili].filter(function (x) { return x; }).join(' · ');
               var ad = u.name || u.email || '(isim yok)';
               return '<div class="todo"><button type="button" class="uy-satir uy-tikla" data-pu="' +
                 esc(u.uid) + '" title="Profili yönetici olarak aç">' +
@@ -7855,12 +8169,21 @@ var MBGP = (function () {
        görür ve düzenleyebilir; diğer üyeler yalnızca paylaşım izni olanı görür. */
     var yoneticiGirdi = !!adminMi;
     var sat = [];
-    function ek(alan, anahtar, etiket) {
-      if (d[alan] && (yoneticiGirdi || p[anahtar])) sat.push(satir(etiket, d[alan]));
+    function ek(alan, anahtar, etiket, bicim) {
+      if (d[alan] && (yoneticiGirdi || p[anahtar])) {
+        var v = d[alan];
+        if (bicim) v = bicim(v);
+        sat.push(satir(etiket, v));
+      }
     }
     ek('no', 'no', 'Öğrenci No');
-    ek('bolum', 'bolum', 'Bölüm');
-    ek('yil', 'yil', 'Giriş yılı');
+    /* Bölüm serbest metin: "Giriş Yılı" ile aynı kural — her kelimenin
+       baş harfi büyük ("moleküler biyoloji ve genetik" → "Moleküler
+       Biyoloji Ve Genetik") */
+    ek('bolum', 'bolum', 'Bölüm', function (v) {
+      return (window.MBG && MBG.basHarfler) ? MBG.basHarfler(v) : v;
+    });
+    ek('yil', 'yil', 'Giriş Yılı');
     ek('eposta', 'eposta', 'E-posta');
     ek('telefon', 'telefon', 'Telefon');
 
@@ -7876,33 +8199,38 @@ var MBGP = (function () {
     var sayiVar = (d.katildi != null || d.gorevli != null);
     var sayiAcik = yoneticiGirdi || !!p.istatistik;
     var ic = sat.length
-      ? '<div class="pf-tab pf-form"><table>' + sat.join('') + '</table></div>'
+      ? '<div class="pf-tab pf-form pf-bilgi"><table>' + sat.join('') + '</table></div>'
       : (sayiVar && sayiAcik
         ? ''
         : '<div class="pf-bos">Bu üye henüz profil bilgisi girmedi.</div>');
-    /* Sayılar açıksa katılım özeti gösterilir (ad + sayı herkese açıktır) */
+    /* Sayılar açıksa katılım özeti gösterilir (ad + sayı herkese açıktır).
+       Küçük emoji satırı yerine OKUNAKLI sayaç kartları. */
     if (sayiVar && sayiAcik) {
-      ic += '<div class="sub" style="margin-top:10px">📊 Katılım: <b>' + (d.katildi || 0) +
-        '</b> · Görev: <b>' + (d.gorevli || 0) + '</b></div>';
+      ic += '<div class="pf-ozet">' +
+        '<div class="pf-ozet-kutu"><div class="pf-ozet-sayi">' + (d.katildi || 0) + '</div>' +
+          '<div class="pf-ozet-etiket">Katılım</div></div>' +
+        '<div class="pf-ozet-kutu"><div class="pf-ozet-sayi">' + (d.gorevli || 0) + '</div>' +
+          '<div class="pf-ozet-etiket">Görev</div></div>' +
+        '</div>';
     }
     /* NOT: bu satır 'ic' ATANDIKTAN SONRA gelmeli — önceki sürümde yönetici
        notu 'ic' tanımlanmadan ekleniyor, sonra eziliyordu (not görünmüyordu). */
     if (yoneticiGirdi) {
-      ic += '<div class="sub" style="margin-top:10px">⚙️ Yönetici olarak kulüp işleri ' +
-        'kapsamında tüm bilgileri görüyorsun (KVKK — aydınlatma metni).</div>';
+      ic += '<div class="pf-not">Yönetici olarak kulüp işleri kapsamında tüm bilgileri ' +
+        'görüyorsun (KVKK — aydınlatma metni).</div>';
     }
     if (!p.istatistik && !yoneticiGirdi) {
-      ic += '<div class="sub" style="margin-top:10px">🔒 İstatistikler gizli tutuluyor.</div>';
+      ic += '<div class="pf-not">İstatistikler gizli tutuluyor.</div>';
     }
     if ((!p.katilim || !p.gorev || !p.istatistik) && !yoneticiGirdi) {
       var g = [];
       if (!p.katilim) g.push('katıldığı etkinlikler');
       if (!p.gorev) g.push('görevleri');
       if (!p.istatistik) g.push('istatistikleri');
-      ic += '<div class="sub" style="margin-top:6px">🔒 ' + esc(gizli.concat(g).join(', ')) +
+      ic += '<div class="pf-not">' + esc(gizli.concat(g).join(', ')) +
         ' gizli tutuluyor.</div>';
     } else if (gizli.length) {
-      ic += '<div class="sub" style="margin-top:6px">🔒 ' + esc(gizli.join(', ')) +
+      ic += '<div class="pf-not">' + esc(gizli.join(', ')) +
         ' gizli tutuluyor.</div>';
     }
     ic += smSatirlari(d);
@@ -7919,7 +8247,7 @@ var MBGP = (function () {
         (gizliMi ? '<div class="pf-alt"><span>🔒 Gizli profil</span></div>' : '') +
         '</div></div>' + ic +
       '<div class="acts">' +
-        (adminMi ? '<button type="button" data-k="yonet">⚙️ Yönetici: düzenle</button>' : '') +
+        (adminMi ? '<button type="button" class="pf-btn-admin" data-k="yonet">Yönetici: düzenle</button>' : '') +
         (geriVar ? '<button type="button" data-k="geri">← Geri</button>'
                  : '<button type="button" data-k="kapat">← Kapat</button>') +
       '</div>';
@@ -7957,7 +8285,8 @@ var MBGP = (function () {
         (kilitli ? ' disabled' : '') + '></div>' +
       '<div class="field"><label>Bölüm</label>' +
         '<input id="pBolum" maxlength="60" data-t="metin" data-alan="bolum" placeholder="Örn. Biyoloji" value="' +
-        esc(p.dept || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
+        esc((window.MBG && MBG.basHarfler) ? MBG.basHarfler(p.dept || '') : (p.dept || '')) + '"' +
+        (kilitli ? ' disabled' : '') + '></div>' +
       '<div class="field"><label>Üniversiteye giriş yılı</label>' +
         '<input id="pYil" maxlength="4" inputmode="numeric" data-t="yil" data-alan="girisYili" placeholder="Örn. 2021" value="' +
         esc(p.girisYili || '') + '"' + (kilitli ? ' disabled' : '') + '></div>' +
@@ -8110,6 +8439,12 @@ var MBGP = (function () {
       }
       toast(yaz ? yaz + ' kayıt yazılıyor…' : 'Kayıtlar temizleniyor…', 2600);
       Promise.all(isler).then(function () {
+        /* herkese acik etkinlik sayacini tazele (misafir de dogru sayiyi gorur) */
+        var evIds = {};
+        for (i = 0; i < ds.length; i++) { evIds[ds[i].getAttribute('data-e')] = 1; }
+        Object.keys(evIds).forEach(function (eid2) {
+          if (MBGFB.sayiYenile) { try { MBGFB.sayiYenile(eid2).catch(function () {}); } catch (e) {} }
+        });
         toast('✓ ' + (yaz ? yaz + ' etkinlik için kayıt yazıldı.' : 'Tüm kayıtlar temizlendi.'), 4200);
         close();
         geri();
@@ -8210,8 +8545,10 @@ var MBGP = (function () {
       var fark = {};
       if (ad !== String(o.name || '')) fark.ad = ['İsim', o.name || '—', ad];
       if (no !== String(o.no || '')) fark.no = ['Öğrenci no', o.no || '—', no || '—'];
-      if (bol !== String(o.dept || '')) fark.bolum = ['Bölüm', o.dept || '—', bol || '—'];
-      if (yil !== String(o.girisYili || '')) fark.yil = ['Giriş yılı', o.girisYili || '—', yil || '—'];
+      if (bol !== String(o.dept || '')) fark.bolum = ['Bölüm',
+        (window.MBG && MBG.basHarfler) ? MBG.basHarfler(o.dept || '') : (o.dept || '—'),
+        (window.MBG && MBG.basHarfler) ? MBG.basHarfler(bol || '') : (bol || '—')];
+      if (yil !== String(o.girisYili || '')) fark.yil = ['Giriş Yılı', o.girisYili || '—', yil || '—'];
       if (tel !== String(o.telefon || '')) fark.tel = ['Telefon', o.telefon || '—', tel || '—'];
       if (epo !== String(o.email || '')) fark.epo = ['E-posta', o.email || '—', epo];
       if (rol !== String(o.rol || 'uye')) fark.rol =
@@ -9444,20 +9781,32 @@ var QR = (function () {
       '<div class="sub">Kodu çerçeveye getir; okununca otomatik kaydedilir.</div>' +
       '<div class="tarama"><video id="tarVideo" playsinline muted autoplay></video>' +
         '<div class="tar-cerceve"></div>' +
+        /* FENER: kameranin icinde, minik daire tus (ayri buton degil) */
+        '<button type="button" class="tar-fener" id="tarFener" data-t="fener" ' +
+          'aria-label="Feneri aç/kapat" title="Fener">' +
+          '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" ' +
+            'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M7.4 2.6h9.2l-1.5 4.6H8.9z"/>' +
+            '<rect x="8.9" y="7.2" width="6.2" height="13.4" rx="1.7"/>' +
+            '<path d="M12 9.6v3.2M12 15.4v2.4"/>' +
+          '</svg>' +
+        '</button>' +
         '<div class="tar-durum" id="tarDurum">Kamera başlatılıyor…</div></div>' +
-      '<div class="field" id="tarElleAlan" hidden>' +
+      '<div class="field" id="tarElleAlan">' +
         '<label>Katılım kodunu yaz</label>' +
         '<input id="tarElle" placeholder="A7B9C2" maxlength="6" inputmode="text"' +
           'autocapitalize="characters" autocomplete="off" spellcheck="false">' +
-        '<div class="tar-ipucu"><b>Ne yazacaksın?</b> Yönetiminin ekranında <b>Katılım QR kodu</b> başlığının altında, QR kodunun sağında yazan ' +
-          '<b>6 karakterlik kodu</b> yaz (harfler/rakamlar, örn. <b>A7B9C2</b>). ' +
-          '<br>• Bu ekrandaki etkinlik için geçerli olan koddur; başka etkinliğinki olmaz.<br>' +
-          '• Kod <b>10 saniyede bir yenilenir</b> — ekranda yazan güncel kodu yaz.<br>' +
-          '• İstersen yönetimin paylaştığı <b>bağlantının tamamını</b> da yapıştırabilirsin.' +
+        '<div class="tar-onayla"><button type="button" class="pri" data-t="onayla">Kodu doğrula</button></div>' +
+        '<div class="tar-ipucu"><b>Kod nerede?</b> Yönetiminin ekranında <b>Katılım QR kodu</b> yazısının yanında, ' +
+          'QR kodunun sağında duran <b>6 harf ve rakam</b> (örn. <b>A7B9C2</b>).' +
+          '<br>• Bu ekrandaki etkinliğin kodu; başka etkinliğinki olmaz.' +
+          '<br>• Yönetiminin paylaştığı <b>bağlantının tamamını</b> da yapıştırabilirsin.' +
         '</div>' +
       '</div>' +
-      '<div class="acts"><button type="button" data-t="vaz">Vazgeç</button>' +
-        '<button type="button" class="pri" data-t="elle" hidden>Elle gir</button></div>';
+      /* ⚠ "Elle gir" ARTIK HİÇBİR ZAMAN GİZLİ DEĞİL: kamera açıkken
+         de elle kod girilebiliyordu ama düğme gizliydi, kullanıcı
+         tıkanıyordu. Kamera takılırsa anında elle geçilebilir. */
+      '<div class="acts"><button type="button" data-t="vaz">Vazgeç</button></div>';
 
     window.__qrKapat = kapat;
     function kapat() {
@@ -9465,6 +9814,7 @@ var QR = (function () {
       durdu = true;
       if (window.__qrKapat === kapat) window.__qrKapat = null;
       if (rafId) cancelAnimationFrame(rafId);
+      if (odakTimer) { clearInterval(odakTimer); odakTimer = 0; }
       if (stream) {
         stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
         stream = null;
@@ -9489,7 +9839,6 @@ var QR = (function () {
           v = document.getElementById('tarVideo'),
           c = document.querySelector('.tar-cerceve');
       if (al) al.hidden = false;
-      if (btn) btn.hidden = false;
       /* ENTER = kodu doğrula (6 karakterlik kodu elle girenler için) */
       var kodAlan = document.getElementById('tarElle');
       if (kodAlan && !kodAlan.onkeydown) {
@@ -9502,6 +9851,22 @@ var QR = (function () {
       }
       if (v) v.style.opacity = '.22';
       if (c) c.style.display = 'none';
+      try { if (kodAlan) kodAlan.focus(); } catch (e9) {}
+    }
+    /* Elle girişe geçince kamera taraması DURUR (CPU yükü + takılma) */
+    function elleAcKapat(ac) {
+      var al = document.getElementById('tarElleAlan');
+      var btn = m.querySelector('[data-t="elle"]');
+      if (ac) {
+        elleGoster();
+      } else {
+        if (al) al.hidden = false;
+        var v = document.getElementById('tarVideo');
+        var c = document.querySelector('.tar-cerceve');
+        if (v) v.style.opacity = '';
+        if (c) c.style.display = '';
+        durumYaz('Kamerayla taramaya devam ediliyor.');
+      }
     }
 
     m.onclick = function (olay) {
@@ -9513,32 +9878,91 @@ var QR = (function () {
         if (typeof opt.iptal === 'function') opt.iptal();
         return;
       }
-      if (t === 'elle') {
+      if (t === 'elle') { elleAcKapat(true); return; }
+      if (t === 'fener') {
+        fenerDegistir();
+        return;
+      }
+      if (t === 'onayla') {
         var gir = (document.getElementById('tarElle') || {}).value || '';
         var coz = kodCoz(gir, opt.evId);
         if (!coz) {
           if (typeof opt.hata === 'function')
-            opt.hata('Kod okunamadı. Yönetimin ekranındaki 6 karakterlik kodu ' +
-              '(örn. A7B9C2) yaz ya da paylaştığı bağlantının tamamını yapıştır.');
+            opt.hata('Kod okunamadı. Ekrandaki kodu kontrol edip tekrar dene.');
           return;
         }
         bitti(coz);
+        return;
       }
     };
     document.getElementById('backdrop').classList.add('open');
 
     if (location.protocol === 'file:') {
-      durumYaz('Kamera yalnızca https adresinde çalışır.');
+      durumYaz('Kamera için sayfayı https adresinde aç.');
       elleGoster();
       return { kapat: kapat };
     }
     if (!kameraAcikMi()) {
-      durumYaz('Bu tarayıcı kamera erişimini desteklemiyor.');
+      durumYaz('Bu tarayıcıda kamera çalışmıyor. Kodu yazabilirsin.');
       elleGoster();
       return { kapat: kapat };
     }
 
     var video = document.getElementById('tarVideo');
+    var fenerAcik = false;
+    /* FENER: karanlık ortamda kamera odaklanamıyordu; fener ile aydınlatma
+       hem odaklanmayı hem QR okumayı kolaylaştırır. */
+    function fenerDegistir() {
+      var tr = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+      var b = m.querySelector('[data-t="fener"]');
+      if (!tr) { durumYaz('Kamera kapalı.', 3000); return; }
+      var cap = tr.getCapabilities ? (tr.getCapabilities() || {}) : {};
+      if (!cap.torch) {
+        /* cihaz desteklemiyor: dugme pasif, aciklama devam eder */
+        if (b) { b.disabled = true; b.title = 'Bu cihazda fener yok'; }
+        durumYaz('Bu cihazda fener yok.', 4000);
+        return;
+      }
+      fenerAcik = !fenerAcek;
+      var is = {}; is.torch = fenerAcik;
+      if (tr.applyConstraints) {
+        tr.applyConstraints(is).then(function () {
+          var b = m.querySelector('[data-t="fener"]');
+          if (b) b.textContent = fenerAcik ? 'Feneri kapat' : 'Fener';
+          durumYaz(fenerAcik ? 'Fener açık.' : 'Fener kapalı.');
+        }).catch(function () { durumYaz('Fener açılamadı.', 3000); });
+      }
+    }
+    /* ODAK: iOS/Android'de kamera bir kez odaklanıp sonra kilitleniyor
+       (bulanık görüntü). Sürekli odak (focusMode) ve en yakın mesafe
+       (focusDistance 0) istenir; desteklenmeyenler sessizce geçilir. */
+    function odakAyarla(tr) {
+      if (!tr || !tr.applyConstraints) return;
+      var dene = [
+        { advanced: [{ focusMode: 'continuous' }] },
+        { focusMode: 'continuous' },
+        { focusDistance: 0 },
+        { advanced: [{ focusDistance: 0 }] }
+      ];
+      var i = 0;
+      (function siradaki() {
+        if (i >= dene.length) return;
+        var d = dene[i++];
+        try {
+          var p = tr.applyConstraints(d);
+          if (p && p.then) p.then(function () {}).catch(function () { siradaki(); });
+          else siradaki();
+        } catch (e) { siradaki(); }
+      })();
+    }
+    /* PERIYODIK ODAK: bazi telefonlarda odak bir sure sonra KILITLENIYOR
+       (gorntu bulanik kaliyor). 4 saniyede bir odak isteyeni tazelemek
+       kilidi kirar - kullanici hicbir sey yapmadan odaklanir. */
+    var odakTimer = setInterval(function () {
+      if (durdu) return;
+      var tr = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+      if (tr) odakAyarla(tr);
+    }, 4000);
 
     /* iOS/Android: arka kamera "exact" ile başarısız olabiliyor; sırayla deneriz. */
     var istekArka = { video: { facingMode: { ideal: 'environment' } }, audio: false };
@@ -9555,11 +9979,19 @@ var QR = (function () {
         video.setAttribute('playsinline', '');
         video.setAttribute('muted', '');
         var tr = st.getVideoTracks ? st.getVideoTracks()[0] : null;
+        /* ODAK: sürekli odak iste (bulanık/kilitli odak sorunu) */
+        odakAyarla(tr);
+        /* FENER düğmesi yalnızca cihaz destekliyorsa görünür */
+        try {
+          var cap = (tr && tr.getCapabilities) ? (tr.getCapabilities() || {}) : {};
+          var fb = m.querySelector('[data-t="fener"]');
+          if (fb && cap.torch) fb.hidden = false;
+        } catch (e8) {}
         var ayar = (tr && tr.getSettings) ? tr.getSettings() : {};
         var etiket = (tr && tr.label) ? tr.label : '';
         var olcu = ayar.width ? (' (' + ayar.width + '×' + ayar.height + ')') : '';
         var ad = etiket ? (' · ' + etiket.slice(0, 26)) : '';
-        durumYaz('Kamera açık' + olcu + ad + ' — kodu çerçeveye getir…');
+        durumYaz('Kamera açık — kodu çerçeveye getir.');
         /* iOS: play() sessizce reddedilirse dokunuşla yeniden denenir */
         var oynatildi = false;
         function oynat() {
@@ -9567,7 +9999,7 @@ var QR = (function () {
           var p2 = video.play();
           if (p2 && p2.then) {
             p2.then(function () { oynatildi = true; })
-              .catch(function () { durumYaz('Kamerayı başlatmak için ekrana bir kez dokun.', 5200); });
+              .catch(function () { durumYaz('Başlatmak için ekrana bir kez dokun.', 4500); });
           } else oynatildi = true;
         }
         oynat();
@@ -9581,31 +10013,52 @@ var QR = (function () {
         /* görüntü hiç gelmezse kullanıcıyı bilgilendir */
         setTimeout(function () {
           if (!video || !stream || !durumEl) return;
-          if (!video.videoWidth) durumYaz('Kamera görüntüsü gelmiyor — elle gir veya sayfayı yenile.', 6500);
+          if (!video.videoWidth) durumYaz('Kamera görüntüsü gelmiyor. Sayfayı yenile veya kodu yaz.', 6000);
         }, 2800);
       })
       .catch(function (h) {
-        var n = (h && h.name) || '';
+        var n = (h && h.name) || '';   /* hata kodu sadece ic mantik icin */
         if (n === 'NotAllowedError' || n === 'PermissionDeniedError' || n === 'SecurityError') {
-          durumYaz('Kamera izni verilmedi (' + n + '). Tarayıcı ayarlarından izin ver ya da elle gir.', 7500);
+          durumYaz('Kameraya izin verilmedi. Tarayıcı ayarlarından izin ver veya kodu yaz.', 7000);
         } else if (n === 'NotFoundError' || n === 'DevicesNotFoundError' || n === 'OverconstrainedError') {
-          durumYaz('Bu cihazda kullanılabilir kamera bulunamadı (' + n + '). Elle gir.', 7500);
+          durumYaz('Bu cihazda kamera bulunamadı. Kodu yazabilirsin.', 7000);
         } else if (n === 'NotReadableError' || n === 'TrackStartError') {
-          durumYaz('Kamera başka bir uygulama tarafından kullanılıyor (' + n + '). Elle gir.', 7500);
+          durumYaz('Kamera başka bir uygulamada açık. Kodu yazabilirsin.', 7000);
         } else {
-          durumYaz('Kamera açılamadı: ' + (n || 'bilinmeyen hata') + '. Elle gir.', 7500);
+          durumYaz('Kamera açılamadı. Kodu yazabilirsin.', 7000);
         }
         elleGoster();
       });
-    var sonZaman = 0;
+    var sonZaman = 0, bdCalisiyor = false;
     function tara(zaman) {
       if (durdu) return;
       rafId = requestAnimationFrame(tara);
-      if (zaman - sonZaman < 110) return;        /* saniyede ~9 tarama yeter */
+      if (zaman - sonZaman < 140) return;        /* saniyede ~7 tarama */
       sonZaman = zaman;
       if (!video || !video.videoWidth) return;
-      var g = Math.min(560, video.videoWidth);
-      var hh = Math.round(g * video.videoHeight / video.videoWidth);
+      /* 1) ÖNCE BarcodeDetector (yerel/native — Android'de hızlı ve
+            güvenilir). 2) jsQR yedek (yoksa/işe yaramazsa).
+            ⚠ ÖNEMLİ: ikisi aynı anda çalıştırılırsa telefonda
+            kasma olur ve kamera "tıkınıyor" gibi görünür. */
+      if (window.BarcodeDetector && !bdCalisiyor) {
+        try {
+          if (!tara.sinif) tara.sinif = new window.BarcodeDetector({ formats: ['qr_code'] });
+          bdCalisiyor = true;
+          tara.sinif.detect(video).then(function (kodlar) {
+            bdCalisiyor = false;
+            if (durdu || !kodlar || !kodlar.length) return;
+            var coz2 = kodCoz(kodlar[0].rawValue, opt.evId);
+            if (coz2) { durumYaz('✓ Kod okundu'); bitti(coz2); }
+            else durumYaz('Bu kod katılım kodu değil.');
+          }).catch(function () { bdCalisiyor = false; });
+        } catch (e3) { bdCalisiyor = false; }
+        return;   /* bu turda jsQR çalıştırma */
+      }
+      /* jsQR: yalnız ÇERÇEVE bölgesini tara (CPU yükü 4-5 kat düşer,
+         telefon ısınmaz, kamera takılmaz). */
+      var vw = video.videoWidth, vh = video.videoHeight;
+      var g = Math.min(520, vw);
+      var hh = Math.round(g * vh / vw);
       if (!hh) return;
       tuval.width = g; tuval.height = hh;
       try { tuvalBag.drawImage(video, 0, 0, g, hh); } catch (e) { return; }
@@ -9617,20 +10070,10 @@ var QR = (function () {
           if (r && r.data) metin = r.data;
         } catch (e2) {}
       }
-      if (!metin && window.BarcodeDetector) {
-        try {
-          if (!tara.sinif) tara.sinif = new window.BarcodeDetector({ formats: ['qr_code'] });
-          tara.sinif.detect(video).then(function (kodlar) {
-            if (durdu || !kodlar || !kodlar.length) return;
-            var coz2 = kodCoz(kodlar[0].rawValue);
-            if (coz2) bitti(coz2);
-          }).catch(function () {});
-        } catch (e3) {}
-      }
       if (!metin) return;
-      var coz3 = kodCoz(metin);
+      var coz3 = kodCoz(metin, opt.evId);
       if (coz3) { durumYaz('✓ Kod okundu'); bitti(coz3); }
-      else { durumYaz('Bu QR kod katılım kodu değil.'); }
+      else { durumYaz('Bu kod katılım kodu değil.'); }
     }
 
     return { kapat: kapat };
@@ -10329,7 +10772,13 @@ var ETK = (function () {
             konuk: (q('#esKonuk').value || '').trim(),
             saat: (q('#esSaat').value || '').trim(),
             yer: (q('#esYer').value || '').trim()
-          })
+          }),
+          /* önceden belirlenmiş başlangıç saati gerçek zaman damgası olarak
+             yazılır → Firestore kuralları "başlangıçtan 2 saat önce bildirim
+             kapalı" kuralını sunucuda da uygulayabilir */
+          (MBGFB.evPlanBaslangicYaz
+            ? MBGFB.evPlanBaslangicYaz(evId, saatTarihi(ev ? ev.date : '', (q('#esSaat').value || '').trim()))
+            : Promise.resolve())
         ]).then(function () {
           d.taslak = null;   /* kaydedildi: taslak temizlenir */
           toast('✓ Etkinlik bilgileri kaydedildi.', 4000);
@@ -10799,12 +11248,20 @@ var ETK = (function () {
     };
   }
 
+  /* EŞZAMANLI YÜKLEME YARIŞI: etkinlik sayfası birden çok kez çizilebilir
+     (onay kutusu kapanışı, "Etkinliği Başlat" sonrası yenileme...). Yavaş
+     bir okuma, yeni bir okumadan SONRA gelip ekranı BAYAT veriyle
+     eziyordu ("Başlat" tıklanmış olmasına rağmen "başlamadı" yazıyordu).
+     Sayaç ile yalnız EN SON istek çizilir. */
+  var evYuklemeNo = 0;
+
   function etkinlikGoruntule(evId) {
     var m = q('#modal');
     if (!m) return;
     m.className = 'modal genis';
     var ev = evBul(evId);
     if (!ev) { toast('Etkinlik bulunamadı.', 4000); return; }
+    var yuklemeNo = ++evYuklemeNo;
 
     var hafta = new Date(ev.date + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'long' });
     /* Başlık kartı: ad + etiketler. Katılım bandı kartın ALTINDA,
@@ -10842,8 +11299,25 @@ var ETK = (function () {
               return;
             }
             katilimKaydet(evId, anahtar).then(function () {
-              toast('✓ Katılımın kaydedildi.', 4500);
-              etkinlikGoruntule(evId);   /* düğme "Katılım Başarılı" olur */
+              /* Kutlama penceresi: "Tebrikler! Başarıyla Katıldın".
+                 Panel otomatik kapanir, "Tamam" ile etkinlik sayfasina
+                 donulur. */
+              if (window.MBGO && MBGO.basari) {
+                var evB = evBul(evId);
+                /* ⚠ Etkinlik adı OLDUĞU GİBİ yazılmalı: adın sonuna
+                   "etkinliğine" gibi ekler eklenince ("...Özel Oturumu
+                   etkinliğine") ad bozulmuş gibi görünüyordu. */
+                var evAd = (evB && evB.title) ? evB.title : '';
+                MBGO.basari({
+                  baslik: 'Tebrikler! Başarıyla Katıldın',
+                  mesaj: (evAd ? '<b>' + esc(evAd) + '</b><br>Katılımın kaydedildi.'
+                               : 'Katılımın kaydedildi.'),
+                  sonra: function () { etkinlikGoruntule(evId); }
+                });
+              } else {
+                toast('✓ Katılımın kaydedildi.', 4500);
+                etkinlikGoruntule(evId);
+              }
             }).catch(function (x) { toast(MBGM.err(x), 6500); });
           },
           hata: function (msg) { toast(msg, 4500); },
@@ -10854,19 +11328,60 @@ var ETK = (function () {
       /* DİKKAT: 'data-et' düğmeleri 'ob' değişkeninde aranır.
          (Eski kodda 'b' — yani [data-x] — kullanılıyordu; düğmeye hiç basılamıyordu.) */
       if (ob && ob.getAttribute('data-et') === 'gidecek') {
+        /* ⚠ ENGELLİ DURUMLAR: buton zaten disabled gelir, ama yine de
+           kontrol ediyoruz (pazarlık amaçlı doğrudan çağrıya karşı). */
+        var gEngel = gidecekEngeli ? gidecekEngeli : null;
+        if (gEngel) { toast(gEngel, 6000); return; }
         if (!MBGFB.user()) {
-          toast('Katılacağını belirtmek için giriş yap.', 4200);
+          toast(KATILMA_KISIT.UYE_DEGIL, 5200);
           MBGM.authModal('giris');
           return;
         }
         if (!MBGFB.verified()) {
-          toast('E-posta adresini doğrulamadan bu bildirimi yapamazsın.', 5200);
+          toast(KATILMA_KISIT.DOGRULAMA, 5200);
           MBGM.dogrulamaPaneli();
           return;
         }
         /* doğrudan kaydetme yok: önce onay kutusu açılır */
         gidecekOnayAc(evId, evBul(evId), gidecek.benim);
         return;
+      }
+      /* --- YÖNETİCİ: etkinliği başlat / bitir --- */
+      if (ob && ob.getAttribute('data-et') === 'evbaslat') {
+        ob.disabled = true;
+        MBGFB.evBaslat(evId).then(function () {
+          toast('✓ Etkinlik başlatıldı. Katılım bildirimleri kapandı.', 4500);
+          etkinlikGoruntule(evId);
+        }).catch(function (x) { ob.disabled = false; toast(MBGM.err(x), 6500); });
+        return;
+      }
+      if (ob && ob.getAttribute('data-et') === 'evbitir') {
+        ob.disabled = true;
+        MBGFB.evBitir(evId).then(function () {
+          toast('✓ Etkinlik sonlandırıldı. Katılım listeleri aşağıda.', 4500);
+          etkinlikGoruntule(evId);
+        }).catch(function (x) { ob.disabled = false; toast(MBGM.err(x), 6500); });
+        return;
+      }
+      if (ob && ob.getAttribute('data-et') === 'evsifirla') {
+        ob.disabled = true;
+        MBGFB.evDurumTemizle(evId).then(function () {
+          toast('✓ Etkinlik durumu sıfırlandı.', 4000);
+          etkinlikGoruntule(evId);
+        }).catch(function (x) { ob.disabled = false; toast(MBGM.err(x), 6500); });
+        return;
+      }
+      if (ob && ob.getAttribute('data-et') === 'okut') {
+        if (!MBGFB.user()) {
+          toast(KATILMA_KISIT.UYE_DEGIL, 5200);
+          MBGM.authModal('giris');
+          return;
+        }
+        if (!MBGFB.verified()) {
+          toast(KATILMA_KISIT.DOGRULAMA, 5200);
+          MBGM.dogrulamaPaneli();
+          return;
+        }
       }
       if (b && b.getAttribute('data-x') === 'qr') {
         var k = (q('#etQrKod') || {}).textContent;
@@ -10885,17 +11400,31 @@ var ETK = (function () {
     }
 
     var katilacakOku = function (id) { return MBGFB.katilacakOku(id); };
+    /* null = ERİŞİLEMEDİ (giriş yoksa) — boş liste ile karıştırmamak için */
+    var katilanOku = function (id) { return MBGFB.katilanOku(id).catch(function () { return null; }); };
+    var gorevliOku = function (id) { return MBGFB.gorevliOku(id).catch(function () { return null; }); };
     var katilacakL = [];          /* yönetici için: katılacağını belirtenler */
     var katilanlar = [], gorevler = [], sayfaIceri = {};
     var gidecek = { adet: 0, benim: false };
+    var sayi = null;              /* herkese açık sayaç (misafir için) */
+    var evDurum = {};             /* etkinlik başlangıç / bitiş */
+    var cezali = false;           /* önceki etkinlikte bildirim yapıp katılmadı */
+    var gidecekEngeli = null;     /* "Katılacağım" neden kapalı (not metni) */
     Promise.all([sayfaOku(evId), katilanOku(evId), gorevliOku(evId), katilacakOku(evId),
-      MBGFB.katilacakListe ? MBGFB.katilacakListe(evId) : []])
+      MBGFB.katilacakListe ? MBGFB.katilacakListe(evId) : [],
+      MBGFB.sayiOku ? MBGFB.sayiOku(evId) : null,
+      MBGFB.evDurumOku ? MBGFB.evDurumOku(evId) : null,
+      cezaKontrol(ev, MBGFB.user() ? MBGFB.user().uid : '')])
       .then(function (r) {
+        if (yuklemeNo !== evYuklemeNo) return;   /* ekran artık geçersiz */
         sayfaIceri = r[0] || {};
         katilanlar = r[1] || [];
-        gorevler = r[2] || {};
+        gorevler = r[2] || [];
         gidecek = r[3] || { adet: 0, benim: false };
         katilacakL = r[4] || [];
+        sayi = r[5] || null;
+        evDurum = r[6] || {};
+        cezali = !!r[7];
         ciz();
       })
       .catch(function (x) {
@@ -10910,7 +11439,13 @@ var ETK = (function () {
       for (i = 0; i < katilanlar.length; i++) if (katilanlar[i].uid === benimUid) kattim = true;
       for (i = 0; i < gorevler.length; i++) if (gorevler[i].uid === benimUid) benimGorev = gorevler[i].gorev;
 
-      /* rozetler */
+      /* rozetler — SAYILAR herkese açık sayac belgesinden gelir, böylece
+         giriş yapmamış misafir de doğru sayıları görür (kayıtlıysak
+         liste zaten okunabildiği için aynı değer gelir). Kimlikler
+         gösterilmez — misafir yalnız SAYI görür. */
+      var katildiAdet = sayi ? sayi.katildi : katilanlar.length;
+      var gorevliAdet = sayi ? sayi.gorevli : gorevler.length;
+      var gidecekAdet = sayi ? sayi.katilacak : (gidecek.adet || 0);
       var durum = q('#etpDurum');
       if (durum) {
         durum.innerHTML =
@@ -10918,33 +11453,75 @@ var ETK = (function () {
             ? '<span class="etp-pill katildi">✓ Bu etkinliğe katıldın</span>'
             : '<span class="etp-pill bekliyor">Katılımın QR ile kaydedilecek</span>') +
           (benimGorev ? '<span class="etp-pill gorev">🎤 Görevin: ' + esc(benimGorev) + '</span>' : '') +
-          '<span class="etp-pill">' + katilanlar.length + ' kişi katıldı</span>' +
-          (gidecek.adet
-            ? '<span class="etp-pill gidecek-pill">' + gidecek.adet + ' kişi katılacak</span>'
+          '<span class="etp-pill">' + katildiAdet + ' kişi katıldı</span>' +
+          (gidecekAdet
+            ? '<span class="etp-pill gidecek-pill">' + gidecekAdet + ' kişi katılacak</span>'
             : '') +
-          '<span class="etp-pill">' + gorevler.length + ' görevli</span>';
+          '<span class="etp-pill">' + gorevliAdet + ' görevli</span>';
       }
 
       /* ---- Katılım bandı -------------------------------------------
          Başlık bloğunun hemen altı, ayrıntıların hemen üstü: soru +
          uzunca düğme. YALNIZCA gelecek etkinliklerde (bugün ve sonrası).
          Geçmiş etkinlikte hiç basılmaz. Misafir de görür; dokununca
-         giriş istenir (tıklama yönlendirmesi giriş/dogrulama ister). */
+         giriş istenir (tıklama yönlendirmesi giriş/dogrulama ister).
+         ⚠ DURUM MAKİNESİ:
+           - başlangıç saatinin 2 saat öncesine kadar "Katılacağım" açık
+           - başlangıç anından itibaren kapalı
+           - önceki etkinlikte bildirim yapıp katılmayan → kapalı (ceza) */
       var bugun = (A && A.today) ? A.today() : '';
       var gelecekMi = !bugun || String(ev.date) >= String(bugun);
+      /* --- etkinlik zaman durumu ---
+         ⚠ İKİ AYRI ZAMAN KAYNAĞI:
+           • evBasPlan  = etkinlik sayfasındaki "saat" parametresi (İSTEMCİ saati)
+           • evBasKayit = yöneticinin "Başlat" ile kaydettiği zaman (SUNUCU saati)
+           İstemci saati sunucudan birkaç saniye geride olabilir; bu yüzden
+           kayıtlı başlangıç/bitiş karşılaştırmasında küçük bir tolerans
+           bırakılır (aksi halde "başladı" yanlışlıkla "yaklaşıyor" görünür). */
+      var simdi = (evDurum.sunucuZamani) ? evDurum.sunucuZamani : new Date();
+      var evBasPlan = s.saat ? saatTarihi(ev.date, s.saat) : null;
+      /* Kayıtlı başlangıç/bitiş: İSTEMCİ saatiyle yazılmış olanı
+         kullan (istemci saatiyle karşılaştır → saat farkı sonucu
+         bozmaz). Eski kayıtlarda sunucu zamanı + tolerans kullanılır. */
+      var evBasKayit = (evDurum.baslangicIstemci && evDurum.baslangicIstemci.toDate)
+        ? evDurum.baslangicIstemci.toDate()
+        : ((evDurum.baslangic && evDurum.baslangic.toDate) ? evDurum.baslangic.toDate() : null);
+      var evBit = (evDurum.bitisIstemci && evDurum.bitisIstemci.toDate)
+        ? evDurum.bitisIstemci.toDate()
+        : ((evDurum.bitis && evDurum.bitis.toDate) ? evDurum.bitis.toDate() : null);
+      var TOL = (evDurum.baslangicIstemci || evDurum.bitisIstemci) ? 0 : 120 * 1000;
+      var basladi = !!(evBasKayit && simdi.getTime() >= evBasKayit.getTime() - TOL);
+      var bitti = !!(evBit && simdi.getTime() > evBit.getTime() + TOL);
+      /* "2 saat öncesi" kuralı ÖNCEDEN BELİRLENMİŞ saate göre */
+      var yaklasti = !!(evBasPlan && !basladi &&
+        (evBasPlan.getTime() - simdi.getTime()) <= 2 * 3600 * 1000);
+      /* üyelik / doğrulama */
+      var uyeMi = !!(MBGFB.user() && MBGFB.user().uid);
+      var dogrulaMi = !!(MBGFB.verified && MBGFB.verified());
+      var girisNotu = !uyeMi ? KATILMA_KISIT.UYE_DEGIL
+        : (!dogrulaMi ? KATILMA_KISIT.DOGRULAMA : '');
+      /* "Katılacağım" düğmesinin durumu */
+      var gidecekKapat = '', gidecekNotu = '';
+      if (girisNotu) { gidecekKapat = girisNotu; }
+      else if (cezali) { gidecekKapat = KATILMA_KISIT.CEZALI; }
+      else if (yaklasti) { gidecekKapat = KATILMA_KISIT.YAKLASTI; }
+      else if (basladi) { gidecekKapat = KATILMA_KISIT.BASLADI; }
+      gidecekEngeli = gidecekKapat || null;
       var gYer = q('#etpGidecekYer');
       if (gYer) {
         if (!gelecekMi) {
           gYer.innerHTML = '';
         } else {
           gYer.innerHTML =
-            '<div class="etp-katilband">' +
+            '<div class="etp-katilband' + (gidecekKapat ? ' pasif' : '') + '">' +
               '<span class="etp-katilsoru">Etkinliğe Katılacak Mısınız?</span>' +
               '<button type="button" class="etp-gidecek' + (gidecek.benim ? ' on' : '') +
-              '" data-et="gidecek">' +
+              (gidecekKapat ? ' kapali' : '') + '" data-et="gidecek"' +
+              (gidecekKapat ? ' disabled' : '') + '>' +
               (gidecek.benim ? '✓ Katılacağım' : 'Katılacağım') +
               '</button>' +
-            '</div>';
+            '</div>' +
+            (gidecekKapat ? '<div class="etp-uyari">' + esc(gidecekKapat) + '</div>' : '');
         }
       }
 
@@ -10980,15 +11557,45 @@ var ETK = (function () {
           : '') +
 
         '<div class="etp-baslik">Katılım</div>' +
-        '<div class="etp-not"><i>' + (kattim ? '✓' : '📱') + '</i><span>' +
+        '<div class="etp-not' + (bitti ? ' pasif' : '') + '"><i>' + (kattim ? '✓' : '📱') + '</i><span>' +
           (kattim
             ? 'Katılımın kaydedildi. Yönetici listesinde görünüyorsun.'
-            : 'Etkinlik başlarken yönetiminin ekranda gösterdiği QR kodu okutman yeterli; ' +
-              'kaydın otomatik yapılır.') +
+            : (girisNotu
+              ? esc(girisNotu)
+              : (bitti
+                ? esc(KATILMA_KISIT.BITTI)
+                : (basladi
+                  ? 'Etkinlik başladı. Yönetiminin ekranda gösterdiği QR kodu okutman yeterli; ' +
+                    'kaydın otomatik yapılır.'
+                  : 'Etkinlik başlarken yönetiminin ekranda gösterdiği QR kodu okutman yeterli; ' +
+                    'kaydın otomatik yapılır.')))) +
         '</span>' +
-        '<button type="button" class="etp-okut" data-et="okut"' + (kattim ? ' disabled' : '') + '>' +
+        '<button type="button" class="etp-okut" data-et="okut"' +
+          (kattim ? ' disabled' : (bitti || girisNotu ? ' disabled' : '')) + '>' +
           (kattim ? '✓ Katılım Başarılı' : '📷 QR Kodu Okut') + '</button>' +
         '</div>' +
+
+        /* --- YÖNETİCİ: etkinliği başlat / bitir --- */
+        (adminMi2
+          ? '<div class="etp-baslik">Yönetim</div>' +
+            '<div class="etp-yonetim">' +
+              '<div class="etp-yonetim-not">' +
+                (bitti
+                  ? 'Etkinlik <b>sonlandı</b>. Katılımlar aşağıda listelenmiştir.'
+                  : (basladi
+                    ? 'Etkinlik <b>başladı</b>. Katılım QR okutarak yapılır.'
+                    : 'Etkinlik henüz başlamadı. Başlatınca katılım bildirimleri kapanır.')) +
+              '</div>' +
+              (bitti
+                ? '<button type="button" data-et="evbaslat">Etkinliği Yeniden Başlat</button>' +
+                  '<button type="button" class="pri" data-et="evbitir">Etkinliği Bitir</button>' +
+                  '<button type="button" data-et="evsifirla">Durumu Sıfırla</button>'
+                : (basladi
+                  ? '<button type="button" class="pri" data-et="evbitir">Etkinliği Bitir</button>' +
+                    '<button type="button" data-et="evsifirla">Durumu Sıfırla</button>'
+                  : '<button type="button" class="pri" data-et="evbaslat">Etkinliği Başlat</button>')) +
+            '</div>'
+          : '') +
 
         (adminMi2 && katilacakL.length
           ? '<div class="etp-baslik">Katılacağını belirten üyeler (' + katilacakL.length + ')</div>' +
@@ -11001,6 +11608,42 @@ var ETK = (function () {
             '</div>'
           : '') +
 
+        /* --- YÖNETİCİ: etkinlik bitti → iki liste (ödül/ceza için) ---
+           1) "Katılacağım" deyip KATILANLAR
+           2) "Katılacağım" deyip KATILMAYANLAR (bir sonraki etkinlikte
+              bildirim yapamazlar) */
+        (adminMi2 && bitti
+          ? (function () {
+              var katildiSet = {}, k;
+              for (k = 0; k < katilanlar.length; k++) katildiSet[String(katilanlar[k].uid)] = 1;
+              var gelen = [], gelmeyen = [];
+              for (k = 0; k < katilacakL.length; k++) {
+                var u = katilacakL[k];
+                if (katildiSet[String(u.uid)]) gelen.push(u);
+                else gelmeyen.push(u);
+              }
+              var liste = function (baslik, arr, sinif) {
+                if (!arr.length) {
+                  return '<div class="etp-baslik">' + baslik + ' (0)</div>' +
+                    '<div class="pf-bos">Kimse yok.</div>';
+                }
+                return '<div class="etp-baslik">' + baslik + ' (' + arr.length + ')</div>' +
+                  '<div class="etp-katilacak-liste ' + sinif + '">' +
+                  arr.map(function (u) {
+                    return '<div class="etp-kuluper"><b>' + esc(u.ad) + '</b>' +
+                      (u.no ? '<span>Öğrenci No: ' + esc(u.no) + '</span>' : '') +
+                      '</div>';
+                  }).join('') + '</div>';
+              };
+              return liste('Katılacağım deyip katılanlar', gelen, 'liste-iyi') +
+                liste('Katılacağım deyip katılmayanlar', gelmeyen, 'liste-kotu') +
+                (gelmeyen.length
+                  ? '<div class="etp-uyari">Bu arkadaşlar bir sonraki etkinlikte ' +
+                    '"Katılacağım" bildirimi yapamayacak.</div>'
+                  : '');
+            })()
+          : '') +
+
         yorumPaneli(evId, kattim);
 
       yorumBagla(evId, uid2, adminMi2);
@@ -11009,6 +11652,88 @@ var ETK = (function () {
         yorumKutusu(evId, hak || adminMi2 || kattim, uid2, adminMi2);
       });
     }
+  }
+
+  /* =====================================================================
+     ETKİNLİK DURUMU — kim neyi ne zaman yapabilir
+     ---------------------------------------------------------------------
+     • "Katılacağım" (niyet bildirimi):
+        - etkinlik başlangıç saatinin 2 SAAT ÖNCESİNE kadar açık
+        - başlangıç anından itibaren KAPALI
+        - önceki etkinlikte "Katılacağım" deyip KATILMAYAN üye bir
+          sonraki etkinlikte bildirim yapamaz (ceza)
+     • "QR Kodu Okut" (katılım onayı):
+        - etkinlik SÜRESİNCE açık
+        - etkinlik bittiyse KAPALI
+     • Üye olmayan / e-postası doğrulanmamayan: hiçbir işlem yapamaz
+     ===================================================================== */
+  var KATILMA_KISIT = {
+    UYE_DEGIL: 'Etkinliklere katılım bildirmek için lütfen üye olunuz.',
+    DOGRULAMA: 'Katılım bildirebilmek için önce e-posta adresinizi doğrulayın.',
+    BASLADI: 'Etkinlik başladı. Katılımınızı QR kodu okutarak bildirebilirsiniz.',
+    YAKLASTI: 'Şuanda bu etkinliğe katılım bildirimi veremezsiniz.',
+    BITTI: 'Bu etkinlik sonlandı. Katılımla ilgili bir sorun olduğunu düşünüyorsanız ' +
+      'Yönetici ile iletişime geçin.',
+    CEZALI: 'Bir önceki etkinlikte yanlış bildirimde bulunduğunuz için bu etkinlikte ' +
+      'katılım bildiriminde bulunamayacaksınız.'
+  };
+  /* "HH:MM" veya "GG.AA.YYYY HH:MM" → Date (tarih verilmezse etkinliğin
+     günü kullanılır). Geçersizse null. */
+  function saatTarihi(evTarih, saatMetni) {
+    var s = String(saatMetni || '').trim();
+    if (!s) return null;
+    var t = null, d = null;
+    var gunSaat = s.match(/^(\d{1,2})[.:](\d{2})$/);
+    var tam = s.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{2,4})[ T]+(\d{1,2})[.:](\d{2})/);
+    if (tam) {
+      var y = +tam[3]; if (y < 100) y += 2000;
+      d = new Date(y, +tam[2] - 1, +tam[1], +tam[4], +tam[5], 0, 0);
+      t = d;
+    } else if (gunSaat && evTarih) {
+      var p = String(evTarih).split('-');
+      if (p.length === 3) {
+        t = new Date(+p[0], +p[1] - 1, +p[2], +gunSaat[1], +gunSaat[2], 0, 0);
+      }
+    }
+    if (!t || isNaN(t.getTime())) return null;
+    return t;
+  }
+  /* plan sırasındaki bir ÖNCEKİ etkinlik (tarih sırasına göre) */
+  function oncekiEtkinlik(ev) {
+    if (!ev) return null;
+    var l = (A && A.events) ? A.events() : [];
+    var ben = null, k;
+    for (k = 0; k < l.length; k++) {
+      if (String(l[k].id) === String(ev.id)) { ben = l[k]; break; }
+    }
+    if (!ben) return null;
+    var once = null;
+    for (k = 0; k < l.length; k++) {
+      if (String(l[k].id) === String(ev.id)) continue;
+      if (String(l[k].date) >= String(ben.date)) continue;
+      if (!once || String(l[k].date) > String(once.date)) once = l[k];
+    }
+    return once;
+  }
+  /* Önceki etkinlikte "Katılacağım" denip katılınmamış mı?
+     (cezali kullanıcı bir sonraki etkinlikte bildirim yapamaz) */
+  function cezaKontrol(ev, uid) {
+    var once = oncekiEtkinlik(ev);
+    if (!once || !uid) return Promise.resolve(false);
+    var isler = [
+      MBGFB.katilacakOku ? MBGFB.katilacakOku(once.id) : null,
+      MBGFB.katilanOku ? MBGFB.katilanOku(once.id) : null
+    ];
+    return Promise.all(isler.map(function (p) { return p ? p.catch(function () { return null; }) : null; }))
+      .then(function (r) {
+        var niyet = r[0] && r[0].benim;               /* "Katılacağım" dedi mi? */
+        var katilan = r[1] || [];
+        var katildi = false, k;
+        for (k = 0; k < katilan.length; k++) {
+          if (String(katilan[k].uid) === String(uid)) { katildi = true; break; }
+        }
+        return !!(nivet && !katildi);
+      }).catch(function () { return false; });
   }
 
   /* =====================================================================
@@ -11032,18 +11757,39 @@ var ETK = (function () {
     if (!m) return;
     m.className = 'modal';
     var baslik = ev ? esc(ev.title) : '';
+    /* HER MADDE tek tek onaylanmalı: "Onaylıyorum" düğmesi ancak
+       tüm kutucuklar işaretlendiğinde açılır (kullanıcı uyarıları
+       gerçekten okusun diye). */
     m.innerHTML =
       '<h2 class="onay-baslik">Etkinliğe Katılacağımı;</h2>' +
       (baslik ? '<div class="onay-etkinlik">' + baslik + '</div>' : '') +
-      '<ul class="onay-madde">' +
-        KATILACAK_MADDE.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') +
+      '<ul class="onay-madde onay-madde-onay">' +
+        KATILACAK_MADDE.map(function (t, i) {
+          return '<li><label class="onay-kutu"><input type="checkbox" data-onay="' + i + '">' +
+            '<span class="onay-kutu-kutu"></span><span class="onay-kutu-yazi">' + esc(t) + '</span></label></li>';
+        }).join('') +
       '</ul>' +
       '<div class="acts onay-acts">' +
         '<button type="button" data-k="hayir">Onaylamıyorum</button>' +
-        '<button type="button" class="pri" data-k="evet">Onaylıyorum</button>' +
-      '</div>';
+        '<button type="button" class="pri" data-k="evet" disabled>Onaylıyorum</button>' +
+      '</div>' +
+      '<div class="onay-ipucu">Devam etmek için yukarıdaki her maddeyi ' +
+        'kutucuğundan işaretleyin.</div>';
     m.oninput = null;
     q('#backdrop').classList.add('open');
+
+    /* kutucuklar: hepsi işaretlenince "Onaylıyorum" açılır */
+    var kutular = m.querySelectorAll('[data-onay]');
+    var evetBtn = m.querySelector('[data-k="evet"]');
+    function kontrolEt() {
+      var hepsi = true, k;
+      for (k = 0; k < kutular.length; k++) { if (!kutular[k].checked) { hepsi = false; break; } }
+      if (evetBtn) evetBtn.disabled = !hepsi;
+    }
+    for (var ki = 0; ki < kutular.length; ki++) {
+      kutular[ki].onchange = kontrolEt;
+    }
+    kontrolEt();
 
     m.onclick = function (e2) {
       var b2 = e2.target && e2.target.closest ? e2.target.closest('[data-k]') : null;
@@ -11125,6 +11871,8 @@ var ETK = (function () {
       q('#backdrop').classList.add('open');
     }
     return katilimKaydet(evId, anahtar).then(function () {
+      /* herkese açık sayacı tazele (misafir de dogru sayiyi görsün) */
+      if (MBGFB.sayiYenile) { try { MBGFB.sayiYenile(evId).catch(function () {}); } catch (e) {} }
       close();
       toast('✓ Katılımın kaydedildi. Etkinlik sayfası açılıyor.', 6000);
       setTimeout(function () { etkinlikGoruntule(evId); }, 350);
@@ -11239,6 +11987,37 @@ var MBGO = (function () {
       if (b) b.focus();
     }, 60);
     return m;
+  }
+
+  /* BAŞARI: kutlama penceresi (katılım onayı gibi). Tek düğme: Tamam.
+     onay penceresinden farklı: "evet/vazgeç" değil, müjde + kapatma. */
+  function basari(opt) {
+    opt = opt || {};
+    var m = q('#modal');
+    if (!m) return;
+    var bd = q('#backdrop');
+    m.innerHTML =
+      '<div class="basari-kutu">' +
+        '<div class="basari-ikon">✓</div>' +
+        '<h2 class="basari-baslik">' + esc(opt.baslik || 'Tebrikler!') + '</h2>' +
+        '<div class="basari-mesaj">' + (opt.mesaj || '') + '</div>' +
+        (opt.not ? '<div class="sub pf-ipucu">' + opt.not + '</div>' : '') +
+        '<div class="acts onay-acts"><button type="button" class="pri" data-o="tamam">' +
+          esc(opt.butonMetni || 'Tamam') + '</button></div>' +
+      '</div>';
+    if (bd) { bd.classList.add('open'); bd.onclick = null; }
+    m.onclick = function (ev) {
+      var b = ev.target && ev.target.closest ? ev.target.closest('[data-o]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-o') === 'tamam') {
+        kapat();
+        if (typeof opt.sonra === 'function') opt.sonra();
+      }
+    };
+    setTimeout(function () {
+      var b = m.querySelector('[data-o="tamam"]');
+      if (b) b.focus();
+    }, 60);
   }
 
   /* vazgeç: eski ekrana dön */
@@ -11398,7 +12177,7 @@ var MBGO = (function () {
     return (ay >= 9 || ay <= 1) ? 'guz' : 'bahar';
   }
 
-  return { sor: sor, onay: onay, islem: islem, uyeAra: uyeAra, hata: hata, duz: duz, donemBul: donemBul };
+  return { sor: sor, onay: onay, islem: islem, uyeAra: uyeAra, hata: hata, duz: duz, basari: basari, donemBul: donemBul };
 })();
 </script>
 <script>
@@ -11454,6 +12233,15 @@ var MBGO = (function () {
   function ilkBuyuk(s) {
     s = String(s == null ? '' : s);
     return s ? s.charAt(0).toLocaleUpperCase('tr-TR') + s.slice(1) : s;
+  }
+  /* HER kelimenin baş harfi büyük (Türkçe): "moleküler biyoloji ve genetik"
+     → "Moleküler Biyoloji Ve Genetik". "Giriş Yılı" ile aynı kural. */
+  function basHarfler(s) {
+    s = String(s == null ? '' : s);
+    if (!s) return s;
+    return s.replace(/(^|\s|[-/])([a-zçğıöşü])/g, function (m, once, h) {
+      return once + h.toLocaleUpperCase('tr-TR');
+    });
   }
   function d2(n) { return (n < 10 ? '0' : '') + n; }
   function iso(y, m, d) { return y + '-' + d2(m) + '-' + d2(d); }
@@ -13482,6 +14270,9 @@ var MBGO = (function () {
 
     /* konsoldan kullanılabilir küçük yardımcı:  MBG.goTo(3) · MBG.goToday() · MBG.dna() */
     window.MBG = {
+      /* yazi bicimlendirme (ortak kural): "Giriş Yılı" gibi bas harf
+         buyuk yazim — bolum gibi serbest metin alanlarinda da gecerli */
+      basHarfler: function (s) { return basHarfler(s); },
       /* mevcut etkinliği yerel planda güncelle */
       planGuncelle: function (id, rec) {
         var i, hedef = null;
